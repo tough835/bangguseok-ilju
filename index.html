@@ -137,6 +137,8 @@
   .ip-ph{flex:none;width:72px;height:72px;border-radius:10px;border:2px dashed #b9b19a;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#8a8370;background:#f3efe2;overflow:hidden}
   .ip-ph img{width:100%;height:100%;object-fit:cover}
   .ip-tx{flex:1;min-width:0}
+  .satb{pointer-events:auto;border:0;font-size:13px;font-weight:800}
+  .ipv{float:right;border:0;border-radius:10px;padding:6px 9px;margin:0 0 4px 6px;background:#2f6f45;color:#fff;font-size:13px;font-weight:800}
   .ip-nm{font-size:15px;font-weight:800;line-height:1.25}
   #ipElev{display:block;width:100%;height:30px;margin-top:6px}
   .ip-gr{font-size:14px;font-weight:900;margin-top:3px}
@@ -207,7 +209,7 @@
   .goalRow{display:flex;gap:8px;align-items:center;margin-top:8px}
   .goalRow input{flex:1;height:52px;border-radius:12px;border:0;padding:0 14px;font-size:22px;font-weight:800;background:rgba(255,255,255,.1);color:#fff}
   .goalRow span{font-size:18px;font-weight:800;opacity:.8}
-  #applyBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(127,207,138,.14);border:1.5px solid rgba(127,207,138,.5)}
+  #applyBox,#trackBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(127,207,138,.14);border:1.5px solid rgba(127,207,138,.5)}
   #applyBox select{width:100%;height:46px;border-radius:10px;font-size:16px;margin:10px 0}
   .rb button.ap{background:#2f7a45}
   .trl{font-size:13px;font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(127,207,138,.2);color:#bfe8c5;margin-left:4px}
@@ -225,6 +227,7 @@
   <div class="ip-top">
     <div class="ip-ph" id="ipPhoto"></div>
     <div class="ip-tx">
+      <button class="ipv hidden" id="ipView"></button>
       <div class="ip-nm" id="ipName"></div>
       <div class="ip-gr" id="ipGrade"></div>
       <div class="ip-note" id="ipNote"></div>
@@ -240,6 +243,7 @@
   <div class="pill alt hidden" id="altiPill"></div>
   <div class="pill note hidden" id="notePill"></div>
   <div class="pill hidden" id="gpsPill"></div>
+  <button class="pill satb hidden" id="bSat"></button>
 </div>
 
 <div id="hudBottom" class="hidden">
@@ -486,6 +490,11 @@
     <div class="muted" id="apSub" style="margin-top:4px;line-height:1.5"></div>
     <select id="apTarget"></select>
     <div class="mbtn"><button id="apNo" data-t="apNo"></button><button id="apYes" class="go" data-t="apYes"></button></div>
+  </div>
+  <div id="trackBox" class="hidden">
+    <b id="trTitle"></b>
+    <div class="muted" id="trSub" style="margin-top:4px;line-height:1.5"></div>
+    <div class="mbtn"><button id="trNo" data-t="apNo"></button><button id="trYes" class="go" data-t="trYes"></button></div>
   </div>
   <div id="passedWrap">
   <h2 data-t="passedTitle">지나온 곳</h2>
@@ -927,6 +936,10 @@ const TEXT = {
     freeSum: '🎯 일반 운동 · 목표 {g}', freeNoGoal: '목표 없음',
     apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
+    satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar', streetView: '📷 거리뷰', roadView: '📷 로드뷰',
+    geoGot: '🗺 실제 길 모양을 받았어요 · 다음에 열 때부터 위성 지도 위에 그려져요',
+    trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '다음부터 운동 화면 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
+    trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
     otherTrails: '다른 길:', trailsN: '길 {n}개', peakStamp: '정상 도장',
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
     zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
@@ -979,6 +992,16 @@ let store = loadStore();
 
 /* ===================== 코스 준비 ===================== */
 /* GPX가 없는 코스는 임시 지도 모양을 만들어 씀 (구불구불한 선, 코스마다 모양 고정) */
+/* ---- 실제 길 모양 (2026-11-15)
+   · 'osm' = 대충 찍은 좌표를 오픈스트리트맵 도보 길에 붙여 받은 모양 (폰이 처음 열 때 한 번 받아 저장)
+   · 'gps' = 보스가 GPS로 직접 다닌 길을 이 코스 지도로 쓰기로 한 것 (가장 우선) */
+const GEO_KEY = 'bgsj_geo', GEO_ID = ACTIVE.city + '/' + COURSE.id;
+let RGEO = {}; try { RGEO = JSON.parse(localStorage.getItem(GEO_KEY)) || {}; } catch(e){}
+const saveGeo = () => { try { localStorage.setItem(GEO_KEY, JSON.stringify(RGEO)); } catch(e){} };
+const RAW_PATH = COURSE.path || null;
+const GEO_NOW = RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 ? RGEO[GEO_ID] : null;
+if (GEO_NOW) COURSE.path = GEO_NOW.p;
+const REAL_PATH = !!COURSE.path;   // 실제 좌표가 있는 코스만 위성 지도·거리뷰를 씀
 if (!COURSE.path){
   const n = 40, step = COURSE.lengthM / n, pts = [[35.52, 127.72]];
   const sd = rnd(COURSE.lengthM) * 6.28; let la = 35.52, ln = 127.72;
@@ -991,6 +1014,9 @@ if (!COURSE.path){
 const L = COURSE.lengthM, SEG = 4, NSEG = Math.round(L / SEG);
 const lat0 = COURSE.path[0][0], kx = 111000 * Math.cos(lat0 * Math.PI/180), ky = 111000;
 const P = COURSE.path.map(p => ({ x: (p[1]-COURSE.path[0][1]) * kx, y: (p[0]-lat0) * ky }));
+const lon0 = COURSE.path[0][1];
+const geoOf = p => [lat0 + p.y / ky, lon0 + p.x / kx];             // 지도 좌표(m) → 위도·경도
+const pOf = (la, lo) => ({ x: (lo - lon0) * kx, y: (la - lat0) * ky });  // 위도·경도 → 지도 좌표(m)
 const cum = [0];
 for (let i = 1; i < P.length; i++) cum.push(cum[i-1] + Math.hypot(P[i].x-P[i-1].x, P[i].y-P[i-1].y));
 const pathScale = L / cum[cum.length-1];   // 그린 모양 길이를 코스 길이에 맞춤
@@ -1806,7 +1832,7 @@ function showRun(on){
 function clearPopups(){ $('popup').classList.add('hidden'); popupQueue = []; clearTimeout(popupTimer); popupTimer = null; }
 $('bStart').onclick = () => {
   if (DB.zone === 'out' && (isClimb() || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
-  S.gps = DB.zone === 'out';
+  S.gps = DB.zone === 'out'; GPS.track = [];
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false;
@@ -1821,7 +1847,7 @@ $('bStart').onclick = () => {
   lastFrame = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 };
 function fillEnd(){
-  const a = ACTS[S.act];
+  const a = ACTS[S.act]; fillTrack();
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free);
   if (S.free){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
@@ -2323,6 +2349,7 @@ const ipCv = $('ipElev'), ipCtx = ipCv.getContext('2d');
 function updateInfoPanel(pos){
   const nh = nextSpotFrom(totalNow());
   $('ipPhoto').innerHTML = nh.lm.photo ? '<img src="' + nh.lm.photo + '">' : '🚩 ' + T.photoSlot;
+  ipViewFor(nh.lm);
   $('ipName').textContent = '🚩 ' + tr(nh.lm.name) + ' ' + (nh.d >= 1000 ? (nh.d / 1000).toFixed(1) + 'km' : Math.round(nh.d) + 'm');
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx, rng = Math.max(30, ELEV_MAX - ELEV_MIN);
   const yy = e => h - 4 * DPR - (e - ELEV_MIN) / rng * (h - 10 * DPR);
@@ -2355,7 +2382,23 @@ function climbNote(st){
   if (wp) return ['🥾 ' + T.nSoon.replace('{s}', tr(wp.name)), false];
   return [st.ratio > 0.5 ? T.nHalf : T.nKeep, true];
 }
+/* ---- 거점 거리뷰: 국내 = 카카오 로드뷰, 해외 = 구글 스트리트뷰 (지도 앱·브라우저로 열림, 무료 링크) ---- */
+let ipViewLm = null;
+function ipViewFor(lm){
+  ipViewLm = REAL_PATH ? lm : null;
+  const kr = (regionPath(ACTIVE.city) || {}).country === 'kr';
+  $('ipView').textContent = kr ? T.roadView : T.streetView; $('ipView').classList.toggle('hidden', !ipViewLm);
+}
+function viewUrl(lm){
+  const ll = geoOf(pointAt(lm.at)), a = ll[0].toFixed(6), b = ll[1].toFixed(6);
+  return (regionPath(ACTIVE.city) || {}).country === 'kr' ? 'https://map.kakao.com/link/roadview/' + a + ',' + b
+    : 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + a + ',' + b;
+}
+$('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) window.open(viewUrl(ipViewLm), '_blank'); };
+function satBtn(){ $('bSat').textContent = satOn() ? T.satOn : T.satOff; }
+$('bSat').onclick = e => { e.stopPropagation(); DB.sat = !satOn(); saveDB(); satBtn(); };
 function showViewMode(on){
+  $('bSat').classList.toggle('hidden', !(on && REAL_PATH && !isClimb() && !S.free)); satBtn();
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
@@ -2542,6 +2585,7 @@ function drawClimbView(st){
 function updateInfoClimb(st){
   const m = st.m, tower = m.kind === 'tower';
   $('ipPhoto').innerHTML = m.photo ? '<img src="' + m.photo + '">' : (tower ? '🏙 ' : '⛰ ') + T.photoSlot;
+  $('ipView').classList.add('hidden');
   $('ipName').textContent = (tower ? '🏙 ' : '⛰ ') + tr(m.name);
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx;
   g.clearRect(0, 0, w, h); g.fillStyle = '#cfe0c9'; g.fillRect(0, h * 0.35, w, h * 0.3);
@@ -2844,7 +2888,7 @@ function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·�
   const d = gpsDist(GPS.last, now), dt = Math.max(0.5, (now.t - GPS.last.t) / 1000), v = d / dt;
   if (v > (S.act === 'bike' ? 25 : 12)){ GPS.last = now; return; }   // 튀는 값
   if (d < Math.max(4, acc * 0.4)) return;                              // 제자리 흔들림
-  GPS.last = now;
+  GPS.last = now; if (!S.paused) trackPush(lat, lon);
   GPS.lastMove = Date.now();
   if (!S.paused){
     advance(d); GPS.spd = GPS.spd ? GPS.spd * 0.6 + v * 3.6 * 0.4 : v * 3.6; S.speed = Math.round(GPS.spd * 10) / 10; refreshSpeedBox(false);
@@ -2888,19 +2932,97 @@ function fadeBottom(g, vh){
   g.fillStyle = gr; g.fillRect(0, vh - 6 * DPR, g.canvas.width, g.canvas.height);
 }
 const gradeCol = g => g > 6 ? '#d9534a' : g > 2.5 ? '#f0a03c' : g < -2.5 ? '#4a8fd9' : '#8f9a8f';
+/* ---- 실제 길 붙이기: 대충 찍은 점들 → 오픈스트리트맵 걷는 길 (FOSSGIS 공개 경로 서버, 하루 한 코스 한 번)
+   · 받은 길 길이가 코스 길이와 너무 다르면 쓰지 않음 (7일 뒤 다시 시도) */
+function thinPath(c, maxN){ if (c.length <= maxN) return c; const k = c.length / maxN, out = []; for (let i = 0; i < maxN; i++) out.push(c[Math.floor(i * k)]); out.push(c[c.length - 1]); return out; }
+function snapRoads(){
+  if (!RAW_PATH || GEO_NOW || S.free) return;
+  const old = RGEO[GEO_ID]; if (old && old.bad && Date.now() - old.t < 7 * 864e5) return;
+  if (navigator.onLine === false) return;
+  const pts = RAW_PATH.slice(); if (COURSE.loop){ const a = pts[0], b = pts[pts.length - 1]; if (a[0] !== b[0] || a[1] !== b[1]) pts.push(a); }
+  const prof = DB.roadAct === 'bike' ? 'bike' : 'foot';
+  const url = 'https://routing.openstreetmap.de/routed-' + prof + '/route/v1/driving/' + pts.map(q => q[1].toFixed(5) + ',' + q[0].toFixed(5)).join(';') + '?overview=full&geometries=geojson';
+  fetch(url).then(r => r.json()).then(j => {
+    const rt = j && j.routes && j.routes[0]; if (!rt || !rt.geometry) return;
+    const ratio = rt.distance / COURSE.lengthM;
+    if (ratio < 0.6 || ratio > 1.6){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); return; }
+    const c = thinPath(rt.geometry.coordinates.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
+    RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now() }; saveGeo();
+    if (!S.running) toastMsg(T.geoGot);
+  }).catch(() => {});
+}
+setTimeout(snapRoads, 2500);
+/* GPS로 다닌 길 모으기 (12m마다 한 점) → 끝난 뒤 '이 코스 지도로 쓰기' */
+function trackPush(lat, lon){
+  const t = GPS.track || (GPS.track = []), l = t[t.length - 1];
+  if (l && gpsDist({ lat: l[0], lon: l[1] }, { lat, lon }) < 12) return;
+  if (t.length < 6000) t.push([+lat.toFixed(5), +lon.toFixed(5)]);
+}
+function trackLen(t){ let d = 0; for (let i = 1; i < t.length; i++) d += gpsDist({ lat: t[i-1][0], lon: t[i-1][1] }, { lat: t[i][0], lon: t[i][1] }); return d; }
+function fillTrack(){
+  const t = GPS.track || [], d = trackLen(t), show = S.gps && !S.free && !isClimb() && t.length > 10 && d > 300;
+  $('trackBox').classList.toggle('hidden', !show); if (!show) return;
+  $('trTitle').textContent = T.trTitle.replace('{a}', (d / 1000).toFixed(2)).replace('{c}', tr(COURSE.short || COURSE.name));
+  $('trSub').textContent = (GEO_NOW && GEO_NOW.src === 'gps' ? T.trReplace + ' ' : '') + (d < L * 0.5 ? T.trShort : T.trSub);
+  $('trYes').disabled = false; $('trNo').disabled = false;
+}
+$('trYes').onclick = () => {
+  const t = GPS.track || []; if (t.length < 2) return;
+  RGEO[GEO_ID] = { p: thinPath(t, 800), src: 'gps', d: Math.round(trackLen(t)), t: Date.now() }; saveGeo();
+  $('trTitle').textContent = T.trDone; $('trYes').disabled = true; $('trNo').disabled = true;
+};
+$('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').disabled = true; $('trNo').disabled = true; };
+
+/* ---- 위성 지도 바닥 (2026-11-15 시험) ----
+   · Esri World Imagery 타일을 그때그때 불러와 그림 (저장하지 않음, 키 없음)
+   · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
+const SAT = { cache: new Map(), url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x };
+const satOn = () => REAL_PATH && DB.sat !== false;
+function satTile(z, x, y, load){
+  const k = z + '/' + x + '/' + y; let im = SAT.cache.get(k);
+  if (!im && load){
+    if (SAT.cache.size > 360) SAT.cache.delete(SAT.cache.keys().next().value);
+    im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { im.ok = 1; }; im.src = SAT.url(z, x, y); SAT.cache.set(k, im);
+  }
+  return im;
+}
+function drawSat(g, tf, c, R, sc){
+  const ll = geoOf(c), cl = Math.cos(ll[0] * Math.PI / 180);
+  let z = Math.max(3, Math.min(18, Math.floor(Math.log2(156543.03 * cl * sc))));
+  const dLa = R / ky, dLo = R / kx;
+  let n, x0, x1, y0, y1;
+  const ty = (la, n) => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
+  for (;;){   // 타일이 너무 많으면 한 단계 멀리
+    n = 2 ** z; x0 = Math.floor((ll[1] - dLo + 180) / 360 * n); x1 = Math.floor((ll[1] + dLo + 180) / 360 * n);
+    y0 = Math.floor(ty(ll[0] + dLa, n)); y1 = Math.floor(ty(ll[0] - dLa, n));
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) <= 48 || z <= 3) break; z--;
+  }
+  const lonOf = x => x / n * 360 - 180, latOf = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
+  g.save();
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++){
+    let im = satTile(z, x, y, true), sx = 0, sy = 0, sw = 256;
+    if (!im.ok){ const pa = satTile(z - 1, x >> 1, y >> 1, false); if (!pa || !pa.ok) continue; im = pa; sx = (x & 1) * 128; sy = (y & 1) * 128; sw = 128; }   // 아직 안 온 칸은 한 단계 위 사진을 늘려서
+    const a = tf(pOf(latOf(y), lonOf(x))), b = tf(pOf(latOf(y), lonOf(x + 1))), d = tf(pOf(latOf(y + 1), lonOf(x)));
+    g.setTransform((b[0] - a[0]) / 256, (b[1] - a[1]) / 256, (d[0] - a[0]) / 256, (d[1] - a[1]) / 256, a[0], a[1]);
+    g.drawImage(im, sx, sy, sw, sw, 0, 0, 256.8, 256.8);
+  }
+  g.restore();
+  g.fillStyle = 'rgba(20,30,24,.18)'; g.fillRect(0, 0, g.canvas.width, g.canvas.height);   // 길 선이 잘 보이게 살짝 어둡게
+}
 function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
   const sc = vw / viewM, c = pointAt(pos), h = headingAt(pos), ch = Math.cos(h), sh = Math.sin(h);
   const tf = p => { const vx = (p.x - c.x) * sc, vy = -(p.y - c.y) * sc; return [ax + vx * ch + vy * sh, ay - vx * sh + vy * ch]; };
   const R = Math.hypot(vw, vh) / sc;
   g.fillStyle = '#e6ecdf'; g.fillRect(0, 0, g.canvas.width, g.canvas.height);
-  if (!mini){   // 바닥 격자: 움직임이 보이게
+  const sat = !mini && satOn(); if (sat) drawSat(g, tf, c, R, sc);
+  if (!mini && !sat){   // 바닥 격자: 움직임이 보이게
     const gs = viewM <= 300 ? 50 : 200; g.strokeStyle = 'rgba(0,0,0,.07)'; g.lineWidth = 1; g.beginPath();
     for (let x = Math.floor((c.x - R) / gs) * gs; x <= c.x + R; x += gs){ const a = tf({ x, y: c.y - R }), b = tf({ x, y: c.y + R }); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
     for (let y = Math.floor((c.y - R) / gs) * gs; y <= c.y + R; y += gs){ const a = tf({ x: c.x - R, y }), b = tf({ x: c.x + R, y }); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
     g.stroke();
   }
   const from = Math.max(0, pos - R), to = Math.min(L - 0.5, pos + R), stp = Math.max(3, R / 90), wd = (mini ? 5 : 11) * DPR;
-  if (!mini){
+  if (!mini && !sat){
     const near = viewM <= 300, gap = near ? 14 : 36, k = near ? 1 : 2.4;
     for (let i = Math.max(0, Math.floor(from / gap)); i * gap <= to; i++){
       const d = i * gap, sn = COURSE.segments[zoneIndexAt(d)].scene, hd = headingAt(d), p0 = pointAt(d), water = sn === 'bank' || sn === 'valley' || sn === 'beach' || sn === 'coast' || sn === 'river';
@@ -2958,6 +3080,7 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
     g.fillStyle = '#f0a03c'; g.fillRect(10 * DPR, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legUp, 26 * DPR, y);
     const x2 = 34 * DPR + g.measureText(T.legUp).width; g.fillStyle = '#4a8fd9'; g.fillRect(x2, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legDown, x2 + 16 * DPR, y);
   }
+  if (sat){ g.font = (10 * DPR) + 'px sans-serif'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(T.satCredit, 8 * DPR, vh - 12 * DPR); }
 }
 /* 작은 칸 글자: 왼쪽 위 이름표(누르면 바뀐다는 표시) + 아래 진행 숫자 */
 function miniTag(txt, foot){
