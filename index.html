@@ -200,6 +200,16 @@
   .zoneBtn{height:42px;padding:0 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:15px;font-weight:800}
   #startScreen h1{font-size:22px}
   .gpsNote{margin-top:10px;font-size:13px;opacity:.7;line-height:1.6}
+  .modeSeg{display:flex;gap:8px;margin:14px 0 4px}
+  .modeSeg button{flex:1;height:64px;border-radius:16px;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;font-size:17px;font-weight:900;line-height:1.2}
+  .modeSeg button small{display:block;font-size:12px;font-weight:600;opacity:.7;margin-top:2px}
+  .modeSeg button.on{background:#7fcf8a;color:#10301f;border-color:#7fcf8a}
+  .goalRow{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .goalRow input{flex:1;height:52px;border-radius:12px;border:0;padding:0 14px;font-size:22px;font-weight:800;background:rgba(255,255,255,.1);color:#fff}
+  .goalRow span{font-size:18px;font-weight:800;opacity:.8}
+  #applyBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(127,207,138,.14);border:1.5px solid rgba(127,207,138,.5)}
+  #applyBox select{width:100%;height:46px;border-radius:10px;font-size:16px;margin:10px 0}
+  .rb button.ap{background:#2f7a45}
   .hidden{display:none!important}
 </style>
 </head>
@@ -297,6 +307,19 @@
     <div class="wide"><span id="sumPickName"></span><b id="sumPick"></b></div>
   </div>
 
+  <div class="modeSeg" id="modeSeg">
+    <button data-mode2="free"><span data-t="mFree"></span><small data-t="mFreeSub"></small></button>
+    <button data-mode2="theme"><span data-t="mTheme"></span><small data-t="mThemeSub"></small></button>
+  </div>
+
+  <div id="freeBox" class="hidden">
+    <h2 id="freeTitle"></h2>
+    <div class="presets" id="freePresets"></div>
+    <div class="goalRow"><input id="freeGoal" type="number" inputmode="decimal" step="0.1" min="0"><span id="freeUnit"></span></div>
+    <div class="muted" data-t="freeHelp" style="margin-top:8px;line-height:1.5"></div>
+  </div>
+
+  <div id="themeBox">
   <h2 data-t="region">지역</h2>
   <div class="sel3">
     <select id="rCountry"></select>
@@ -309,6 +332,7 @@
   <div class="card" id="courseList"></div>
   <button id="courseToggle" class="toggle"></button>
   <button id="bSite" class="toggle hidden"></button>
+  </div>
 
   <h2 data-t="act" id="actTitle">운동</h2>
   <div class="chips" id="actChips"></div>
@@ -453,8 +477,16 @@
     <button id="bFix" data-t="fixBtn">맞추기</button>
   </div>
   <div class="muted" id="fixMsg"></div>
+  <div id="applyBox" class="hidden">
+    <b data-t="apTitle"></b>
+    <div class="muted" id="apSub" style="margin-top:4px;line-height:1.5"></div>
+    <select id="apTarget"></select>
+    <div class="mbtn"><button id="apNo" data-t="apNo"></button><button id="apYes" class="go" data-t="apYes"></button></div>
+  </div>
+  <div id="passedWrap">
   <h2 data-t="passedTitle">지나온 곳</h2>
   <div class="card" id="endLandmarks"></div>
+  </div>
   <button class="big" id="bAgain" data-t="again">▶ 이어서 운동</button>
   <button class="big sub" id="bHome" data-t="home">처음으로</button>
 </div>
@@ -853,6 +885,12 @@ const TEXT = {
     bkOutT: '① 내보내기 (기록 {n}건)', bkCopy: '📋 코드 복사', bkFile: '💾 파일로 저장', bkInT: '② 가져오기 (합치기)', bkImport: '가져오기', bkLoad: '📂 파일 불러오기',
     bkCopied: '✅ 복사했어요. 카톡 나에게 보내기로 붙여 넣으세요.', bkCopyFail: '자동 복사가 막혔어요. 위 칸을 길게 눌러 전체 선택 → 복사해 주세요.',
     bkBad: '백업 코드가 아니에요. 처음부터 끝까지 빠짐없이 붙여 넣었는지 확인해 주세요.', bkDone: '✅ 가져오기 완료: 새 기록 {a}건 추가 · 이미 있던 {b}건은 그대로', bkFresh: '설정(지역·코스)도 함께 옮겼어요. 화면을 새로 불러옵니다.',
+    mFree: '🎯 일반', mFreeSub: '목표만 정하고 운동', mTheme: '🗺 테마', mThemeSub: '관광 코스 따라가기',
+    freeDist: '목표 거리', freeUp: '목표 층수', freeHelp: '테마 코스와 상관없이 목표만큼 운동합니다. 끝나고 원하면 테마 코스에 반영할 수 있어요.',
+    freeName: '🎯 일반 · 목표 {g}', freeLeft: '목표까지', freeDone: '🎉 목표 {g} 달성!', freeDoneSub: '계속 운동해도 되고, 끝내도 돼요',
+    freeSum: '🎯 일반 운동 · 목표 {g}', freeNoGoal: '목표 없음',
+    apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
+    apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
     zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
     aWalkOut: '걷기·조깅', gpsStart: '▶ GPS로 기록 시작', manualOut: '✍ 다녀온 기록 넣기', hikeOut: '✍ 다녀온 등산 기록 넣기',
@@ -1420,6 +1458,7 @@ function climbPassed(m, before, after){
   return out;
 }
 function advance(dm){
+  if (S.free){ freeAdvance(dm); return; }
   const before = totalNow(); S.sessionM += dm;
   walkPassed(before, totalNow()).forEach(p => {
     if (p.lap){ showPopup(p.name, p.desc, false); return; }
@@ -1433,6 +1472,7 @@ function advance(dm){
   if (S.running && S.goalAt != null) checkGoal();
 }
 function advanceClimb(dm){
+  if (S.free){ freeAdvance(dm); return; }
   const m = TGT(DB.climb.sel), before = S.startTotal + S.sessionM; S.sessionM += dm;
   climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : '🥾 ') + p.name, p.desc, p.photo); });
 }
@@ -1442,8 +1482,9 @@ function sessionRecord(){
   const up = isClimb();
   return { id: S.sessionId, date: new Date(S.sessionId).toISOString(), act: S.act, src: S.gps ? 'gps' : 'live', sec: Math.round(S.elapsed),
     distM: up ? 0 : Math.round(S.sessionM), upM: up ? Math.round(S.sessionM) : 0,
-    credit: up ? { course: 'climb', target: DB.climb.sel, m: S.sessionM } : { course: 'walk', target: COURSE.id, m: S.sessionM },
-    passed: S.passed.slice(), site: siteOK(sitePlace().key) || undefined };
+    credit: S.free ? freeCredit() : up ? { course: 'climb', target: DB.climb.sel, m: S.sessionM } : { course: 'walk', target: COURSE.id, m: S.sessionM },
+    free: S.free ? { goal: S.freeGoal, unit: up ? 'floor' : 'km' } : undefined,
+    passed: S.passed.slice(), site: S.free ? undefined : (siteOK(sitePlace().key) || undefined) };
 }
 function autosave(final){
   if (S.sessionM >= 1) upsertRecord(sessionRecord());
@@ -1456,7 +1497,11 @@ function loop(now){
   raf = requestAnimationFrame(loop);
   if (now - lastFrame < 31) return;
   const wallNow = Date.now(), dt = Math.min((wallNow - S.lastT) / 1000, 6 * 3600); S.lastT = wallNow; lastFrame = now;
-  if (isClimb()){
+  if (S.free){   // 일반: 목표 링 화면
+    if (!S.paused){ S.elapsed += dt; if (isClimb()){ if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); } else if (!autoActive() && !S.gps) advance(effSpeed() / 3.6 * dt); }
+    if (++hudTick % 6 === 0) hudFree();
+    drawFree();
+  } else if (isClimb()){
     if (!S.paused){ S.elapsed += dt; if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); S.phase += dt * (autoActive() ? cadence() : levelToSpm(S.level)) / 60 * Math.PI; }
     const amp = S.paused ? 0 : 0.045, bob = Math.abs(Math.sin(S.phase)) * amp - amp/2, sway = Math.sin(S.phase / 2) * amp * 0.6;
     const st = climbState();
@@ -1614,14 +1659,19 @@ function applyPick(){                                      // 코스 종류에 �
 
 /* ---- 3) 운동 + 4) 방식(지금 운동 | 기록만 입력) ---- */
 function setAct(a){
-  const out = DB.zone === 'out', upPick = DB.pick.type === 'climb';
-  if (upPick) a = out ? 'hike' : 'stair';                       // 방구석 = 천국의 계단 / 바깥 = 실제 등산·계단
+  const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
+  if (free){   // 일반: 방구석 = 러닝머신·자전거·천국의 계단 / 바깥 = 걷기·조깅·자전거
+    if (out && (a === 'tread' || ACTS[a].kind === 'up')) a = 'walk';
+    else if (!out && (a === 'walk' || a === 'jog' || a === 'hike')) a = 'tread';
+  }
+  else if (upPick) a = out ? 'hike' : 'stair';                       // 방구석 = 천국의 계단 / 바깥 = 실제 등산·계단
   else if (out && a === 'tread') a = 'walk';                    // 바깥 걷기·조깅
   else if (!out && (a === 'walk' || a === 'jog')) a = 'tread';
   else if (ACTS[a].kind === 'up') a = out ? 'walk' : 'tread';
   S.act = a; DB.act = a; if (ACTS[a].kind === 'dist') DB.roadAct = a;
-  const up = isClimb(), tower = up && TGT(DB.climb.sel).kind === 'tower';
-  const list = up ? (out ? [['hike', '🥾', tower ? T.aRealStair : T.aHike]] : [['stair', '🪜', T.aStair]])
+  const up = isClimb(), tower = !free && up && TGT(DB.climb.sel).kind === 'tower';
+  const list = free ? (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '🪜', T.aStair]])
+             : up ? (out ? [['hike', '🥾', tower ? T.aRealStair : T.aHike]] : [['stair', '🪜', T.aStair]])
                   : (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike]]);
   $('actChips').innerHTML = list.map(([k, ic, nm]) => '<button data-act="' + k + '" class="' + (k === a ? 'on' : '') + '"><b>' + ic + '</b><span>' + nm + '</span></button>').join('');
   $('actChips').querySelectorAll('[data-act]').forEach(b => b.onclick = () => setAct(b.dataset.act));
@@ -1635,6 +1685,7 @@ function setAct(a){
   $('speedArea').classList.toggle('hidden', out);
   const gpsOK = out && !up && gpsUsable();
   $('bStart').textContent = !out ? T.start : up ? T.hikeOut : gpsOK ? T.gpsStart : T.manualOut;
+  refreshFree();
   $('gpsNote').classList.toggle('hidden', !out);
   $('gpsNote').textContent = up ? T.hikeHelp : gpsOK ? (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? T.gpsHelpApp : T.gpsHelp) : T.gpsNoHere;
   $('bZone').textContent = out ? T.zOutTitle : T.zInTitle;
@@ -1692,7 +1743,8 @@ function saveManual(amt, min, act){
     rec.passed = ps.map(p => p.name); hubs = ps.filter(p => p.hub).map(p => p.name);
     msg = tr(COURSE.short || COURSE.name) + ' +' + amt.toFixed(2) + 'km';
   }
-  if (siteOK(recPlace(rec))) rec.site = true;
+  if (isFree()){ delete rec.credit; rec.passed = []; rec.free = { goal: up ? (DB.free.floors || 0) : (DB.free.km || 0), unit: up ? 'floor' : 'km' }; hubs = []; msg = T.freeTag + ' ' + (up ? rec.upM + 'm' : amt.toFixed(2) + 'km') + ' · ' + T.apLater; }   // 일반: 테마에 안 쌓음
+  else if (siteOK(recPlace(rec))) rec.site = true;
   upsertRecord(rec);
   $('addBox').classList.add('hidden'); refreshRec();
   toastMsg('✅ ' + msg + (hubs.length ? ' · 🚩 ' + hubs.join(', ') : ''));
@@ -1703,8 +1755,9 @@ $('addClose').onclick = () => $('addBox').classList.add('hidden');
 /* ---- 출발 / 종료 ---- */
 function showRun(on){
   ['map','hudTop','hudBottom'].forEach(id => $(id).classList.toggle('hidden', !on));
-  $('altiPill').classList.toggle('hidden', !(on && isClimb()));
+  $('altiPill').classList.toggle('hidden', !(on && isClimb() && !S.free));
   showViewMode(on);
+  if (on && S.free){ $('map').classList.add('hidden'); $('infoPanel').classList.add('hidden'); $('hudTop').classList.remove('hidden'); $('notePill').classList.add('hidden'); }
   if (!on) $('syncBox').classList.add('hidden');
   $('startScreen').classList.add('hidden');
 }
@@ -1714,8 +1767,9 @@ $('bStart').onclick = () => {
   S.gps = DB.zone === 'out';
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
-  S.startTotal = isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
-  S.goalAt = null; if (!isClimb()) startGoal();
+  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false;
+  S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
+  S.goalAt = null; if (!isClimb() && !S.free) startGoal();
   $('bPause').textContent = '⏸ ' + T.paused; $('pauseBadge').classList.add('hidden');
   if (S.gps){ S.speed = 0; gpsStart(); } else sensorStart();
   ['bDown', 'bUp'].forEach(id => $(id).style.visibility = S.gps ? 'hidden' : '');
@@ -1726,6 +1780,14 @@ $('bStart').onclick = () => {
 };
 function fillEnd(){
   const a = ACTS[S.act];
+  $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free);
+  if (S.free){
+    const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
+    $('endSummary').innerHTML = T.freeSum.replace('{g}', freeGoalText(S.freeGoal, up)) + '<br>' + a.icon + ' ' + T[a.key] + ' <b>' + amt + '</b> · ' + fmtTime(S.elapsed) +
+      (S.freeHit ? '<br>🎉 ' + T.freeDone.replace('🎉 ', '').replace('{g}', freeGoalText(S.freeGoal, up)) : '');
+    $('fixLabel').textContent = up ? T.fixFloors : T.fixKm; $('fixIn').placeholder = up ? T.floorUnit : 'km';
+    fillApply(); return;
+  }
   if (isClimb()){
     const st = climbState(), tower = st.m.kind === 'tower';
     $('endSummary').innerHTML = T.todayUp + ' <b>' + Math.round(S.sessionM) + ' m</b> · ' + fmtTime(S.elapsed) + '<br>' +
@@ -1754,7 +1816,8 @@ $('bFix').onclick = () => {   // 기계에 찍힌 숫자로 맞추기
   const v = parseFloat($('fixIn').value);
   if (!(v >= 0)){ $('fixMsg').textContent = T.badNum; return; }
   const oldM = S.sessionM, usedSensor = SENS.sessDist > 0;
-  if (isClimb()){ const m = TGT(DB.climb.sel), b = S.startTotal + S.sessionM; S.sessionM = v * FLOOR_M;
+  if (S.free) S.sessionM = isClimb() ? v * FLOOR_M : v * 1000;
+  else if (isClimb()){ const m = TGT(DB.climb.sel), b = S.startTotal + S.sessionM; S.sessionM = v * FLOOR_M;
     if (S.startTotal + S.sessionM > b) climbPassed(m, b, S.startTotal + S.sessionM).forEach(p => S.passed.push(p.short || p.name)); }
   else { const b = totalNow(); S.sessionM = v * 1000;
     if (totalNow() > b) walkPassed(b, totalNow()).filter(p => !p.lap).forEach(p => S.passed.push(p.name)); }
@@ -2265,6 +2328,7 @@ $('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showV
    ===================================================================== */
 function askResume(){
   let body = '', key = '';
+  if (isFree()) return;   // 일반 모드는 이어하기 없음
   if (DB.pick.type === 'climb'){
     const st = climbState(); if (st.climbed < 3) return;
     key = 'c:' + st.m.id;
@@ -2298,7 +2362,7 @@ $('bReset').onclick = () => {
    (고치면 credit도 같이 바뀌어 코스 진행이 자동으로 맞춰짐)
    ===================================================================== */
 const REC = { per: 'week', f: 'all', edit: null, delArm: false };
-const recWhere = r => { const c = r.credit || {}; return c.course === 'climb' ? tr(TGT(c.target).short || TGT(c.target).name).replace('지리산 ', '') : roadName(c.course === 'sangnim' ? 'sangnim-3k' : c.target); };
+const recWhere = r => { const c = r.credit || {}; if (r.free && !r.credit) return T.freeTag + (r.free.goal ? ' ' + freeGoalText(r.free.goal, r.free.unit === 'floor') : ''); return (r.free ? T.freeTag + ' ' : '') + (c.course === 'climb' ? tr(TGT(c.target).short || TGT(c.target).name).replace('지리산 ', '') : roadName(c.course === 'sangnim' ? 'sangnim-3k' : c.target)); };
 const recAmt = r => (ACTS[r.act] || ACTS.tread).kind === 'up' ? (r.upM || 0).toLocaleString() + 'm' : ((r.distM || 0) / 1000).toFixed(2) + 'km';
 function recLine(r){ const d = new Date(r.date), a = ACTS[r.act] || ACTS.tread;
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ' + a.icon + ' ' + recAmt(r) + ' ' + recWhere(r) + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : ''); }
@@ -2338,10 +2402,15 @@ function refreshRec(){
     html += '<div class="rrow"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
       (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
       T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + ' · ' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
-      '<div class="rb"><button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
+      '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
   $('recList').querySelectorAll('[data-ed]').forEach(el => el.onclick = () => openEdit(+el.dataset.ed));
+  $('recList').querySelectorAll('[data-ap]').forEach(el => el.onclick = () => {
+    const id = +el.dataset.ap; if (REC.apId !== id){ REC.apId = id; refreshRec(); return; }   // 한 번 더 누르면 반영
+    const r = DB.records.find(x => x.id === id); REC.apId = null; if (r){ const isUp = (ACTS[r.act] || ACTS.tread).kind === 'up'; applyTheme(r, isUp ? 'climb' : 'walk', isUp ? DB.climb.sel : COURSE.id); }
+    refreshRec();
+  });
   $('recList').querySelectorAll('[data-del]').forEach(el => el.onclick = () => {
     const id = +el.dataset.del;
     if (REC.delId !== id){ REC.delId = id; refreshRec(); return; }   // 한 번 더 누르면 지움
@@ -2456,6 +2525,108 @@ document.querySelectorAll('[data-zone]').forEach(b => b.onclick = () => {
   setAct(S.act); askResume();
 });
 $('bZone').onclick = showHome;
+
+/* =====================================================================
+   일반 / 테마
+   · 일반: 목표(거리 km 또는 층수)만 정하고 운동 → 테마 코스에는 안 쌓임 (credit 없음, free 표시)
+   · 끝나면 '테마에 반영할까요?' → 반영하면 그 기록에 credit을 붙임 (내 기록에서 나중에 반영도 가능)
+   ===================================================================== */
+function isFree(){ return !!(DB.free && DB.free.on); }
+function freeGoalVal(){ const g = DB.free || {}; return isClimb() ? (g.floors || 0) : (g.km || 0); }
+function freeGoalText(g, up){ return !g ? T.freeNoGoal : up ? g + T.floorUnit : (+g).toString() + 'km'; }
+function refreshFree(){
+  if (!$('freeBox')) return;
+  DB.free = DB.free || { on: false, km: 5, floors: 50 };
+  const free = isFree(), up = isClimb();
+  document.querySelectorAll('[data-mode2]').forEach(b => b.classList.toggle('on', (b.dataset.mode2 === 'free') === free));
+  $('freeBox').classList.toggle('hidden', !free); $('themeBox').classList.toggle('hidden', free);
+  $('sumPickName').parentElement.classList.toggle('hidden', free);
+  if (!free) return;
+  $('freeTitle').textContent = up ? T.freeUp : T.freeDist;
+  $('freeUnit').textContent = up ? T.floorUnit : 'km';
+  const list = up ? [30, 50, 100, 200] : (S.act === 'bike' ? [10, 20, 30, 50] : [3, 5, 10, 21.1]), cur = up ? DB.free.floors : DB.free.km;
+  $('freePresets').innerHTML = list.map(v => '<button data-fg="' + v + '" class="' + (v === cur ? 'on' : '') + '">' + v + (up ? T.floorUnit : 'km') + '</button>').join('');
+  $('freePresets').querySelectorAll('[data-fg]').forEach(b => b.onclick = () => { if (up) DB.free.floors = +b.dataset.fg; else DB.free.km = +b.dataset.fg; saveDB(); refreshFree(); });
+  if (document.activeElement !== $('freeGoal')) $('freeGoal').value = cur || '';
+}
+$('freeGoal').oninput = () => { const v = parseFloat($('freeGoal').value); if (!(v > 0)) return; if (isClimb()) DB.free.floors = Math.round(v); else DB.free.km = v; saveDB();
+  $('freePresets').querySelectorAll('[data-fg]').forEach(b => b.classList.toggle('on', +b.dataset.fg === v)); };
+document.querySelectorAll('[data-mode2]').forEach(b => b.onclick = () => {
+  DB.free = DB.free || { km: 5, floors: 50 }; DB.free.on = b.dataset.mode2 === 'free'; saveDB();
+  setAct(DB.free.on ? S.act : (DB.pick.type === 'climb' ? 'stair' : (DB.roadAct || S.act))); refreshStart();
+});
+function freeCredit(){ const prev = DB.records.find(r => r.id === S.sessionId); return prev && prev.credit ? Object.assign({}, prev.credit, { m: S.sessionM }) : undefined; }   // 반영한 뒤 '맞추기'로 숫자를 고쳐도 반영은 유지
+function freeGoalM(){ return isClimb() ? S.freeGoal * FLOOR_M : S.freeGoal * 1000; }
+function freeAdvance(dm){
+  S.sessionM += dm;
+  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
+}
+function hudFree(){
+  if (S.gps && S.speed > 0 && Date.now() - (GPS.lastMove || 0) > 8000){ S.speed = 0; GPS.spd = 0; refreshSpeedBox(false); }
+  if (autoActive()) autoSpeedTick();
+  const up = isClimb(), goalM = freeGoalM(), left = Math.max(0, goalM - S.sessionM), sp = effSpeed();
+  $('namePill').textContent = T.freeName.replace('{g}', freeGoalText(S.freeGoal, up));
+  $('sNextLabel').textContent = S.freeGoal ? T.freeLeft : T.today;
+  $('sNextDist').textContent = S.freeGoal ? (up ? Math.ceil(left / FLOOR_M) + T.floorUnit : fmtM(left)) : fmtM(S.sessionM);
+  $('sNextName').textContent = S.freeGoal && left > 0 ? T.approx + ' ' + Math.max(1, Math.round(up ? left / climbMpm() : left / Math.max(0.3, sp / 3.6) / 60)) + T.min : (S.freeHit ? '🎉' : '');
+  $('sTodayLabel').textContent = up ? T.todayUp : T.today;
+  $('sToday').textContent = up ? Math.round(S.sessionM) + ' m' : (S.sessionM / 1000).toFixed(2) + ' km';
+  $('sTime').textContent = fmtTime(S.elapsed) + ' · ' + (up ? T.machineFloors.replace('{n}', Math.floor(S.sessionM / FLOOR_M)) : S.act === 'bike' ? T.aBike : (sp >= WALK_RUN_LIMIT ? T.run : T.walk));
+  $('progBar').style.width = (S.freeGoal ? Math.min(100, S.sessionM / goalM * 100) : 0).toFixed(1) + '%';
+}
+function drawFree(){   // 목표 링: 가운데 큰 숫자, 둘레가 차오름
+  const top = 70 * DPR, bot = (innerHeight - ($('hudBottom').offsetHeight || innerHeight * 0.4) + 20) * DPR;
+  ctx.fillStyle = '#12261b'; ctx.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = (top + bot) / 2, r = Math.max(40 * DPR, Math.min(W * 0.36, (bot - top) * 0.42)), up = isClimb();
+  const ratio = S.freeGoal ? Math.min(1, S.sessionM / freeGoalM()) : (S.elapsed % 60) / 60;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 18 * DPR; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = S.freeHit ? '#ffd27a' : '#7fcf8a'; ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.002, ratio)); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+  ctx.font = '900 ' + Math.round(r * 0.42) + 'px sans-serif';
+  ctx.fillText(up ? Math.floor(S.sessionM / FLOOR_M) + '' : (S.sessionM / 1000).toFixed(2), cx, cy + r * 0.12);
+  ctx.font = '700 ' + Math.round(r * 0.14) + 'px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fillText((up ? T.floorUnit : 'km') + (S.freeGoal ? ' / ' + freeGoalText(S.freeGoal, up) : ''), cx, cy + r * 0.38);
+  if (S.freeGoal){ ctx.fillStyle = S.freeHit ? '#ffd27a' : '#7fcf8a'; ctx.font = '800 ' + Math.round(r * 0.16) + 'px sans-serif'; ctx.fillText(Math.floor(ratio * 100) + '%', cx, cy - r * 0.38); }
+  ctx.textAlign = 'left';
+}
+/* 테마 반영: 기록 r에 credit을 붙임 → 코스 진행이 자동으로 늘어남 */
+function themeName(up){ if (up === undefined) up = DB.pick.type === 'climb'; return up ? tr(TGT(DB.climb.sel).short || TGT(DB.climb.sel).name) : tr(COURSE.short || COURSE.name); }
+function applyTheme(r, kind, target){
+  if (!r || r.credit) return;
+  if (kind === 'climb'){
+    const m = TGT(target), before = climbTotal(m.id), amt = r.upM || 0;
+    r.credit = { course: 'climb', target: m.id, m: amt }; r.passed = climbPassed(m, before, before + amt).map(p => p.short || p.name);
+    toastMsg(T.apDone.replace('{c}', tr(m.short || m.name)).replace('{a}', amt + 'm'));
+  } else {
+    const amt = r.distM || 0, rd = ALL_ROADS[target] || COURSE;
+    if (rd.id === COURSE.id){ const before = walkTotal(); r.passed = walkPassed(before, before + amt).filter(p => !p.lap).map(p => p.name); }
+    r.credit = { course: 'walk', target: rd.id, m: amt };
+    toastMsg(T.apDone.replace('{c}', tr(rd.short || rd.name)).replace('{a}', (amt / 1000).toFixed(2) + 'km'));
+  }
+  saveDB(); try { refreshSteps(); } catch(e){}
+}
+function fillApply(){
+  const up = isClimb(), sel = $('apTarget');
+  const amt = up ? Math.round(S.sessionM) + 'm' : (S.sessionM / 1000).toFixed(2) + 'km';
+  $('apSub').textContent = T.apSub.replace('{a}', amt);
+  const city = WORLD.cities[DB.region.city] || CITY;
+  const opts = up ? TARGETS.filter(t => t.cityId === DB.region.city).map(t => [t.id, (t.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(t.name)])
+                  : Object.values(city.courses).filter(c => c.mode === 'distance').map(c => [c.id, '🛣 ' + tr(c.name)]);
+  if (!opts.length) opts.push(up ? [DB.climb.sel, tr(TGT(DB.climb.sel).name)] : [COURSE.id, tr(COURSE.name)]);
+  const def = up ? DB.climb.sel : COURSE.id;
+  sel.innerHTML = opts.map(([id, nm]) => '<option value="' + id + '"' + (id === def ? ' selected' : '') + '>' + nm + '</option>').join('');
+  const r = DB.records.find(x => x.id === S.sessionId);
+  $('apYes').disabled = !r || S.sessionM < 1; $('apNo').disabled = false;
+  $('applyBox').querySelector('b').textContent = T.apTitle;
+}
+$('apYes').onclick = () => {
+  const r = DB.records.find(x => x.id === S.sessionId); if (!r) return;
+  applyTheme(r, isClimb() ? 'climb' : 'walk', $('apTarget').value);
+  $('applyBox').querySelector('b').textContent = T.apDone.replace('{c}', $('apTarget').selectedOptions[0].textContent).replace('{a}', '');
+  $('apYes').disabled = true; $('apNo').disabled = true;
+};
+$('apNo').onclick = () => { $('applyBox').querySelector('b').textContent = T.apLater; $('apYes').disabled = true; $('apNo').disabled = true; };
 
 /* =====================================================================
    기록 옮기기·백업: DB 전체를 'BGSJ1:' + base64 코드로. 가져오기는 합치기 (같은 기록 id는 한 번만)
