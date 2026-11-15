@@ -960,7 +960,7 @@ const TEXT = {
     gBad: '⚠️ 받은 길({a}km)이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
-    trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '다음부터 운동 화면 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
+    trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '실제로 이 코스를 걸었을 때만 눌러 주세요. 다음부터 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
     otherTrails: '다른 길:', trailsN: '길 {n}개', peakStamp: '정상 도장',
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
@@ -3056,9 +3056,17 @@ function trackPush(lat, lon){
   if (l && gpsDist({ lat: l[0], lon: l[1] }, { lat, lon }) < 12) return;
   if (t.length < 6000) t.push([+lat.toFixed(5), +lon.toFixed(5)]);
 }
+/* 실제로 그 코스 근처를 걸었을 때만 '지도로 쓰기'를 물음 (아파트 앞을 걸으며 가상으로 상림을 걸은 날은 묻지 않음)
+   · 코스 좌표가 있으면: 다닌 점의 절반 이상이 코스 선에서 600m 안 / 좌표가 없으면: 묻되 '실제로 걸었을 때만' 안내 */
+function trackOnCourse(t){
+  if (!RAW_PATH) return true;
+  const near = q => RAW_PATH.some(r => gpsDist({ lat: r[0], lon: r[1] }, { lat: q[0], lon: q[1] }) < 600);
+  const sample = t.filter((q, i) => i % Math.max(1, Math.floor(t.length / 30)) === 0);
+  return sample.filter(near).length >= sample.length / 2;
+}
 function trackLen(t){ let d = 0; for (let i = 1; i < t.length; i++) d += gpsDist({ lat: t[i-1][0], lon: t[i-1][1] }, { lat: t[i][0], lon: t[i][1] }); return d; }
 function fillTrack(){
-  const t = GPS.track || [], d = trackLen(t), show = S.gps && !S.free && !isClimb() && t.length > 10 && d > 300;
+  const t = GPS.track || [], d = trackLen(t), show = S.gps && !S.free && !isClimb() && t.length > 10 && d > 300 && trackOnCourse(t);
   $('trackBox').classList.toggle('hidden', !show); if (!show) return;
   $('trTitle').textContent = T.trTitle.replace('{a}', (d / 1000).toFixed(2)).replace('{c}', tr(COURSE.short || COURSE.name));
   $('trSub').textContent = (GEO_NOW && GEO_NOW.src === 'gps' ? T.trReplace + ' ' : '') + (d < L * 0.5 ? T.trShort : T.trSub);
