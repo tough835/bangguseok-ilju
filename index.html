@@ -856,6 +856,8 @@ const TEXT = {
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
     zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
     aWalkOut: '걷기·조깅', gpsStart: '▶ GPS로 기록 시작', manualOut: '✍ 다녀온 기록 넣기', hikeOut: '✍ 다녀온 등산 기록 넣기',
+    gpsHelpApp: '달린 만큼 고른 코스에서 앞으로 갑니다. 폰을 잠가도 기록돼요 (알림창에 \'기록 중\' 표시).', bgTitle: '방구석일주 기록 중', bgMsg: '잠금 중에도 거리를 기록하고 있어요',
+    gpsPerm: '위치 권한이 필요해요. 설정에서 위치를 \'앱 사용 중에만 허용\'으로 바꿔 주세요.',
     gpsHelp: '달린 만큼 고른 코스에서 앞으로 갑니다. 화면을 켜 둔 채로 운동하세요 (화면이 꺼지면 기록이 멈춰요).',
     gpsNoHere: '이 화면에서는 GPS를 쓸 수 없어요. 외부 주소(Netlify)에서 열면 실시간 기록이 됩니다. 지금은 다녀온 거리를 넣어 주세요.',
     hikeHelp: '산 높이는 GPS로 정확히 재기 어려워서, 다녀온 뒤 오른 높이를 넣습니다.',
@@ -1634,7 +1636,7 @@ function setAct(a){
   const gpsOK = out && !up && gpsUsable();
   $('bStart').textContent = !out ? T.start : up ? T.hikeOut : gpsOK ? T.gpsStart : T.manualOut;
   $('gpsNote').classList.toggle('hidden', !out);
-  $('gpsNote').textContent = up ? T.hikeHelp : gpsOK ? T.gpsHelp : T.gpsNoHere;
+  $('gpsNote').textContent = up ? T.hikeHelp : gpsOK ? (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? T.gpsHelpApp : T.gpsHelp) : T.gpsNoHere;
   $('bZone').textContent = out ? T.zOutTitle : T.zInTitle;
   saveDB(); refreshStart(); drawIdle();
 }
@@ -2585,30 +2587,47 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveD
    · 화면이 꺼지면 웹페이지는 위치를 못 받음 → 화면 켜 둔 채로 (앱으로 만들면 해결)
    ===================================================================== */
 var GPS = { id: null, last: null, spd: 0 };
-function gpsUsable(){ return typeof geoUsable === 'function' && geoUsable(); }
+function gpsUsable(){ return !!BG || (typeof geoUsable === 'function' && geoUsable()); }
 function gpsDist(a, b){ const r = Math.PI / 180, x = (b.lon - a.lon) * r * Math.cos((a.lat + b.lat) / 2 * r), y = (b.lat - a.lat) * r; return Math.hypot(x, y) * 6371000; }
+/* 설치형 앱(APK) 안에서 열리면: 폰 기능(잠금 중 GPS)을 직접 씀 */
+var CAP = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? window.Capacitor : null;
+var BG = CAP && CAP.Plugins && CAP.Plugins.BackgroundGeolocation;
+function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·앱 공통)
+  acc = Math.round(acc || 99); const now = { lat, lon, t: t || Date.now() };
+  $('gpsPill').textContent = (acc <= 20 ? T.gpsOk : T.gpsWeak).replace('{a}', acc);
+  if (acc > 35 || !S.running) return;
+  if (!GPS.last){ GPS.last = now; return; }
+  const d = gpsDist(GPS.last, now), dt = Math.max(0.5, (now.t - GPS.last.t) / 1000), v = d / dt;
+  if (v > (S.act === 'bike' ? 25 : 12)){ GPS.last = now; return; }   // 튀는 값
+  if (d < Math.max(4, acc * 0.4)) return;                              // 제자리 흔들림
+  GPS.last = now;
+  GPS.lastMove = Date.now();
+  if (!S.paused){
+    advance(d); GPS.spd = GPS.spd ? GPS.spd * 0.6 + v * 3.6 * 0.4 : v * 3.6; S.speed = Math.round(GPS.spd * 10) / 10; refreshSpeedBox(false);
+    if (Date.now() - (GPS.saved || 0) > 30000){ GPS.saved = Date.now(); autosave(false); }   // 잠금 중에도 30초마다 저장
+  }
+}
 function gpsStart(){
   GPS.last = null; GPS.spd = 0;
+  if (BG){   // 앱: 알림창에 '기록 중'을 띄우고 잠금 중에도 계속 받음
+    BG.addWatcher({ backgroundTitle: T.bgTitle, backgroundMessage: T.bgMsg, requestPermissions: true, stale: false, distanceFilter: 3 }, (loc, err) => {
+      if (err){
+        if (err.code === 'NOT_AUTHORIZED'){ toastMsg(T.gpsPerm); $('gpsPill').textContent = T.gpsLost; try { BG.openSettings(); } catch(e){} }
+        return;
+      }
+      if (loc) gpsFix(loc.latitude, loc.longitude, loc.accuracy, loc.time);
+    }).then(id => { GPS.id = id; }).catch(() => toastMsg(T.gpsLost));
+    return;
+  }
   try {
-    GPS.id = navigator.geolocation.watchPosition(p => {
-      const acc = Math.round(p.coords.accuracy), now = { lat: p.coords.latitude, lon: p.coords.longitude, t: p.timestamp || Date.now() };
-      $('gpsPill').textContent = (acc <= 20 ? T.gpsOk : T.gpsWeak).replace('{a}', acc);
-      if (acc > 35 || !S.running) return;
-      if (!GPS.last){ GPS.last = now; return; }
-      const d = gpsDist(GPS.last, now), dt = Math.max(0.5, (now.t - GPS.last.t) / 1000), v = d / dt;
-      if (v > (S.act === 'bike' ? 25 : 12)){ GPS.last = now; return; }   // 튀는 값
-      if (d < Math.max(4, acc * 0.4)) return;                              // 제자리 흔들림
-      GPS.last = now;
-      GPS.lastMove = Date.now();
-      if (!S.paused){ advance(d); GPS.spd = GPS.spd ? GPS.spd * 0.6 + v * 3.6 * 0.4 : v * 3.6; S.speed = Math.round(GPS.spd * 10) / 10; refreshSpeedBox(false); }
-    }, e => {
+    GPS.id = navigator.geolocation.watchPosition(p => gpsFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp), e => {
       GPS.err = e && e.code;
       if (e && e.code === 1){ toastMsg(T.gpsLost); gpsStop(); $('gpsPill').textContent = T.gpsLost; SITE.blocked = true; }   // 위치 권한 거부
       else $('gpsPill').textContent = T.gpsWait;                                                                            // 잠깐 신호 없음 → 계속 기다림
     }, { enableHighAccuracy: true, maximumAge: 0 });
   } catch(e){ toastMsg(T.gpsLost); }
 }
-function gpsStop(){ try { if (GPS.id != null) navigator.geolocation.clearWatch(GPS.id); } catch(e){} GPS.id = null; }
+function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GPS.id }); else navigator.geolocation.clearWatch(GPS.id); } } catch(e){} GPS.id = null; }
 
 /* =====================================================================
    내비 화면 (운동 중 기본 화면)

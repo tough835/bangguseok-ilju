@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">방구석일주</string>
+    <string name="title_activity_main">방구석일주</string>
+    <string name="package_name">com.dolgurum.bangguseok</string>
+    <string name="custom_url_scheme">com.dolgurum.bangguseok</string>
+    <!-- 잠금 중 GPS 알림 (background-geolocation 플러그인) -->
+    <string name="capacitor_background_geolocation_notification_channel_name">운동 기록</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_tracking</string>
+    <string name="capacitor_background_geolocation_notification_color">#3f9a52</string>
+</resources>

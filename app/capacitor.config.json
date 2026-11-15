@@ -1,0 +1,16 @@
+{
+  "appId": "com.dolgurum.bangguseok",
+  "appName": "방구석일주",
+  "webDir": "www",
+  "server": {
+    "url": "https://symphonious-pasca-f5d6ba.netlify.app",
+    "androidScheme": "https",
+    "allowNavigation": [
+      "symphonious-pasca-f5d6ba.netlify.app"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "useLegacyBridge": true
+  }
+}
