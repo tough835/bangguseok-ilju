@@ -136,6 +136,8 @@
   .ip-top{display:flex;gap:8px}
   .ip-ph{flex:none;width:72px;height:72px;border-radius:10px;border:2px dashed #b9b19a;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#8a8370;background:#f3efe2;overflow:hidden}
   .ip-ph img{width:100%;height:100%;object-fit:cover}
+  .ip-ph.empty{border:0;background:#e9e4d4}
+  .noph{font-size:30px;opacity:.75}
   .pcr{position:absolute;right:4px;bottom:4px;max-width:92%;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ip-tx{flex:1;min-width:0}
   .satb{pointer-events:auto;border:0;font-size:13px;font-weight:800}
@@ -1402,8 +1404,8 @@ function nextPopup(){
   const p = popupQueue.shift();
   if (!p){ $('popup').classList.add('hidden'); popupTimer = null; return; }
   $('pTitle').textContent = p.title; $('pDesc').textContent = p.desc || '';
-  $('pPhoto').classList.toggle('hidden', !p.photo);
-  if (typeof p.photo === 'string') $('pPhoto').innerHTML = photoHtml(p.photo, 10); else $('pPhoto').innerHTML = T.photoSlot;
+  const hasPh = typeof p.photo === 'string';   // 사진이 없으면 빈 '사진 자리' 칸을 띄우지 않음 (11/15 보스)
+  $('pPhoto').classList.toggle('hidden', !hasPh); $('pPhoto').innerHTML = hasPh ? photoHtml(p.photo, 10) : '';
   $('popup').classList.remove('hidden');
   popupTimer = setTimeout(nextPopup, 5500);
 }
@@ -2235,7 +2237,7 @@ function refreshStamps(){
 function openSpot(lm){
   const n = stampCount(lm, walkTotal()), fv = firstVisit(lm);
   $('scTitle').textContent = (isHub(lm) ? '🚩 ' : '🔖 ') + tr(lm.name);
-  $('scPhoto').innerHTML = lm.photo ? photoHtml(lm.photo, 12) : T.photoSlot;
+  $('scPhoto').innerHTML = typeof lm.photo === 'string' ? photoHtml(lm.photo, 12) : '<span class="noph">📍</span>';
   $('scDesc').textContent = tr(lm.desc);
   $('scVisits').textContent = tr(COURSE.short || COURSE.name) + ' ' + T.atKm.replace('{k}', (lm.at / 1000).toFixed(1)) + ' · ' + (n ? T.visits.replace('{n}', n).replace('{d}', fv || '-') : T.notYet);
   $('spotCard').classList.remove('hidden');
@@ -2383,7 +2385,7 @@ function drawMapView(pos){
 const ipCv = $('ipElev'), ipCtx = ipCv.getContext('2d');
 function updateInfoPanel(pos){
   const nh = nextSpotFrom(totalNow());
-  $('ipPhoto').innerHTML = nh.lm.photo ? photoHtml(nh.lm.photo, 0, true) : '🚩 ' + T.photoSlot;
+  $('ipPhoto').innerHTML = typeof nh.lm.photo === 'string' ? photoHtml(nh.lm.photo, 0, true) : '<span class="noph">🚩</span>'; $('ipPhoto').classList.toggle('empty', typeof nh.lm.photo !== 'string');
   ipViewFor(nh.lm);
   $('ipName').textContent = '🚩 ' + tr(nh.lm.name) + ' ' + (nh.d >= 1000 ? (nh.d / 1000).toFixed(1) + 'km' : Math.round(nh.d) + 'm');
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx, rng = Math.max(30, ELEV_MAX - ELEV_MIN);
@@ -2630,7 +2632,7 @@ function drawClimbView(st){
 }
 function updateInfoClimb(st){
   const m = st.m, tower = m.kind === 'tower';
-  $('ipPhoto').innerHTML = m.photo ? photoHtml(m.photo, 0, true) : (tower ? '🏙 ' : '⛰ ') + T.photoSlot;
+  $('ipPhoto').innerHTML = typeof m.photo === 'string' ? photoHtml(m.photo, 0, true) : '<span class="noph">' + (tower ? '🏙' : '⛰') + '</span>'; $('ipPhoto').classList.toggle('empty', typeof m.photo !== 'string');
   $('ipView').classList.add('hidden');
   $('ipName').textContent = (tower ? '🏙 ' : '⛰ ') + tr(m.name);
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx;
