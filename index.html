@@ -136,6 +136,7 @@
   .ip-top{display:flex;gap:8px}
   .ip-ph{flex:none;width:72px;height:72px;border-radius:10px;border:2px dashed #b9b19a;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#8a8370;background:#f3efe2;overflow:hidden}
   .ip-ph img{width:100%;height:100%;object-fit:cover}
+  .pcr{position:absolute;right:4px;bottom:4px;max-width:92%;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ip-tx{flex:1;min-width:0}
   .satb{pointer-events:auto;border:0;font-size:13px;font-weight:800}
   .ipv{float:right;border:0;border-radius:10px;padding:6px 9px;margin:0 0 4px 6px;background:#2f6f45;color:#fff;font-size:13px;font-weight:800}
@@ -1388,7 +1389,7 @@ function nextPopup(){
   if (!p){ $('popup').classList.add('hidden'); popupTimer = null; return; }
   $('pTitle').textContent = p.title; $('pDesc').textContent = p.desc || '';
   $('pPhoto').classList.toggle('hidden', !p.photo);
-  if (typeof p.photo === 'string') $('pPhoto').innerHTML = '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">'; else $('pPhoto').innerHTML = T.photoSlot;
+  if (typeof p.photo === 'string') $('pPhoto').innerHTML = photoHtml(p.photo, 10); else $('pPhoto').innerHTML = T.photoSlot;
   $('popup').classList.remove('hidden');
   popupTimer = setTimeout(nextPopup, 5500);
 }
@@ -1435,9 +1436,19 @@ Object.entries(WORLD.cities).forEach(([cid, city]) => Object.values(city.courses
   if (c.mode === 'climb') c.segments.forEach(s => TARGETS.push({ ...s, kind: c.kind, cityId: cid, cityName: city.name, gain: s.summit - (s.base || 0), base: s.base || 0 }));
   else { c.cityId = cid; ALL_ROADS[c.id] = c; }
 }));
-/* ---- 거점 사진 (아리 이미지): 파일 hub_<명소id>.png → HUB_PHOTO['<명소id>'], 산·빌딩 mtn_<id>.png → HUB_PHOTO['mtn_<id>'] ----
-   요청서: Drive 공용자산/방구석일주_이미지. 주소만 넣으면 정보칸·팝업·스티커 사진에 자동 표시 */
+/* ---- 거점 사진 (2026-11-15 방식 변경: AI 그림 → 무료 실제 사진)
+   · HUB_PHOTO['<명소id>'] = 사진 주소 (산·빌딩은 'mtn_<id>')
+   · HUB_CREDIT['<명소id>'] = '작가 · 라이선스' → 사진 아래에 작게 표시 (CC BY·BY-SA·공공누리 1유형은 출처 표시가 조건)
+   · 출처표: Drive 방구석일주_이미지 > 02_아리 결과 > 거점사진_출처표_CURRENT */
 const HUB_PHOTO = {};
+const HUB_CREDIT = {};
+const PHOTO_CREDIT = {};   // 사진 주소 → 출처 (화면에서 찾아 쓰기)
+Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; });
+function photoHtml(src, r, small){
+  const cr = PHOTO_CREDIT[src];
+  return '<div style="position:relative;width:100%;height:100%"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + (r || 0) + 'px">' +
+    (cr ? '<span class="pcr">' + (small ? '©' : '© ' + cr) + '</span>' : '') + '</div>';
+}
 Object.values(ALL_ROADS).forEach(c => (c.landmarks || []).forEach(lm => { if (!lm.photo && HUB_PHOTO[lm.id]) lm.photo = HUB_PHOTO[lm.id]; }));
 TARGETS.forEach(t => { if (!t.photo && HUB_PHOTO['mtn_' + t.id]) t.photo = HUB_PHOTO['mtn_' + t.id]; });
 const MOUNTAINS = TARGETS.filter(t => t.kind === 'mountain').sort((a, b) => a.gain - b.gain);
@@ -2200,7 +2211,7 @@ function refreshStamps(){
 function openSpot(lm){
   const n = stampCount(lm, walkTotal()), fv = firstVisit(lm);
   $('scTitle').textContent = (isHub(lm) ? '🚩 ' : '🔖 ') + tr(lm.name);
-  $('scPhoto').innerHTML = lm.photo ? '<img src="' + lm.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">' : T.photoSlot;
+  $('scPhoto').innerHTML = lm.photo ? photoHtml(lm.photo, 12) : T.photoSlot;
   $('scDesc').textContent = tr(lm.desc);
   $('scVisits').textContent = tr(COURSE.short || COURSE.name) + ' ' + T.atKm.replace('{k}', (lm.at / 1000).toFixed(1)) + ' · ' + (n ? T.visits.replace('{n}', n).replace('{d}', fv || '-') : T.notYet);
   $('spotCard').classList.remove('hidden');
@@ -2348,7 +2359,7 @@ function drawMapView(pos){
 const ipCv = $('ipElev'), ipCtx = ipCv.getContext('2d');
 function updateInfoPanel(pos){
   const nh = nextSpotFrom(totalNow());
-  $('ipPhoto').innerHTML = nh.lm.photo ? '<img src="' + nh.lm.photo + '">' : '🚩 ' + T.photoSlot;
+  $('ipPhoto').innerHTML = nh.lm.photo ? photoHtml(nh.lm.photo, 0, true) : '🚩 ' + T.photoSlot;
   ipViewFor(nh.lm);
   $('ipName').textContent = '🚩 ' + tr(nh.lm.name) + ' ' + (nh.d >= 1000 ? (nh.d / 1000).toFixed(1) + 'km' : Math.round(nh.d) + 'm');
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx, rng = Math.max(30, ELEV_MAX - ELEV_MIN);
@@ -2584,7 +2595,7 @@ function drawClimbView(st){
 }
 function updateInfoClimb(st){
   const m = st.m, tower = m.kind === 'tower';
-  $('ipPhoto').innerHTML = m.photo ? '<img src="' + m.photo + '">' : (tower ? '🏙 ' : '⛰ ') + T.photoSlot;
+  $('ipPhoto').innerHTML = m.photo ? photoHtml(m.photo, 0, true) : (tower ? '🏙 ' : '⛰ ') + T.photoSlot;
   $('ipView').classList.add('hidden');
   $('ipName').textContent = (tower ? '🏙 ' : '⛰ ') + tr(m.name);
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx;
