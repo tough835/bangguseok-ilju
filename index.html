@@ -845,7 +845,7 @@ const TEXT = {
     nSoon: '곧 {s}', nSteepUp: '⚠ 가파른 오르막 · 숨 고르며', nSteepDown: '⚠ 가파른 내리막 · 속도 주의', nUp: '⬆ 오르막 구간', nDown: '⬇ 내리막 구간',
     nFlat: '➡ 평지 · 페이스 유지', nIncline: '트레드밀 경사 {g}%', nTop: '🔥 정상까지 {d}m!', nHalf: '절반 넘었어요 · 레벨 유지', nKeep: '꾸준히 · 레벨 유지',
     changeCourse: '코스 바꾸기 ▾', closeList: '닫기 ▴',
-    stBtn: '걸음수 {n}', stTitle: '👣 오늘 걸음', stSplit: '운동 {w}보 · 그 밖 {o}보', stSub: '등산·조깅·계단 기록도 합산 (기록은 추정) · 매일 0시에 새로',  stSubNo: '평소 걸음은 이 화면에서 못 셉니다 → 삼성 헬스 숫자로 맞춰 주세요 (운동 기록은 합산됨)',
+    stBtn: '걸음수 {n}', stTitle: '👣 오늘 걸음', stSplit: '운동 {w}보 · 그 밖 {o}보', stSubApp: '폰 걸음 센서로 24시간 셉니다 (설치한 때부터) · 매일 0시에 새로', stSubPerm: '걸음을 세려면 \'신체 활동\' 권한이 필요해요. 설정 → 애플리케이션 → 방구석일주 → 권한에서 허용해 주세요.', stSub: '등산·조깅·계단 기록도 합산 (기록은 추정) · 매일 0시에 새로',  stSubNo: '평소 걸음은 이 화면에서 못 셉니다 → 삼성 헬스 숫자로 맞춰 주세요 (운동 기록은 합산됨)',
     stInputL: '삼성 헬스 걸음수로 맞추기', stSet: '맞추기', stApply: '🛣 코스에 반영 · +{n}보 ≈ {d}km', stNone: '새로 반영할 걸음이 없어요',
     stClimb: '걸음은 길 코스에만 반영할 수 있어요. 코스를 길로 바꿔 주세요.', stHelp: '운동 밖 걸음만 {c}에 반영됩니다 (운동 걸음은 이미 기록에 들어 있음). 반영한 걸음은 다시 반영되지 않아요.',
     stDone: '✅ 걸음 {n}보 → {c} +{d}km', srcSteps: '👣 걸음 반영', stApplied: '오늘 반영함: {n}보',
@@ -2533,6 +2533,7 @@ function stepInfo(){   // { total 하루 합계, work 운동 걸음, other 운�
   const work = Math.max(d.run, est), other = Math.max(0, d.n - d.run);
   let total = other + work;
   if (d.set && d.set > total) total = d.set;          // 삼성 헬스 숫자가 더 크면 그 숫자
+  if (d.native && d.native > total) total = d.native; // 앱(APK): 폰 걸음 칩 24시간 숫자
   const free = Math.max(0, total - work - d.used);
   return { total, work, other: total - work, free };
 }
@@ -2554,12 +2555,13 @@ function stepsListen(){ try { window.removeEventListener('devicemotion', onBgMot
 async function stepsPermission(){   // 아이폰은 한 번 눌러서 허용해야 함
   try { if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){ if (await DeviceMotionEvent.requestPermission() === 'granted') stepsListen(); } } catch(e){}
 }
+var NSTEP = { ok: false, perm: false };   // 앱(APK) 걸음 칩 상태
 function refreshSteps(){
   const d = stepDay(), si = stepInfo();
   document.querySelectorAll('[data-steps]').forEach(b => b.textContent = T.stBtn.replace('{n}', si.total.toLocaleString()));
   if ($('stepBox').classList.contains('hidden')) return;
   $('stNum').textContent = si.total.toLocaleString();
-  $('stSub').textContent = T.stSplit.replace('{w}', si.work.toLocaleString()).replace('{o}', si.other.toLocaleString()) + '\n' + (STEP.ok ? T.stSub : T.stSubNo);
+  $('stSub').textContent = T.stSplit.replace('{w}', si.work.toLocaleString()).replace('{o}', si.other.toLocaleString()) + '\n' + (NSTEP.ok ? T.stSubApp : STEP.ok ? T.stSub : NSTEP.perm ? T.stSubPerm : T.stSubNo);
   $('stSub').style.whiteSpace = 'pre-line';
   const free = si.free, km = free * (DB.stride.walk || 0.7) / 1000, road = DB.pick.type !== 'climb';
   $('stApply').textContent = T.stApply.replace('{n}', free.toLocaleString()).replace('{d}', km.toFixed(2));
@@ -2579,6 +2581,21 @@ $('stApply').onclick = () => {
   toastMsg(T.stDone.replace('{n}', free.toLocaleString()).replace('{c}', tr(COURSE.short || COURSE.name)).replace('{d}', (m / 1000).toFixed(2)) + (ps.some(p => p.hub) ? ' · 🚩 ' + ps.filter(p => p.hub).map(p => p.name).join(', ') : ''));
 };
 stepsListen(); refreshSteps();
+/* 앱(APK): 폰 걸음 칩에서 오늘 걸음(24시간)을 가져옴 — 처음엔 '신체 활동' 권한을 물음 */
+function nativeSteps(first){
+  const P = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.Steps;
+  if (!P) return;
+  (first ? P.start() : P.today()).then(r => {
+    if (!r || !r.available){ NSTEP.ok = false; NSTEP.perm = r && r.reason === 'permission'; refreshSteps(); return; }
+    NSTEP.ok = true; NSTEP.perm = false;
+    stepDay().native = r.steps;
+    Object.entries(r.history || {}).forEach(([k, v]) => { DB.steps = DB.steps || {}; const t = DB.steps[k] || (DB.steps[k] = { n: 0, run: 0, used: 0 }); t.native = Math.max(t.native || 0, v); });
+    saveDB(); refreshSteps();
+  }).catch(() => {});
+}
+nativeSteps(true);
+setInterval(() => { if (!document.hidden) nativeSteps(false); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) nativeSteps(false); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveDB(); else refreshSteps(); });
 
 /* =====================================================================
