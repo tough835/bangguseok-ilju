@@ -1440,14 +1440,24 @@ Object.entries(WORLD.cities).forEach(([cid, city]) => Object.values(city.courses
    · HUB_PHOTO['<명소id>'] = 사진 주소 (산·빌딩은 'mtn_<id>')
    · HUB_CREDIT['<명소id>'] = '작가 · 라이선스' → 사진 아래에 작게 표시 (CC BY·BY-SA·공공누리 1유형은 출처 표시가 조건)
    · 출처표: Drive 방구석일주_이미지 > 02_아리 결과 > 거점사진_출처표_CURRENT */
-const HUB_PHOTO = {};
-const HUB_CREDIT = {};
-const PHOTO_CREDIT = {};   // 사진 주소 → 출처 (화면에서 찾아 쓰기)
-Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; });
+const HUB_PHOTO = {
+  'hamhwaru': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg/640px-%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg', 'gate-end': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg/640px-%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg',      // 11/15 아리 채택
+  'start': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Hamyang_Sangrim.JPG/640px-Hamyang_Sangrim.JPG'                              // 상림 코스 대표 사진 (표지석·가을 숲) — 출발 거점에만
+};
+const HUB_CREDIT = {
+  'hamhwaru': '국가유산청 · 공공누리 1유형', 'gate-end': '국가유산청 · 공공누리 1유형',
+  'start': 'HappyMidnight · CC BY-SA 3.0'
+};
+const HUB_LINK = {   // 출처 원본 페이지 (공공누리·CC 모두 링크 권장) — ©를 누르면 열림
+  'hamhwaru': 'https://commons.wikimedia.org/wiki/File:%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg', 'gate-end': 'https://commons.wikimedia.org/wiki/File:%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg',
+  'start': 'https://commons.wikimedia.org/wiki/File:Hamyang_Sangrim.JPG'
+};
+const PHOTO_CREDIT = {}, PHOTO_LINK = {};   // 사진 주소 → 출처·원본 (화면에서 찾아 쓰기)
+Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; if (HUB_LINK[k]) PHOTO_LINK[HUB_PHOTO[k]] = HUB_LINK[k]; });
 function photoHtml(src, r, small){
   const cr = PHOTO_CREDIT[src];
   return '<div style="position:relative;width:100%;height:100%"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + (r || 0) + 'px">' +
-    (cr ? '<span class="pcr">' + (small ? '©' : '© ' + cr) + '</span>' : '') + '</div>';
+    (cr ? '<span class="pcr"' + (PHOTO_LINK[src] ? ' onclick="event.stopPropagation();window.open(\'' + PHOTO_LINK[src] + '\',\'_blank\')"' : '') + '>' + (small ? '©' : '© ' + cr) + '</span>' : '') + '</div>';
 }
 Object.values(ALL_ROADS).forEach(c => (c.landmarks || []).forEach(lm => { if (!lm.photo && HUB_PHOTO[lm.id]) lm.photo = HUB_PHOTO[lm.id]; }));
 TARGETS.forEach(t => { if (!t.photo && HUB_PHOTO['mtn_' + t.id]) t.photo = HUB_PHOTO['mtn_' + t.id]; });
