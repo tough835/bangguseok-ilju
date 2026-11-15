@@ -1,0 +1,9 @@
+# 빌드 없이 저장소 그대로 배포
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
