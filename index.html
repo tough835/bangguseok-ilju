@@ -210,6 +210,10 @@
   #applyBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(127,207,138,.14);border:1.5px solid rgba(127,207,138,.5)}
   #applyBox select{width:100%;height:46px;border-radius:10px;font-size:16px;margin:10px 0}
   .rb button.ap{background:#2f7a45}
+  .trl{font-size:13px;font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(127,207,138,.2);color:#bfe8c5;margin-left:4px}
+  .sibs{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;opacity:.9}
+  .sibs button{border:0;border-radius:10px;padding:6px 10px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700}
+  .stamp{font-size:12px;font-weight:800;color:#ffd27a}
   .hidden{display:none!important}
 </style>
 </head>
@@ -507,7 +511,8 @@ const WORLD = {
      새 지역을 넣으려면 여기에 한 줄 + cities에 그 도시 데이터를 넣으면 됩니다. */
   regions: [
     { id: 'kr', name: { ko: '대한민국' }, children: [
-      { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'hamyang', name: { ko: '함양군' } } ] },
+      { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'hamyang', name: { ko: '함양군' } }, { id: 'sancheong', name: { ko: '산청군' } } ] },
+      { id: 'jeonnam',   name: { ko: '전라남도' },   children: [ { id: 'gurye', name: { ko: '구례군' } } ] },
       { id: 'seoul-si',  name: { ko: '서울특별시' }, children: [ { id: 'seoul',   name: { ko: '서울' } } ] },
       { id: 'busan-si',  name: { ko: '부산광역시' }, children: [ { id: 'busan',   name: { ko: '부산' } } ] },
       { id: 'jeju-do',   name: { ko: '제주특별자치도' }, children: [ { id: 'jeju', name: { ko: '제주' } } ] } ] },
@@ -780,7 +785,7 @@ const WORLD = {
             { id: 'geumwon', name: { ko: '금원산' }, summit: 1353, base: 500, baseName: { ko: '등산로 입구(추정)' }, trail: { ko: '등산로 확인 필요' }, photo: null },
             { id: 'gibaek', name: { ko: '기백산' }, summit: 1331, base: 450, baseName: { ko: '일주문 주차장' }, trail: { ko: '일주문 주차장→도숫골→기백산(4.2km)' }, photo: null },
             { id: 'hwangseok', name: { ko: '황석산' }, summit: 1192, base: 300, baseName: { ko: '심원정 주차장' }, trail: { ko: '심원정 주차장→유동마을→망월대→황석산(4.5km)' }, photo: null },
-            { id: 'cheonwang', name: { ko: '지리산 천왕봉' }, summit: 1915, base: 520, baseName: { ko: '백무동 주차장' }, trail: { ko: '백무동 주차장→소지봉→장터목→천왕봉(7.5km)' }, photo: null, waypoints: [ { name: { ko: '소지봉' }, elev: 1312 }, { name: { ko: '장터목대피소' }, elev: 1653 }, { name: { ko: '제석봉' }, elev: 1806 }, { name: { ko: '통천문' }, elev: 1814 } ] }
+            { id: 'cheonwang', name: { ko: '지리산 천왕봉' }, peak: 'jirisan-cheonwang', trailName: { ko: '백무동 코스' }, distKm: 7.5, summit: 1915, base: 520, baseName: { ko: '백무동 주차장' }, trail: { ko: '백무동 주차장→소지봉→장터목→천왕봉(7.5km)' }, photo: null, waypoints: [ { name: { ko: '소지봉' }, elev: 1312 }, { name: { ko: '장터목대피소' }, elev: 1653 }, { name: { ko: '제석봉' }, elev: 1806 }, { name: { ko: '통천문' }, elev: 1814 } ] }
           ]
         }
       }
@@ -789,6 +794,24 @@ const WORLD = {
     /* ---- 빌딩: 도시별 랜드마크 (계단 오르기) ----
        summit = 오르는 높이(m), floors = 층, steps = 실제 계단 수(대회 기준)
        출처: 각 수직마라톤 대회 보도·CTBUH 자료. 부르즈 할리파는 148층 전망대 기준 */
+    /* ---- 산 3단 구조 (2026-11-15): 산(peak) → 등산로(trail) → 이정표(waypoints)
+       · 같은 peak의 등산로는 정상 도장을 함께 씀. 지역별 목록에는 '그 지역에서 출발하는 길'만 보임
+       · 이정표 at = 진행 비율(0~1). 능선길처럼 높이가 오르내리는 길에 씀 (없으면 높이로 위치 계산)
+       · 거리: 국립공원 지도 구간 거리 기준 / 출발지·중간 높이는 추정 */
+    sancheong: { id: 'sancheong', name: { ko: '산청군' }, country: 'KR', courses: {
+        'sancheong-mtn': { id: 'sancheong-mtn', name: { ko: '산청 산' }, mode: 'climb', kind: 'mountain', segments: [
+          { id: 'cheonwang-jungsan', name: { ko: '지리산 천왕봉' }, peak: 'jirisan-cheonwang', trailName: { ko: '중산리 코스' }, distKm: 5.4, summit: 1915, base: 600,
+            baseName: { ko: '중산리 탐방안내소' }, trail: { ko: '중산리→칼바위→로타리대피소→법계사→천왕봉 (5.4km, 가장 짧고 가파름)' }, photo: null,
+            waypoints: [ { name: { ko: '칼바위' }, elev: 860 }, { name: { ko: '로타리대피소' }, elev: 1335 }, { name: { ko: '법계사' }, elev: 1450 }, { name: { ko: '개선문' }, elev: 1700 }, { name: { ko: '천왕샘' }, elev: 1850 } ] }
+        ] } } },
+    gurye: { id: 'gurye', name: { ko: '구례군' }, country: 'KR', courses: {
+        'gurye-mtn': { id: 'gurye-mtn', name: { ko: '구례 산' }, mode: 'climb', kind: 'mountain', segments: [
+          { id: 'cheonwang-hwaeom', name: { ko: '지리산 천왕봉' }, peak: 'jirisan-cheonwang', trailName: { ko: '화엄사 종주 (화대종주)' }, distKm: 32.5, summit: 1915, base: 260,
+            baseName: { ko: '화엄사' }, trail: { ko: '화엄사→노고단고개(7km)→주능선 25.5km→천왕봉. 능선 오르내림은 빼고 순 높이로 계산' }, photo: null,
+            waypoints: [ { name: { ko: '노고단고개' }, elev: 1440, at: 0.215 }, { name: { ko: '임걸령' }, elev: 1320, at: 0.302 }, { name: { ko: '삼도봉' }, elev: 1550, at: 0.385 },
+                         { name: { ko: '연하천대피소' }, elev: 1480, at: 0.538 }, { name: { ko: '벽소령대피소' }, elev: 1350, at: 0.649 }, { name: { ko: '세석대피소' }, elev: 1560, at: 0.843 },
+                         { name: { ko: '장터목대피소' }, elev: 1653, at: 0.948 } ] }
+        ] } } },
     /* ---- 서울·부산·제주 길 코스 (2026-11-15): 거리는 지자체·공식 안내 기준, 중간 위치·지도는 임시 ---- */
     seoul: { id: 'seoul', name: { ko: '서울' }, country: 'KR', courses: {
         'namsan-7k': {"id": "namsan-7k", "name": {"ko": "남산 북측순환로 (국립극장↔회현 왕복)"}, "short": {"ko": "남산 북측순환로"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 6500, "loop": true, "elev": [[0, 110], [1000, 150], [1700, 170], [3250, 120], [4800, 170], [5500, 150], [6500, 110]], "note": "왕복 약 6.5km는 소개 자료 기준, 지도는 임시", "source": "차·자전거 없는 숲길, 오르막·내리막 반복", "segments": [{"from": 0, "to": 6500, "scene": "forest"}], "landmarks": [{"id": "theater", "name": {"ko": "국립극장"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "출발"}}, {"id": "pavilion", "name": {"ko": "남산 숲 쉼터"}, "at": 1600, "side": -1, "art": "pavilion", "photo": null, "desc": {"ko": "단풍 터널"}, "hub": true}, {"id": "hoehyeon", "name": {"ko": "회현 쪽 끝 (반환)"}, "at": 3250, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "back2", "name": {"ko": "숲 쉼터 (돌아오기)"}, "at": 4900, "side": -1, "art": "pavilion", "photo": null, "desc": {"ko": ""}}, {"id": "theater2", "name": {"ko": "국립극장 (도착)"}, "at": 6450, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}, "hub": true}], "path": [[37.5527, 127.0055], [37.554, 127.001], [37.5552, 126.9965], [37.5562, 126.992], [37.557, 126.9875], [37.5574, 126.985], [37.5566, 126.9878], [37.5557, 126.9925], [37.5546, 126.997], [37.5534, 127.0015], [37.5527, 127.0055]]},
@@ -904,6 +927,7 @@ const TEXT = {
     freeSum: '🎯 일반 운동 · 목표 {g}', freeNoGoal: '목표 없음',
     apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
+    otherTrails: '다른 길:', trailsN: '길 {n}개', peakStamp: '정상 도장',
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
     zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
     aWalkOut: '걷기·조깅', gpsStart: '▶ GPS로 기록 시작', manualOut: '✍ 다녀온 기록 넣기', hikeOut: '✍ 다녀온 등산 기록 넣기',
@@ -1439,6 +1463,7 @@ function climbState(){
   return { m, k: (m.kind === 'tower' ? TOWERS : MOUNTAINS).indexOf(m), climbed, elev: m.base + climbed, remain: m.gain - climbed, ratio: climbed / m.gain,
            done: Math.floor(total / m.gain), floor: m.floors ? Math.max(1, Math.round(climbed / m.gain * m.floors)) : 0 };
 }
+const wpAt = (m, w) => w.at != null ? w.at * m.gain : (w.elev - m.base);   // 이정표가 오른 높이 몇 m 지점인지
 const climbMpm = () => levelToSpm(S.level) * STEP_M;
 function effSpeed(){ return S.speed; }
 
@@ -1463,7 +1488,7 @@ function walkPassed(before, after){
 function climbPassed(m, before, after){
   const out = [];
   for (let k = Math.floor(before / m.gain); k <= Math.floor(after / m.gain); k++){
-    (m.waypoints || []).forEach(w => { const at = k * m.gain + (w.elev - m.base); if (at > before && at <= after) out.push({ name: tr(w.name), desc: T.elevAt.replace('{e}', w.elev.toLocaleString()) }); });
+    (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after) out.push({ name: tr(w.name), desc: T.elevAt.replace('{e}', w.elev.toLocaleString()) }); });
     const top = (k + 1) * m.gain;
     if (top > before && top <= after) out.push({ name: tr(m.name) + ' ' + T.summit, short: tr(m.name), photo: m.photo || true,
       desc: (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : T.elevAt.replace('{e}', m.summit.toLocaleString())) + ' · ' + tr(m.desc || m.trail) });
@@ -1558,7 +1583,7 @@ function hudWalk(pos){
 function hudClimb(st){
   if (autoActive()) autoSpeedTick();
   const tower = st.m.kind === 'tower';
-  $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name);
+  $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');
   $('altiPill').textContent = tower ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm';
   $('sNextLabel').textContent = tower ? T.toTop : T.toSummit;
   $('sNextDist').textContent = Math.round(st.remain) + ' m';
@@ -1652,10 +1677,14 @@ function renderCourseRows(lists, onlySel){
   } else {
     $('courseList').innerHTML = lists[DB.tab].filter(m => !onlySel || m.id === DB.pick.id).map(m => {
       const total = climbTotal(m.id), done = Math.floor(total / m.gain), pct = Math.floor((total % m.gain) / m.gain * 100), real = realOf(m.id);
-      const info = m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm';
-      return '<div class="mrow' + (DB.pick.type === 'climb' && m.id === DB.pick.id ? ' sel' : '') + '" data-climb="' + m.id + '"><div><b>' + tr(m.name) + '</b><br><span class="muted">' + info + '</span></div>' +
-        '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (done ? '<br>✅ ' + done + T.times : '') + (real ? '<br><span class="real">⛰ ' + real + '</span>' : '') + '</div></div>';
+      const info = m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm ? ' · ' + m.distKm + 'km' : '');
+      const sel = DB.pick.type === 'climb' && m.id === DB.pick.id, sibs = peakTrails(m).filter(t => t.id !== m.id);
+      const others = sel && sibs.length ? '<div class="sibs">' + T.otherTrails + ' ' + sibs.map(t => '<button data-jump="' + t.id + '">🥾 ' + tr(t.trailName) + ' · ' + regionName(t.cityId) + (climbTotal(t.id) >= t.gain ? ' ✅' : '') + '</button>').join('') + '</div>' : '';
+      return '<div class="mrow' + (sel ? ' sel' : '') + '" data-climb="' + m.id + '"><div><b>' + tr(m.name) + '</b>' + (m.trailName ? ' <span class="trl">' + tr(m.trailName) + '</span>' : '') +
+        '<br><span class="muted">' + info + (sibs.length && !sel ? ' · ' + T.trailsN.replace('{n}', sibs.length + 1) : '') + '</span>' + others + '</div>' +
+        '<div class="r">' + (peakDone(m) ? '<span class="stamp">🏁 ' + T.peakStamp + '</span><br>' : '') + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (done ? '<br>✅ ' + done + T.times : '') + (real ? '<br><span class="real">⛰ ' + real + '</span>' : '') + '</div></div>';
     }).join('');
+    $('courseList').querySelectorAll('[data-jump]').forEach(b => b.onclick = e => { e.stopPropagation(); jumpTrail(b.dataset.jump); });
     $('courseList').querySelectorAll('[data-climb]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; DB.pick = { type: 'climb', id: r.dataset.climb }; DB.climb.sel = r.dataset.climb; S.act = 'stair'; applyPick(); askResume(); });
   }
 }
@@ -1867,7 +1896,7 @@ function refreshStart(){
   const up = DB.pick.type === 'climb';
   if (up){
     const cs = climbState();
-    $('sumPickName').textContent = (cs.m.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(cs.m.name) + ' · ' + tr(cs.m.cityName);
+    $('sumPickName').textContent = (cs.m.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(cs.m.name) + ' · ' + (cs.m.trailName ? tr(cs.m.trailName) : tr(cs.m.cityName));
     $('sumPick').textContent = Math.floor(cs.ratio * 100) + '% · ' + Math.round(cs.remain) + 'm ' + T.left + (cs.done ? ' · ✅ ' + cs.done + T.times : '');
   } else {
     const wt = walkTotal();
@@ -2321,7 +2350,7 @@ function walkNote(pos){   // [문구, 평온한 상태인지]
   return [note, ok];
 }
 function climbNote(st){
-  const m = st.m, wp = (m.waypoints || []).find(x => { const d = (x.elev - m.base) - st.climbed; return d > 0 && d <= 40; });
+  const m = st.m, wp = (m.waypoints || []).find(x => { const d = wpAt(m, x) - st.climbed; return d > 0 && d <= 40; });
   if (st.remain <= 50) return [T.nTop.replace('{d}', Math.round(st.remain)), false];
   if (wp) return ['🥾 ' + T.nSoon.replace('{s}', tr(wp.name)), false];
   return [st.ratio > 0.5 ? T.nHalf : T.nKeep, true];
@@ -2503,7 +2532,7 @@ function drawClimbView(st){
     ctx.fillStyle = hub ? '#fff' : '#e3e8e1'; ctx.strokeStyle = '#7a5a2e'; ctx.lineWidth = 2 * DPR; ctx.beginPath(); ctx.arc(x, y, (hub ? 7 : 5) * DPR, 0, 7); ctx.fill(); ctx.stroke();
     ctx.font = (hub ? '800 ' : '600 ') + fs + 'px sans-serif'; const tw = ctx.measureText(label).width, lx = Math.max(8 * DPR, x - tw - 16 * DPR), ly = y - (hub ? fs + 14 * DPR : fs * 0.5 + 4 * DPR);
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(lx - 5 * DPR, ly, tw + 10 * DPR, fs + 8 * DPR); ctx.fillStyle = '#24332a'; ctx.fillText(label, lx, ly + fs); };
-  (m.waypoints || []).forEach(w => flag((w.elev - m.base) / m.gain, tr(w.name) + ' ' + w.elev + 'm', false));
+  (m.waypoints || []).forEach(w => flag(wpAt(m, w) / m.gain, tr(w.name) + ' ' + w.elev + 'm', false));
   flag(1, '⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', true);
   ctx.fillStyle = '#24332a'; ctx.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif'; ctx.fillText('▶ ' + tr(m.baseName || { ko: '' }) + ' ' + m.base + 'm', x0, bot + 22 * DPR);
   const px = X(st.ratio), py = Y(st.ratio), pulse = 1 + 0.25 * Math.sin(performance.now() / 300);
@@ -2538,6 +2567,20 @@ document.querySelectorAll('[data-zone]').forEach(b => b.onclick = () => {
   setAct(S.act); askResume();
 });
 $('bZone').onclick = showHome;
+
+/* ---- 산 3단 구조 도우미: 같은 산(peak)의 길들, 정상 도장, 다른 지역 길로 바로 이동 ---- */
+function peakTrails(m){ return m && m.peak ? TARGETS.filter(t => t.peak === m.peak) : [m]; }
+function peakDone(m){ return m && m.kind === 'mountain' && peakTrails(m).some(t => climbTotal(t.id) >= t.gain); }
+function regionPath(cityId){
+  for (const c of WORLD.regions) for (const p of c.children) for (const ct of p.children) if (ct.id === cityId) return { country: c.id, prov: p.id, city: ct.id, name: ct.name };
+  return null;
+}
+function regionName(cityId){ const r = regionPath(cityId); return r ? tr(r.name) : ''; }
+function jumpTrail(id){
+  const t = TGT(id), r = regionPath(t.cityId); if (!r) return;
+  DB.region = { country: r.country, prov: r.prov, city: r.city }; DB.pick = { type: 'climb', id: t.id }; DB.climb.sel = t.id; DB.tab = 'mountain'; listOpen = false;
+  saveDB(); applyPick(); refreshStart(); askResume();
+}
 
 /* =====================================================================
    일반 / 테마
@@ -2987,7 +3030,7 @@ function drawClimbNav(g, x, y, vw, vh, st, mini){
     const fs = (hub ? 14 : 13) * DPR; g.font = (hub ? '800 ' : '700 ') + Math.round(fs) + 'px sans-serif';
     const tw = g.measureText(label).width, bh = fs + 9 * DPR, lx = Math.max(6 * DPR, px - tw - 16 * DPR), ly = py - bh - 6 * DPR;
     g.fillStyle = 'rgba(255,255,255,.92)'; g.fillRect(lx - 5 * DPR, ly, tw + 10 * DPR, bh); g.fillStyle = '#24332a'; g.fillText(label, lx, ly + fs + 2 * DPR); };
-  (m.waypoints || []).forEach(w => { const s = (w.elev - m.base) / m.gain; if (s >= from && s <= to) flag(s, tr(w.name) + ' ' + w.elev.toLocaleString() + 'm', false); });
+  (m.waypoints || []).forEach(w => { const s = wpAt(m, w) / m.gain; if (s >= from && s <= to) flag(s, tr(w.name) + ' ' + w.elev.toLocaleString() + 'm', false); });
   if (to >= 1) flag(1, '⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', true);
   if (from <= 0 && !mini){ g.fillStyle = '#24332a'; g.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif'; g.fillText('▶ ' + tr(m.baseName || { ko: '' }) + ' ' + m.base + 'm', Math.max(8 * DPR, X(0) - 40 * DPR), Y(0) + 22 * DPR); }
   if (!mini) fadeBottom(g, vh);
