@@ -226,6 +226,7 @@
   .sibs{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;opacity:.9}
   .sibs button{border:0;border-radius:10px;padding:6px 10px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700}
   .stamp{font-size:12px;font-weight:800;color:#ffd27a}
+  .geonote{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:13px;line-height:1.45;opacity:.9}
   .hidden{display:none!important}
 </style>
 </head>
@@ -354,6 +355,7 @@
   <h2 data-t="course">코스</h2>
   <div class="seg" id="tabSeg"></div>
   <div class="card" id="courseList"></div>
+  <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
   <button id="courseToggle" class="toggle"></button>
   <button id="bSite" class="toggle hidden"></button>
   </div>
@@ -954,6 +956,9 @@ const TEXT = {
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
     photoBig: '📷 거점 사진 {n}', galKm: '{k}km 지점', geoWait: '🛰 위성 지도는 실제 길 모양을 받은 뒤에 켜져요',
     satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
+    gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
+    gBad: '⚠️ 받은 길({a}km)이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
+    errMsg: '⚠️ 앱 오류: {e}',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '다음부터 운동 화면 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
@@ -1711,6 +1716,7 @@ let listOpen = false;
 function refreshCourses(){
   const lists = cityLists(), tabs = ['road', 'mountain', 'tower'].filter(k => lists[k].length);
   if (!tabs.includes(DB.tab)) DB.tab = tabs[0];
+  setTimeout(geoNote, 0);
   // 접힌 상태: 고른 코스 한 줄 + '코스 바꾸기'
   const picked = DB.pick.type === 'road' && ALL_ROADS[DB.pick.id] && WORLD.cities[DB.region.city] && WORLD.cities[DB.region.city].courses[DB.pick.id]
     ? 'road' : (DB.pick.type === 'climb' && TGT(DB.pick.id).cityId === DB.region.city ? TGT(DB.pick.id).kind : null);
@@ -2265,6 +2271,13 @@ DB.autoSensor = false;   // 폰 센서 자동은 아직 안 됨 → 버튼 숨�
 const SENS = { on: false, ok: false, times: [], lastPeak: 0, avg: 9.8, f: 0, rising: false, sessSteps: 0, sessDist: 0 };
 const autoCapable = () => S.act === 'tread' || S.act === 'stair';
 const autoActive = () => SENS.on && SENS.ok;
+window.addEventListener('error', e => errNote(e.message || 'error'));
+window.addEventListener('unhandledrejection', e => errNote(String(e.reason && e.reason.message || e.reason)));
+function errNote(m){
+  m = String(m).slice(0, 120); if (/ResizeObserver|Script error/.test(m)) return;
+  try { const a = JSON.parse(localStorage.getItem('bgsj_err') || '[]'); a.unshift(new Date().toLocaleString('ko-KR') + ' ' + m); localStorage.setItem('bgsj_err', JSON.stringify(a.slice(0, 10))); } catch(x){}
+  try { toastMsg(T.errMsg.replace('{e}', m)); } catch(x){}
+}
 function toastMsg(m){ const t = $('toast'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.add('hidden'), 2600); }
 async function sensorStart(){
   Object.assign(SENS, { on: false, ok: false, times: [], sessSteps: 0, sessDist: 0, rising: false, f: 0 });
@@ -2983,22 +2996,56 @@ const gradeCol = g => g > 6 ? '#d9534a' : g > 2.5 ? '#f0a03c' : g < -2.5 ? '#4a8
 /* ---- 실제 길 붙이기: 대충 찍은 점들 → 오픈스트리트맵 걷는 길 (FOSSGIS 공개 경로 서버, 하루 한 코스 한 번)
    · 받은 길 길이가 코스 길이와 너무 다르면 쓰지 않음 (7일 뒤 다시 시도) */
 function thinPath(c, maxN){ if (c.length <= maxN) return c; const k = c.length / maxN, out = []; for (let i = 0; i < maxN; i++) out.push(c[Math.floor(i * k)]); out.push(c[c.length - 1]); return out; }
+function poly6(str){   // Valhalla 경로 문자열 → [[경도, 위도]...] (OSRM과 같은 순서로)
+  let i = 0, lat = 0, lon = 0; const out = [];
+  while (i < str.length){
+    for (const k of [0, 1]){ let b, sh = 0, r = 0; do { b = str.charCodeAt(i++) - 63; r |= (b & 31) << sh; sh += 5; } while (b >= 32); const d = (r & 1) ? ~(r >> 1) : (r >> 1); if (k) lon += d; else lat += d; }
+    out.push([lon / 1e6, lat / 1e6]);
+  }
+  return out;
+}
 function snapRoads(){
   if (!RAW_PATH || GEO_NOW || S.free) return;
-  const old = RGEO[GEO_ID]; if (old && old.bad && Date.now() - old.t < 7 * 864e5) return;
-  if (navigator.onLine === false) return;
+  const old = RGEO[GEO_ID]; if (old && old.bad && Date.now() - old.t < 864e5) return;
+  if (navigator.onLine === false){ GEO_ST = 'off'; geoNote(); return; }
+  GEO_ST = 'wait'; geoNote();
   const pts = RAW_PATH.slice(); if (COURSE.loop){ const a = pts[0], b = pts[pts.length - 1]; if (a[0] !== b[0] || a[1] !== b[1]) pts.push(a); }
   const prof = DB.roadAct === 'bike' ? 'bike' : 'foot';
   const url = 'https://routing.openstreetmap.de/routed-' + prof + '/route/v1/driving/' + pts.map(q => q[1].toFixed(5) + ',' + q[0].toFixed(5)).join(';') + '?overview=full&geometries=geojson';
-  fetch(url).then(r => r.json()).then(j => {
-    const rt = j && j.routes && j.routes[0]; if (!rt || !rt.geometry) return;
+  // 1순위 OSRM(FOSSGIS) → 안 되면 2순위 Valhalla(FOSSGIS). 둘 다 오픈스트리트맵 기반 무료 공개 서버
+  const osrm = () => fetch(url).then(r => { if (!r.ok) throw new Error('OSRM ' + r.status); return r.json(); }).then(j => {
+    const rt = j && j.routes && j.routes[0]; if (!rt || !rt.geometry) throw new Error('OSRM ' + ((j && j.code) || 'no route'));
+    return { distance: rt.distance, coords: rt.geometry.coordinates };
+  });
+  const valhalla = () => {
+    const q = { locations: pts.map(x => ({ lat: x[0], lon: x[1], type: 'break_through' })), costing: prof === 'bike' ? 'bicycle' : 'pedestrian', directions_type: 'none' };
+    return fetch('https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(q))).then(r => { if (!r.ok) throw new Error('Valhalla ' + r.status); return r.json(); }).then(j => {
+      const tp = j && j.trip; if (!tp) throw new Error('Valhalla no trip');
+      let coords = []; tp.legs.forEach(l => coords = coords.concat(poly6(l.shape)));
+      return { distance: tp.summary.length * 1000, coords };
+    });
+  };
+  osrm().catch(e1 => valhalla().catch(e2 => { throw new Error(e1.message + ' / ' + e2.message); })).then(rt => {
     const ratio = rt.distance / COURSE.lengthM;
-    if (ratio < 0.7 || ratio > 1.4){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); return; }
-    const c = thinPath(rt.geometry.coordinates.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
+    if (ratio < 0.6 || ratio > 1.8){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); GEO_ST = 'bad'; geoNote(); return; }
+    const c = thinPath(rt.coords.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
     RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now() }; saveGeo();
+    GEO_ST = 'ok'; geoNote();
     if (!S.running){ toastMsg(T.geoGot); setTimeout(() => { if (S.running) return; try { sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, 1800); }
-  }).catch(() => {});
+  }).catch(e => { GEO_ST = 'err'; GEO_ERR = String(e && e.message || e).slice(0, 60); geoNote(); });
 }
+/* 시작 화면: 실제 길 모양 상태 한 줄 (누르면 다시 받기) */
+let GEO_ST = GEO_NOW ? 'ok' : (RGEO[GEO_ID] && RGEO[GEO_ID].bad ? 'bad' : ''), GEO_ERR = '';
+function geoNote(){
+  const el = $('geoNote'); if (!el) return;
+  const show = !!RAW_PATH && !isFree() && DB.pick.type !== 'climb' && DB.pick.id === COURSE.id && DB.tab === 'road';
+  el.classList.toggle('hidden', !show); if (!show) return;
+  const g = RGEO[GEO_ID] || {};
+  el.textContent = GEO_ST === 'ok' ? T.gOk.replace('{s}', g.src === 'gps' ? T.gGps : T.gOsm)
+    : GEO_ST === 'wait' ? T.gWait : GEO_ST === 'bad' ? T.gBad.replace('{a}', ((g.d || 0) / 1000).toFixed(1)).replace('{b}', (COURSE.lengthM / 1000).toFixed(1))
+    : GEO_ST === 'err' ? T.gErr.replace('{e}', GEO_ERR) : GEO_ST === 'off' ? T.gOff : T.gNone;
+}
+function geoRetry(){ if (GEO_NOW) return; delete RGEO[GEO_ID]; saveGeo(); snapRoads(); }
 setTimeout(snapRoads, 2500);
 /* GPS로 다닌 길 모으기 (12m마다 한 점) → 끝난 뒤 '이 코스 지도로 쓰기' */
 function trackPush(lat, lon){
