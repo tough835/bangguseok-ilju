@@ -139,6 +139,13 @@
   .pcr{position:absolute;right:4px;bottom:4px;max-width:92%;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ip-tx{flex:1;min-width:0}
   .satb{pointer-events:auto;border:0;font-size:13px;font-weight:800}
+  #gallery{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
+  .galbox{width:100%;max-width:520px}
+  #galImg{width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:#222}
+  #galImg .pcr{font-size:12px;padding:3px 8px}
+  .galrow{display:flex;align-items:center;gap:10px;margin-top:12px;color:#fff;text-align:center}
+  .galrow>div{flex:1;font-size:16px;line-height:1.45}
+  .galrow button{flex:none;width:52px;height:52px;border:0;border-radius:14px;background:rgba(255,255,255,.18);color:#fff;font-size:30px;font-weight:800}
   .ipv{float:right;border:0;border-radius:10px;padding:6px 9px;margin:0 0 4px 6px;background:#2f6f45;color:#fff;font-size:13px;font-weight:800}
   .ip-nm{font-size:15px;font-weight:800;line-height:1.25}
   #ipElev{display:block;width:100%;height:30px;margin-top:6px}
@@ -290,6 +297,12 @@
   </div>
 </div>
 <div id="speedFlash" class="hidden"><span id="flashVal"></span><small id="flashUnit"></small></div>
+<div id="gallery" class="hidden">
+  <div class="galbox" onclick="event.stopPropagation()">
+    <div id="galImg"></div>
+    <div class="galrow"><button id="galPrev">‹</button><div><b id="galName"></b><div class="muted" id="galCnt"></div></div><button id="galNext">›</button></div>
+  </div>
+</div>
 <div id="popup" class="hidden">
   <div class="t" id="pTitle"></div>
   <div class="ph" id="pPhoto"></div>
@@ -937,8 +950,9 @@ const TEXT = {
     freeSum: '🎯 일반 운동 · 목표 {g}', freeNoGoal: '목표 없음',
     apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
-    satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar', streetView: '📷 거리뷰', roadView: '📷 로드뷰',
-    geoGot: '🗺 실제 길 모양을 받았어요 · 다음에 열 때부터 위성 지도 위에 그려져요',
+    photoBig: '📷 거점 사진 {n}', galKm: '{k}km 지점', geoWait: '🛰 위성 지도는 실제 길 모양을 받은 뒤에 켜져요',
+    satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
+    geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '다음부터 운동 화면 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
     otherTrails: '다른 길:', trailsN: '길 {n}개', peakStamp: '정상 도장',
@@ -2403,23 +2417,34 @@ function climbNote(st){
   if (wp) return ['🥾 ' + T.nSoon.replace('{s}', tr(wp.name)), false];
   return [st.ratio > 0.5 ? T.nHalf : T.nKeep, true];
 }
-/* ---- 거점 거리뷰: 국내 = 카카오 로드뷰, 해외 = 구글 스트리트뷰 (지도 앱·브라우저로 열림, 무료 링크) ---- */
-let ipViewLm = null;
-function ipViewFor(lm){
-  ipViewLm = REAL_PATH ? lm : null;
-  const kr = (regionPath(ACTIVE.city) || {}).country === 'kr';
-  $('ipView').textContent = kr ? T.roadView : T.streetView; $('ipView').classList.toggle('hidden', !ipViewLm);
+/* ---- 거점 사진 크게 보기 (11/15: 로드뷰·거리뷰 버튼 삭제 → 사진으로 대체)
+   · 이 코스에서 사진이 있는 곳만 모아 좌우로 넘김. 출처(©)를 누르면 원본 페이지 */
+let ipViewLm = null, galList = [], galI = 0;
+const coursePhotos = () => LMS.filter(l => typeof l.photo === 'string');
+function ipViewFor(lm){   // 이 코스에 사진이 한 장이라도 있으면 버튼 표시 (다음 거점에 사진이 있으면 그것부터)
+  const n = coursePhotos().length; ipViewLm = n ? (lm || true) : null;
+  $('ipView').textContent = T.photoBig.replace('{n}', n); $('ipView').classList.toggle('hidden', !n);
 }
-function viewUrl(lm){
-  const ll = geoOf(pointAt(lm.at)), a = ll[0].toFixed(6), b = ll[1].toFixed(6);
-  return (regionPath(ACTIVE.city) || {}).country === 'kr' ? 'https://map.kakao.com/link/roadview/' + a + ',' + b
-    : 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + a + ',' + b;
+function openGallery(lm){
+  galList = coursePhotos(); if (!galList.length) return;
+  galI = Math.max(0, galList.indexOf(lm)); showGal(); $('gallery').classList.remove('hidden');
 }
-$('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) window.open(viewUrl(ipViewLm), '_blank'); };
+function showGal(){
+  const l = galList[galI];
+  $('galImg').innerHTML = photoHtml(l.photo, 14);
+  $('galName').textContent = tr(l.name) + (l.desc ? ' · ' + tr(l.desc) : '');
+  $('galCnt').textContent = (galI + 1) + ' / ' + galList.length + ' · ' + T.galKm.replace('{k}', (l.at / 1000).toFixed(1));
+  $('galPrev').style.visibility = galList.length > 1 ? '' : 'hidden'; $('galNext').style.visibility = galList.length > 1 ? '' : 'hidden';
+}
+$('galPrev').onclick = e => { e.stopPropagation(); galI = (galI - 1 + galList.length) % galList.length; showGal(); };
+$('galNext').onclick = e => { e.stopPropagation(); galI = (galI + 1) % galList.length; showGal(); };
+$('gallery').onclick = () => $('gallery').classList.add('hidden');
+$('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) openGallery(ipViewLm); };
+$('ipPhoto').addEventListener('click', e => { if (ipViewLm && typeof ipViewLm.photo === 'string'){ e.stopPropagation(); openGallery(ipViewLm); } });
 function satBtn(){ $('bSat').textContent = satOn() ? T.satOn : T.satOff; }
 $('bSat').onclick = e => { e.stopPropagation(); DB.sat = !satOn(); saveDB(); satBtn(); };
 function showViewMode(on){
-  $('bSat').classList.toggle('hidden', !(on && REAL_PATH && !isClimb() && !S.free)); satBtn();
+  $('bSat').classList.toggle('hidden', !(on && SAT_OK && !isClimb() && !S.free)); satBtn();
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
@@ -2966,10 +2991,10 @@ function snapRoads(){
   fetch(url).then(r => r.json()).then(j => {
     const rt = j && j.routes && j.routes[0]; if (!rt || !rt.geometry) return;
     const ratio = rt.distance / COURSE.lengthM;
-    if (ratio < 0.6 || ratio > 1.6){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); return; }
+    if (ratio < 0.7 || ratio > 1.4){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); return; }
     const c = thinPath(rt.geometry.coordinates.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
     RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now() }; saveGeo();
-    if (!S.running) toastMsg(T.geoGot);
+    if (!S.running){ toastMsg(T.geoGot); setTimeout(() => { if (S.running) return; try { sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, 1800); }
   }).catch(() => {});
 }
 setTimeout(snapRoads, 2500);
@@ -2998,7 +3023,8 @@ $('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').dis
    · Esri World Imagery 타일을 그때그때 불러와 그림 (저장하지 않음, 키 없음)
    · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
 const SAT = { cache: new Map(), url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x };
-const satOn = () => REAL_PATH && DB.sat !== false;
+const SAT_OK = !!GEO_NOW;   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
+const satOn = () => SAT_OK && DB.sat !== false;
 function satTile(z, x, y, load){
   const k = z + '/' + x + '/' + y; let im = SAT.cache.get(k);
   if (!im && load){
