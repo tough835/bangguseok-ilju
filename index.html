@@ -1882,7 +1882,7 @@ $('bStart').onclick = () => {
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
   $('bPause').textContent = '⏸ ' + T.paused; $('pauseBadge').classList.add('hidden');
-  if (S.gps){ S.speed = 0; gpsStart(); } else sensorStart();
+  if (S.gps){ S.speed = 0; try { gpsStart(); } catch(e){ errNote(e.message); } } else sensorStart();   // GPS가 실패해도 운동 화면은 열림
   ['bDown', 'bUp'].forEach(id => $(id).style.visibility = S.gps ? 'hidden' : '');
   $('gpsPill').classList.toggle('hidden', !S.gps); if (S.gps) $('gpsPill').textContent = T.gpsWait;
   try { if (location.hash !== '#run') location.hash = 'run'; } catch(e){}
@@ -2959,13 +2959,16 @@ function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·�
 function gpsStart(){
   GPS.last = null; GPS.spd = 0;
   if (BG){   // 앱: 알림창에 '기록 중'을 띄우고 잠금 중에도 계속 받음
-    BG.addWatcher({ backgroundTitle: T.bgTitle, backgroundMessage: T.bgMsg, requestPermissions: true, stale: false, distanceFilter: 3 }, (loc, err) => {
+    // 앱 연결 방식(legacy bridge)에 따라 addWatcher가 약속(Promise)이 아니라 번호를 바로 돌려줌 → 둘 다 받기 (11/15 보스 폰 오류)
+    let ret; try { ret = BG.addWatcher({ backgroundTitle: T.bgTitle, backgroundMessage: T.bgMsg, requestPermissions: true, stale: false, distanceFilter: 3 }, (loc, err) => {
       if (err){
         if (err.code === 'NOT_AUTHORIZED'){ toastMsg(T.gpsPerm); $('gpsPill').textContent = T.gpsLost; try { BG.openSettings(); } catch(e){} }
         return;
       }
       if (loc) gpsFix(loc.latitude, loc.longitude, loc.accuracy, loc.time);
-    }).then(id => { GPS.id = id; }).catch(() => toastMsg(T.gpsLost));
+    }); } catch(e){ toastMsg(T.gpsLost); return; }
+    if (ret && typeof ret.then === 'function') ret.then(id => { GPS.id = id; }).catch(() => toastMsg(T.gpsLost));
+    else if (ret != null) GPS.id = ret;
     return;
   }
   try {
