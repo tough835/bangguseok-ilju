@@ -594,7 +594,7 @@
 </div>
 
 <script>
-const BUILD = '202611161521';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161526';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2411,6 +2411,7 @@ document.querySelectorAll('[data-goal]').forEach(b => b.onclick = () => { DB.goa
 /* 지나온 길: 거점(🚩)마다 그 앞에서 지나온 명소(🔖 스티커)를 묶어서 보여 줌. 누르면 간단한 소개 */
 function refreshStamps(){
   const wt = walkTotal(); let hg = 0, sg = 0, sAll = 0;
+  $('stampBox').classList.toggle('hidden', wt <= 0); if (wt <= 0) return;   /* 11/16 보스: 그 코스로 달린 기록이 있을 때만 '지나온 길' 표시 (기록을 지우면 같이 사라짐) */
   const siteNames = new Set(DB.records.filter(r => r.site && creditOf(r, COURSE)).flatMap(r => r.passed || []));
   $('stampTitle').textContent = (wt > 0 ? T.trail : T.trailPre) + ' · ' + tr(COURSE.short || COURSE.name);   // 11/16: 기록이 없으면 '지나온 길'이 아니라 '이 코스 거점'(앞으로 지날 곳)
   $('stampGrid').innerHTML = HUBS.map(h => {
