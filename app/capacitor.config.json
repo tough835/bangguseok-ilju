@@ -1,9 +1,9 @@
 {
-  "appId": "com.dolgurum.bangguseok",
-  "appName": "방구석일주",
+  "appId": "com.dolgurum.bangguseokrunner",
+  "appName": "방구석러너",
   "webDir": "www",
   "server": {
-    "url": "https://tough835.github.io/bangguseok-ilju/",
+    "url": "https://tough835.github.io/bangguseok-runner/",
     "androidScheme": "https",
     "allowNavigation": [
       "tough835.github.io",

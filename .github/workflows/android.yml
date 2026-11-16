@@ -1,6 +1,6 @@
-# 방구석일주 안드로이드 앱(APK) 자동 빌드
+# 방구석러너 안드로이드 앱(APK) 자동 빌드
 # app/ 아래가 바뀌거나 직접 실행하면 → APK를 만들어 GitHub Release 'apk-latest'에 올림
-# 폰에서 받는 주소: https://github.com/tough835/bangguseok-ilju/releases/latest/download/bangguseok.apk
+# 폰에서 받는 주소: https://github.com/tough835/bangguseok-runner/releases/latest/download/bangguseok-runner.apk
 name: Android APK
 
 on:
@@ -43,21 +43,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/bangguseok.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/bangguseok-runner.apk"
 
       - name: 빌드 결과 보관
         uses: actions/upload-artifact@v4
         with:
           name: bangguseok-apk-${{ github.run_number }}
-          path: bangguseok.apk
+          path: bangguseok-runner.apk
 
       - name: 폰에서 받을 수 있게 Release에 올리기
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-v0.1.${{ github.run_number }}
-          name: 방구석일주 앱 v0.1.${{ github.run_number }}
+          name: 방구석러너 앱 v0.1.${{ github.run_number }}
           make_latest: true
           body: |
-            폰에서 아래 bangguseok.apk 를 눌러 내려받아 설치하세요.
+            폰에서 아래 bangguseok-runner.apk 를 눌러 내려받아 설치하세요.
             커밋: ${{ github.sha }}
-          files: bangguseok.apk
+          files: bangguseok-runner.apk

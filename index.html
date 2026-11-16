@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>방구석일주</title>
+<title>방구석러너 · 러닝머신·100대명산 가상코스</title>
 <style>
   html,body{margin:0;height:100%;background:#0d1f16;overflow:hidden;color:#fff;
     font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
@@ -386,7 +386,7 @@
 <!-- 첫 화면: 방구석(실내) | 바깥(실외) -->
 <div id="homeScreen" class="screen hidden">
   <div class="homeTop"><button class="stepbtn" data-steps></button></div>
-  <h1 data-t="appName">방구석일주</h1>
+  <h1 data-t="appName">방구석러너</h1>
   <div class="homeSub" data-t="homeSub"></div>
   <div class="zones">
     <button class="zin" data-zone="in"><i>🏠</i><b data-t="zIn"></b><em data-t="zInSub"></em><small data-t="zInEx"></small></button>
@@ -630,7 +630,7 @@
 </div>
 
 <script>
-const BUILD = '202611162109';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611162323';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1043,7 +1043,7 @@ try {
 /* 화면 글자 (공통) — 다국어는 나중에 en 등을 추가 */
 const TEXT = {
   ko: {
-    appName: '방구석일주', sumToday: '오늘', region: '지역', course: '코스', act: '운동', left: '남음',
+    appName: '방구석러너', sumToday: '오늘', region: '지역', course: '코스', act: '운동', left: '남음',
     tab_road: '🛣 길', tab_mountain: '⛰ 산', tab_tower: '🏙 빌딩', hubsN: '거점 {n}곳',
     aFoot: '걷기·조깅', aBike: '자전거', aStair: '천국의 계단', aHike: '등산', aRealStair: '실제 계단',
     mLive: '▶ 지금 운동', mManual: '✍ 기록만 입력',
@@ -1079,7 +1079,7 @@ const TEXT = {
     nSoon: '곧 {s}', nSteepUp: '⚠ 가파른 오르막 · 숨 고르며', nSteepDown: '⚠ 가파른 내리막 · 속도 주의', nUp: '⬆ 오르막 구간', nDown: '⬇ 내리막 구간',
     nFlat: '➡ 평지 · 페이스 유지', nIncline: '트레드밀 경사 {g}%', nTop: '🔥 정상까지 {d}m!', nHalf: '절반 넘었어요 · 레벨 유지', nKeep: '꾸준히 · 레벨 유지',
     changeCourse: '코스 바꾸기 ▾', closeList: '닫기 ▴',
-    stBtn: '걸음수 {n}', stTitle: '👣 오늘 걸음', stSplit: '운동 {w}보 · 그 밖 {o}보', stSubApp: '폰 걸음 센서로 24시간 셉니다 (설치한 때부터) · 매일 0시에 새로', stSubPerm: '걸음을 세려면 \'신체 활동\' 권한이 필요해요. 설정 → 애플리케이션 → 방구석일주 → 권한에서 허용해 주세요.', stSub: '등산·조깅·계단 기록도 합산 (기록은 추정) · 매일 0시에 새로',  stSubNo: '평소 걸음은 이 화면에서 못 셉니다 → 삼성 헬스 숫자로 맞춰 주세요 (운동 기록은 합산됨)',
+    stBtn: '걸음수 {n}', stTitle: '👣 오늘 걸음', stSplit: '운동 {w}보 · 그 밖 {o}보', stSubApp: '폰 걸음 센서로 24시간 셉니다 (설치한 때부터) · 매일 0시에 새로', stSubPerm: '걸음을 세려면 \'신체 활동\' 권한이 필요해요. 설정 → 애플리케이션 → 방구석러너 → 권한에서 허용해 주세요.', stSub: '등산·조깅·계단 기록도 합산 (기록은 추정) · 매일 0시에 새로',  stSubNo: '평소 걸음은 이 화면에서 못 셉니다 → 삼성 헬스 숫자로 맞춰 주세요 (운동 기록은 합산됨)',
     stInputL: '삼성 헬스 걸음수로 맞추기', stSet: '맞추기', stApply: '🛣 코스에 반영 · +{n}보 ≈ {d}km', stNone: '새로 반영할 걸음이 없어요',
     stClimb: '걸음은 길 코스에만 반영할 수 있어요. 코스를 길로 바꿔 주세요.', stHelp: '운동 밖 걸음만 {c}에 반영됩니다 (운동 걸음은 이미 기록에 들어 있음). 반영한 걸음은 다시 반영되지 않아요.',
     stDone: '✅ 걸음 {n}보 → {c} +{d}km', srcSteps: '👣 걸음 반영', stApplied: '오늘 반영함: {n}보',
@@ -1109,7 +1109,7 @@ const TEXT = {
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
     zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
     aWalkOut: '걷기·조깅', gpsStart: '▶ GPS로 기록 시작', manualOut: '✍ 다녀온 기록 넣기', hikeOut: '✍ 다녀온 등산 기록 넣기',
-    gpsHelpApp: '달린 만큼 고른 코스에서 앞으로 갑니다. 폰을 잠가도 기록돼요 (알림창에 \'기록 중\' 표시).', bgTitle: '방구석일주 기록 중', bgMsg: '잠금 중에도 거리를 기록하고 있어요',
+    gpsHelpApp: '달린 만큼 고른 코스에서 앞으로 갑니다. 폰을 잠가도 기록돼요 (알림창에 \'기록 중\' 표시).', bgTitle: '방구석러너 기록 중', bgMsg: '잠금 중에도 거리를 기록하고 있어요',
     gpsPerm: '위치 권한이 필요해요. 설정에서 위치를 \'앱 사용 중에만 허용\'으로 바꿔 주세요.',
     gpsHelp: '달린 만큼 고른 코스에서 앞으로 갑니다. 화면을 켜 둔 채로 운동하세요 (화면이 꺼지면 기록이 멈춰요).',
     gpsNoHere: '이 화면에서는 GPS를 쓸 수 없어요. 외부 주소(Netlify)에서 열면 실시간 기록이 됩니다. 지금은 다녀온 거리를 넣어 주세요.',
@@ -3643,7 +3643,7 @@ $('bkCopy').onclick = async () => {
 };
 $('bkFile').onclick = () => {
   try {
-    const d = new Date(), name = '방구석일주_기록_' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '.txt';
+    const d = new Date(), name = '방구석러너_기록_' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '.txt';
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('bkOut').value], { type: 'text/plain' })); a.download = name;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   } catch(e){ $('bkMsg').textContent = T.bkCopyFail; }

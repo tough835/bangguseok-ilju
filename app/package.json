@@ -1,8 +1,8 @@
 {
-  "name": "bangguseok-ilju-app",
+  "name": "bangguseok-runner-app",
   "version": "0.1.0",
   "private": true,
-  "description": "방구석일주 안드로이드 껍데기 앱 (Netlify 주소를 열고, 잠금 중 GPS·걸음 칩을 붙임)",
+  "description": "방구석러너 안드로이드 껍데기 앱 (GitHub Pages 주소를 열고, 잠금 중 GPS·걸음 칩을 붙임)",
   "scripts": { "sync": "cap sync android" },
   "dependencies": {
     "@capacitor/android": "8.6.2",

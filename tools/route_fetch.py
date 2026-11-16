@@ -3,7 +3,7 @@
 import json, urllib.request, urllib.parse, time, os, math
 src = json.load(open('data/route_src.json'))
 os.makedirs('data/route', exist_ok=True)
-UA = {'User-Agent': 'bangguseok-ilju/1.0 (github.com/tough835/bangguseok-ilju)'}
+UA = {'User-Agent': 'bangguseok-runner/1.0 (github.com/tough835/bangguseok-runner)'}
 def get(u):
     with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r: return json.load(r)
 def poly6(s):
