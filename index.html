@@ -286,7 +286,6 @@
   <div class="pill note hidden" id="notePill"></div>
   <div class="pill hidden" id="gpsPill"></div>
   <button class="pill satb hidden" id="bSat"></button>
-  <button class="pill satb hidden" id="bAll">🗺 전체 코스</button>
 </div>
 
 <div id="hudBottom" class="hidden">
@@ -595,7 +594,7 @@
 </div>
 
 <script>
-const BUILD = '202611161511';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161519';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1738,14 +1737,11 @@ function loop(now){
     if (++hudTick % 6 === 0){ AREA = viewArea(); hudWalk(pos); if (NAV.full) updateInfoPanel(pos); }
     if (!AREA) AREA = viewArea();
     const far = S.act === 'bike';
-    if (NAV.full){ drawMapView(pos); drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); }
+    if (NAV.full){ drawMapView(pos); if (outTheme()) drawTrackMini(); else { drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); } }
     else if (S.gps){   $('map').classList.add('big');   /* 11/16 보스: 바깥 = 큰 화면 실제 지도 + 오른쪽 위 '테마 그림 지도'(가상 위치 확대). 누르면 서로 바뀜 */
-      if (NAV.alt){   // 큰 화면 = 테마 길 확대 (방구석과 같은 화면), 오른쪽 위 = 실제 지도로 돌아가기
+      if (NAV.alt){   // 큰 화면 = 테마 길 확대, 작은 칸 = 다음 화면(전체 경로) 미리보기
         drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false);
-        const g = mctx, sz = mapCv.width; g.fillStyle = '#1f3a2c'; g.fillRect(0, 0, sz, sz);
-        g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '800 ' + Math.round(26 * DPR) + 'px sans-serif'; g.fillText('🏃', sz / 2, sz * 0.45);
-        g.font = '800 ' + Math.round(11 * DPR) + 'px sans-serif'; g.fillText(T.realBack, sz / 2, sz * 0.62); g.textAlign = 'left';
-        miniTag(T.tagReal, (S.sessionM / 1000).toFixed(2) + 'km');
+        drawMiniOverview(pos);
       } else {
         drawRealMap(null, false);
         drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
@@ -2844,11 +2840,10 @@ $('galNext').onclick = e => { e.stopPropagation(); galI = (galI + 1) % galList.l
 $('gallery').onclick = () => $('gallery').classList.add('hidden');
 $('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) openGallery(ipViewLm); };
 $('ipPhoto').addEventListener('click', e => { if (ipViewLm && typeof ipViewLm.photo === 'string'){ e.stopPropagation(); openGallery(ipViewLm); } });
-function satBtn(){ $('bSat').textContent = !satOn() ? T.satOff : mapSty() === 'map' ? T.mapOn : T.satOn; }
-$('bSat').onclick = e => { e.stopPropagation(); if (!satOn()){ DB.sat = true; DB.mapSty = 'sat'; } else if (mapSty() === 'sat') DB.mapSty = 'map'; else DB.sat = false; saveDB(); satBtn(); };
+function satBtn(){ $('bSat').textContent = mapSty() === 'map' ? T.mapOn : T.satOn; }
+$('bSat').onclick = e => { e.stopPropagation(); DB.sat = true; DB.mapSty = mapSty() === 'sat' ? 'map' : 'sat'; saveDB(); satBtn(); };   // 🛰 위성 ↔ 🗺 지도 두 가지만
 function showViewMode(on){
   $('bSat').classList.toggle('hidden', !(on && !isClimb() && (S.gps || SAT_OK))); satBtn();
-  $('bAll').classList.toggle('hidden', !(on && outTheme())); $('bAll').textContent = NAV.full ? T.allBack : T.allOn;
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
@@ -2857,8 +2852,17 @@ function showViewMode(on){
 /* 오른쪽 위 작은 칸을 누르면 큰 화면과 서로 바뀜: 내비(현위치 확대) ↔ 전체 지도 + 사진·코스 정보 */
 /* 11/16 보스: 바깥 테마 = 오른쪽 위를 누르면 큰 화면이 '테마 길 확대 지도'로 (다시 누르면 실제 지도) · 전체 코스 모양은 왼쪽 위 '🗺 전체 코스' 버튼 */
 function outTheme(){ return S.gps && !S.free && !isClimb(); }
-$('map').onclick = () => { if (!S.running) return; if (outTheme() && !NAV.full){ NAV.alt = !NAV.alt; return; } NAV.full = !NAV.full; showViewMode(true); };
-$('bAll').onclick = e => { e.stopPropagation(); if (!S.running) return; NAV.full = !NAV.full; showViewMode(true); };
+/* 11/16 보스: 오른쪽 위를 누를 때마다 큰 화면이 돌아가며 바뀜 — 실제 → 테마(확대) → 전체 경로 → 실제 … · 작은 칸에는 '다음 화면'을 미리 보여 줌 */
+$('map').onclick = () => {
+  if (!S.running) return;
+  if (outTheme()){
+    if (NAV.full){ NAV.full = false; NAV.alt = false; showViewMode(true); }
+    else if (NAV.alt){ NAV.alt = false; NAV.full = true; showViewMode(true); }
+    else NAV.alt = true;
+    return;
+  }
+  NAV.full = !NAV.full; showViewMode(true);
+};
 /* 손가락 두 개로 지도 확대·축소 (11/16) · 0.25배 ~ 5배 · 두 번 톡 = 원래대로 (NAV.zoom은 NAV 정의에서 1) */
 (() => {
   let d0 = 0, z0 = 1, lastTap = 0;
@@ -3158,6 +3162,18 @@ function drawFree(){   // 목표 링: 가운데 큰 숫자, 둘레가 차오름
 /* 일반 + 바깥(GPS): 지금 있는 곳 실제 지도 (북쪽이 위) · 초록 = 오늘 다닌 길, 회색 = 따라갈 추천 길 · 두 손가락 확대·축소 */
 function drawFreeMap(){ drawRealMap(freeRoute(), true); }
 /* 실제 위치 지도 (일반·테마 공통) · route = 회색으로 그릴 길, ring = 오른쪽 위 목표 % 원 */
+function drawTrackMini(){   // 작은 칸: 오늘 실제로 다닌 길 모양 (다음 = 실제 지도)
+  const g = mctx, sz = mapCv.width, t = GPS.track || [], pad = 18 * DPR;
+  g.fillStyle = '#eef2ea'; g.fillRect(0, 0, sz, sz);
+  if (t.length > 1){
+    let a = 90, b = -90, c = 180, d = -180; t.forEach(p => { a = Math.min(a, p[0]); b = Math.max(b, p[0]); c = Math.min(c, p[1]); d = Math.max(d, p[1]); });
+    const cl = Math.cos(a * Math.PI / 180), w = Math.max(1e-5, (d - c) * cl), h = Math.max(1e-5, b - a), k = (sz - 2 * pad) / Math.max(w, h);
+    const X = p => sz / 2 + ((p[1] - (c + d) / 2) * cl) * k, Y = p => sz / 2 - (p[0] - (a + b) / 2) * k;
+    g.lineJoin = g.lineCap = 'round'; g.strokeStyle = '#3fae5a'; g.lineWidth = 4 * DPR; g.beginPath(); t.forEach((p, i) => i ? g.lineTo(X(p), Y(p)) : g.moveTo(X(p), Y(p))); g.stroke();
+    const e = t[t.length - 1]; g.fillStyle = '#e8574a'; g.beginPath(); g.arc(X(e), Y(e), 5 * DPR, 0, 7); g.fill();
+  } else { g.fillStyle = '#e8574a'; g.beginPath(); g.arc(sz / 2, sz / 2, 5 * DPR, 0, 7); g.fill(); }
+  miniTag(T.tagReal, (S.sessionM / 1000).toFixed(2) + 'km');
+}
 function drawRealMap(rt, ring){
   const top = 0, bot = (innerHeight - ($('hudBottom').offsetHeight || innerHeight * 0.4) + 30) * DPR;
   ctx.fillStyle = '#1b2d23'; ctx.fillRect(0, 0, W, H);
@@ -3168,7 +3184,7 @@ function drawRealMap(rt, ring){
   const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
   const cx = W / 2, cy = bot * 0.55, hx = X(here[1]), hy = Y(here[0]);
   const sx = lo => cx + (X(lo) - hx) * k, sy = la => cy + (Y(la) - hy) * k;
-  if (DB.sat !== false){
+  {
     const t0x = Math.floor((hx - cx / k) / 256), t1x = Math.floor((hx + (W - cx) / k) / 256), t0y = Math.floor((hy - cy / k) / 256), t1y = Math.floor((hy + (H - cy) / k) / 256);
     for (let tx = t0x; tx <= t1x; tx++) for (let ty = t0y; ty <= t1y; ty++){
       const im = satTile(z, tx, ty, true); if (!im || !im.ok) continue; const f = (im.naturalWidth || 256) / 256;
@@ -3183,7 +3199,7 @@ function drawRealMap(rt, ring){
   ctx.fillStyle = 'rgba(232,87,74,.25)'; ctx.beginPath(); ctx.arc(cx, cy, 22 * DPR, 0, 7); ctx.fill();
   ctx.fillStyle = '#e8574a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * DPR; ctx.beginPath(); ctx.arc(cx, cy, 9 * DPR, 0, 7); ctx.fill(); ctx.stroke();
   ctx.font = (10 * DPR) + 'px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.75)';
-  if (DB.sat !== false) ctx.fillText(MAPSTY[mapSty()].credit, 8 * DPR, bot - 14 * DPR);
+  ctx.fillText(MAPSTY[mapSty()].credit, 8 * DPR, bot - 14 * DPR);
   // 목표 진행 작은 원
   if (ring && S.freeGoal){ const r = 26 * DPR, ox = W - r - 14 * DPR, oy = 70 * DPR + r, ratio = Math.min(1, S.sessionM / freeGoalM());
     ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(ox, oy, r + 8 * DPR, 0, 7); ctx.fill();
@@ -3598,7 +3614,7 @@ const MAPSTY = {   // 🛰 위성(Esri) / 🗺 선명한 지도(CARTO, 오픈스
 const SAT = { cache: new Map(), url: (z, x, y) => MAPSTY[mapSty()].url(z, x, y) };
 function mapSty(){ return DB.mapSty === 'map' ? 'map' : 'sat'; }
 const SAT_OK = !!GEO_NOW || !!COURSE.pathReal;   /* 11/16 보스: 저수지 코스가 물 위로 그려짐 → 손으로 맞춘 좌표도 실제 길에 붙인 뒤에만 위성. pathReal = 길 찾기 서버가 만든 길(내 코스) */   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
-const satOn = () => (S.gps ? true : SAT_OK) && DB.sat !== false;   // 바닥 지도 켜짐 (종류는 mapSty)
+const satOn = () => (S.gps ? true : SAT_OK);   /* 11/16 보스: '그림 지도'(꾸민 물·나무 그림)는 불필요 → 실제 길이 있으면 늘 위성 또는 지도 */   // 바닥 지도 켜짐 (종류는 mapSty)
 function satTile(z, x, y, load){
   const k = mapSty() + z + '/' + x + '/' + y; let im = SAT.cache.get(k);
   if (!im && load){
