@@ -189,6 +189,7 @@
   .sum4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
   .sum4 div{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px}
   .sum4 .kc{grid-column:span 2}
+  .kcday{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;margin:12px 0 4px}.kcday .kt{display:flex;justify-content:space-between;font-weight:800;font-size:17px;margin-bottom:4px}.kcday .kl{display:flex;justify-content:space-between;font-size:14px;opacity:.85;padding:3px 0}.kcday .kl b{font-weight:700}
   .bodyrow{display:flex;align-items:center;gap:8px;margin:6px 0}.bodyrow label{width:44px}.bodyrow input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;font-size:17px}
   .sum4 span{display:block;font-size:12px;opacity:.7}
   .sum4 b{font-size:22px}
@@ -533,6 +534,7 @@
     <div class="st" data-t="stTitle"></div>
     <div class="bignum" id="stNum"></div>
     <div class="muted" id="stSub" style="text-align:center"></div>
+    <div class="kcday" id="stKcal"></div>
     <div class="form">
       <label data-t="stInputL"></label>
       <div class="row2"><div><input id="stInput" type="number" inputmode="numeric" min="0"></div><div><button id="stSet" class="toggle" data-t="stSet" style="margin:0;height:48px"></button></div></div>
@@ -628,7 +630,7 @@
 </div>
 
 <script>
-const BUILD = '202611161836';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161842';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1058,7 +1060,7 @@ const TEXT = {
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
     cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
     nearWait: '📍 지금 위치를 찾는 중…', nearHere: '📍 지금 위치에서 가까운 순', nearFallback: '📍 위치를 못 받아서 {s} 기준으로 가까운 순 (위치 권한을 켜면 내 주변으로)',
-    nearPass: '(지나가는 길)', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
+    nearPass: '(지나가는 길)', kcToday: '오늘 소모 칼로리', kcLife: '생활 걸음', kcSteps: '보', kcNone: '아직 기록이 없어요', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
     rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
     mapNote: '지도 모양은 임시 (GPX 받으면 실제 모양으로)',
     myRec: '📒 내 기록', myRecAll: '📒 내 기록 전체 보기', myRecTitle: '📒 내 기록', back: '← 돌아가기',
@@ -2304,7 +2306,7 @@ function refreshStart(){
   // 요약: 오늘 운동 / 지금 고른 코스
   const today = new Date().toDateString(), tr0 = DB.records.filter(r => new Date(r.date).toDateString() === today);
   const tDist = tr0.reduce((a, r) => a + (r.distM || 0), 0), tUp = tr0.reduce((a, r) => a + (r.upM || 0), 0);
-  $('sumToday').innerHTML = (tDist || !tUp ? (tDist/1000).toFixed(1) + 'km' : '') + (tUp ? (tDist ? '<br>' : '') + tUp.toLocaleString() + 'm' : '');
+  $('sumToday').innerHTML = (tDist || !tUp ? (tDist/1000).toFixed(1) + 'km' : '') + (tUp ? (tDist ? '<br>' : '') + tUp.toLocaleString() + 'm' : '') + (() => { try { const k = dayKcal().total; return k ? '<br><small style="font-size:13px;opacity:.8">🔥 ' + kcalTxt(k) + '</small>' : ''; } catch(e){ return ''; } })();
   const up = DB.pick.type === 'climb';
   if (up){
     const cs = climbState();
@@ -3132,6 +3134,23 @@ function kcalOf(r){
   return Math.round(met * kg * sec / 3600 * k);
 }
 const kcalTxt = n => n.toLocaleString() + ' kcal';
+/* 오늘 총 칼로리 = 생활 걸음(운동 밖 걸음) + 운동 기록(종류별). 걸음을 코스에 반영한 기록(src steps)은 생활 걸음과 같은 것이라 빼고 셈 */
+function dayKcal(){
+  const today = new Date().toDateString(), recs = DB.records.filter(r => r.src !== 'steps' && r.src !== 'legacy' && new Date(r.date).toDateString() === today);
+  let si = { other: 0 }; try { si = stepInfo(); } catch(e){}
+  const life = Math.max(0, si.other || 0), lines = [];
+  const lifeK = kcalOf({ act: 'walk', src: 'steps', distM: life * (DB.stride.walk || 0.72) });
+  if (life) lines.push(['👣', T.kcLife, life.toLocaleString() + T.kcSteps, lifeK]);
+  const G = [['foot', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['up', '🪜', T.fUpAct]];
+  G.forEach(([g, ic, nm]) => { const rs = recs.filter(r => actGroup(r) === g); if (!rs.length) return;
+    const k = rs.reduce((a, r) => a + kcalOf(r), 0), d = rs.reduce((a, r) => a + (r.distM || 0), 0), u = rs.reduce((a, r) => a + (r.upM || 0), 0), sec = rs.reduce((a, r) => a + (r.sec || 0), 0);
+    lines.push([ic, nm, (g === 'up' ? u.toLocaleString() + 'm' : (d / 1000).toFixed(1) + 'km') + (sec >= 60 ? ' · ' + Math.round(sec / 60) + T.min : ''), k]); });
+  return { total: lines.reduce((a, l) => a + l[3], 0), lines };
+}
+function kcalDayHtml(){ const dk = dayKcal();
+  return '<div class="kt"><span>🔥 ' + T.kcToday + '</span><span>' + kcalTxt(dk.total) + '</span></div>' +
+    (dk.lines.length ? dk.lines.map(l => '<div class="kl"><span>' + l[0] + ' ' + l[1] + ' <span class="muted">' + l[2] + '</span></span><b>' + kcalTxt(l[3]) + '</b></div>').join('') : '<div class="kl muted">' + T.kcNone + '</div>') +
+    '<div class="kl muted" style="font-size:12px">' + T['kcalLv' + bodyFix()[2]] + '</div>'; }
 const recWhere = r => { const c = r.credit || {}; if (r.free && !r.credit) return T.freeTag + (r.free.goal ? ' ' + freeGoalText(r.free.goal, r.free.unit === 'floor') : ''); return (r.free ? T.freeTag + ' ' : '') + (c.course === 'climb' ? tr(TGT(c.target).short || TGT(c.target).name).replace('지리산 ', '') : roadName(c.course === 'sangnim' ? 'sangnim-3k' : c.target)); };
 const recAmt = r => (ACTS[r.act] || ACTS.tread).kind === 'up' ? (r.upM || 0).toLocaleString() + 'm' : ((r.distM || 0) / 1000).toFixed(2) + 'km';
 function recLine(r){ const d = new Date(r.date), a = ACTS[r.act] || ACTS.tread;
@@ -3573,7 +3592,7 @@ function refreshSteps(){
   const d = stepDay(), si = stepInfo();
   document.querySelectorAll('[data-steps]').forEach(b => b.textContent = T.stBtn.replace('{n}', si.total.toLocaleString()));
   if ($('stepBox').classList.contains('hidden')) return;
-  $('stNum').textContent = si.total.toLocaleString();
+  $('stNum').textContent = si.total.toLocaleString(); try { $('stKcal').innerHTML = kcalDayHtml(); } catch(e){}
   $('stSub').textContent = T.stSplit.replace('{w}', si.work.toLocaleString()).replace('{o}', si.other.toLocaleString()) + '\n' + (NSTEP.ok ? T.stSubApp : STEP.ok ? T.stSub : NSTEP.perm ? T.stSubPerm : T.stSubNo);
   $('stSub').style.whiteSpace = 'pre-line';
   const free = si.free, km = free * (DB.stride.walk || 0.7) / 1000, road = DB.pick.type !== 'climb';
