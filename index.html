@@ -958,7 +958,7 @@ const TEXT = {
     satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km)이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
-    errMsg: '⚠️ 앱 오류: {e}',
+    errMsg: '⚠️ 앱 오류: {e}', photoFail: '사진을 못 불러왔어요:',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '실제로 이 코스를 걸었을 때만 눌러 주세요. 다음부터 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
@@ -1474,6 +1474,18 @@ const HUB_LINK = {   // 출처 원본 페이지 (공공누리·CC 모두 링크 
   'start': 'https://commons.wikimedia.org/wiki/File:Hamyang_Sangrim.JPG'
 };
 const small = u => 'https://wsrv.nl/?url=' + encodeURIComponent(u) + '&w=800&q=80&output=jpg';   // 큰 원본을 800px로 줄여 받기 (무료 이미지 줄이기 서버)
+/* 사진이 안 열리면 다음 주소로 (11/16: 최치원 신도비가 폰에서 안 보임 → 예비 줄이기 서버) · 다 안 되면 사진 칸을 깃발로 */
+function photoAlts(src){
+  const m = /[?&]url=([^&]+)/.exec(src); if (!m || src.indexOf('wsrv.nl') < 0) return [];
+  const orig = decodeURIComponent(m[1]);
+  return ['https://i0.wp.com/' + orig.replace(/^https?:\/\//, '') + '?w=800', 'https://images.weserv.nl/?url=' + encodeURIComponent(orig) + '&w=800'];
+}
+function photoFail(img){
+  const alts = JSON.parse(img.dataset.alts || '[]');
+  if (alts.length){ img.dataset.alts = JSON.stringify(alts.slice(1)); img.src = alts[0]; return; }
+  toastMsg('🖼 ' + T.photoFail + ' (' + (img.dataset.orig || '').replace(/^https?:\/\//, '').split('/')[0] + ')'); errNote.log && errNote.log('photo ' + img.dataset.orig);
+  const box = img.parentNode; box.innerHTML = '<span class="noph">🚩</span>'; box.style.display = 'flex'; box.style.alignItems = 'center'; box.style.justifyContent = 'center';
+}
 HUB_PHOTO['choichiwon'] = small('https://portal.nrich.go.kr/file_link/newFolder/584/Image/original/20240828171604_00001.jpg');   // 11/15 20:37 아리 채택 (원본 11331×5898)
 HUB_CREDIT['choichiwon'] = '국립문화유산연구원 · 공공누리 1유형';
 HUB_LINK['choichiwon'] = 'https://portal.nrich.go.kr/kor/ksmUsrView.do?ksm_idx=13610&menuIdx=584';
@@ -1481,7 +1493,8 @@ const PHOTO_CREDIT = {}, PHOTO_LINK = {};   // 사진 주소 → 출처·원본 
 Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; if (HUB_LINK[k]) PHOTO_LINK[HUB_PHOTO[k]] = HUB_LINK[k]; });
 function photoHtml(src, r, small){
   const cr = PHOTO_CREDIT[src];
-  return '<div style="position:relative;width:100%;height:100%"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + (r || 0) + 'px">' +
+  const alts = photoAlts(src).map(a => a.replace(/"/g, '&quot;'));
+  return '<div style="position:relative;width:100%;height:100%"><img src="' + src + '" data-orig="' + src + '" data-alts=\'' + JSON.stringify(alts) + '\' onerror="photoFail(this)" style="width:100%;height:100%;object-fit:cover;border-radius:' + (r || 0) + 'px">' +
     (cr ? '<span class="pcr"' + (PHOTO_LINK[src] ? ' onclick="event.stopPropagation();window.open(\'' + PHOTO_LINK[src] + '\',\'_blank\')"' : '') + '>' + (small ? '©' : '© ' + cr) + '</span>' : '') + '</div>';
 }
 Object.values(ALL_ROADS).forEach(c => (c.landmarks || []).forEach(lm => { if (!lm.photo && HUB_PHOTO[lm.id]) lm.photo = HUB_PHOTO[lm.id]; }));
