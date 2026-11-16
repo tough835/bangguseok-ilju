@@ -612,7 +612,7 @@
 </div>
 
 <script>
-const BUILD = '202611161800';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161828';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3354,7 +3354,7 @@ function drawRealMap(rt, ring){
   ctx.fillStyle = 'rgba(232,87,74,.25)'; ctx.beginPath(); ctx.arc(cx, cy, 22 * DPR, 0, 7); ctx.fill();
   ctx.fillStyle = '#e8574a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * DPR; ctx.beginPath(); ctx.arc(cx, cy, 9 * DPR, 0, 7); ctx.fill(); ctx.stroke();
   ctx.font = (10 * DPR) + 'px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.75)';
-  ctx.fillText(MAPSTY[mapSty()].credit, 8 * DPR, bot - 14 * DPR);
+  ctx.fillText(mapCredit(), 8 * DPR, bot - 14 * DPR);
   // 목표 진행 작은 원
   if (ring && S.freeGoal){ const r = 26 * DPR, ox = W - r - 14 * DPR, oy = 70 * DPR + r, ratio = Math.min(1, S.sessionM / freeGoalM());
     ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(ox, oy, r + 8 * DPR, 0, 7); ctx.fill();
@@ -3778,15 +3778,28 @@ const MAPSTY = {   // 🛰 위성(Esri) / 🗺 선명한 지도(CARTO, 오픈스
   sat: { max: 19, url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x, credit: '위성 사진 © Esri · Maxar' },
   map: { max: 19, url: (z, x, y) => 'https://tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png', credit: '지도 © OpenStreetMap 기여자' }   // 11/16: CARTO가 키를 요구해서 오픈스트리트맵 기본 지도로
 };
+/* 11/16: 국내는 브이월드(국토교통부) 항공사진·기본지도 — 무료·공공누리 1유형(출처 표시), 시골도 선명. 키는 tough835.github.io에서만 작동
+   해외는 그대로 Esri / OpenStreetMap. 브이월드 조각이 안 열리면 그 자리만 해외 지도로 */
+const VW_KEY = '77F0E859-7013-4326-8DA4-F326BCAB8C0E';
+let VW_LAST = false;   // 마지막으로 그린 조각이 국내였는지 (출처 글자용)
+function tileKR(z, x, y){
+  const n = 2 ** z, lon = (x + 0.5) / n * 360 - 180, lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / n))) * 180 / Math.PI;
+  return z >= 7 && lat > 33.0 && lat < 38.7 && lon > 124.5 && lon < 131.0;
+}
+const vwUrl = (z, x, y) => 'https://api.vworld.kr/req/wmts/1.0.0/' + VW_KEY + '/' + (mapSty() === 'map' ? 'Base/' + z + '/' + y + '/' + x + '.png' : 'Satellite/' + z + '/' + y + '/' + x + '.jpeg');
 const SAT = { cache: new Map(), url: (z, x, y) => MAPSTY[mapSty()].url(z, x, y) };
+function mapCredit(){ return VW_LAST ? '지도 © 브이월드(국토교통부) · 공공누리 제1유형' : MAPSTY[mapSty()].credit; }
 function mapSty(){ return DB.mapSty === 'map' ? 'map' : 'sat'; }
 const SAT_OK = !!GEO_NOW || !!COURSE.pathReal;   /* 11/16 보스: 저수지 코스가 물 위로 그려짐 → 손으로 맞춘 좌표도 실제 길에 붙인 뒤에만 위성. pathReal = 길 찾기 서버가 만든 길(내 코스) */   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
 const satOn = () => (S.gps ? true : SAT_OK);   /* 11/16 보스: '그림 지도'(꾸민 물·나무 그림)는 불필요 → 실제 길이 있으면 늘 위성 또는 지도 */   // 바닥 지도 켜짐 (종류는 mapSty)
 function satTile(z, x, y, load){
-  const k = mapSty() + z + '/' + x + '/' + y; let im = SAT.cache.get(k);
+  const k = mapSty() + z + '/' + x + '/' + y; let im = SAT.cache.get(k); if (load) VW_LAST = tileKR(z, x, y);
   if (!im && load){
     if (SAT.cache.size > 360) SAT.cache.delete(SAT.cache.keys().next().value);
-    im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { im.ok = 1; }; im.src = SAT.url(z, x, y); SAT.cache.set(k, im);
+    im = new Image(); im.onload = () => { im.ok = 1; };
+    if (tileKR(z, x, y)){ im.onerror = () => { im.onerror = null; im.crossOrigin = 'anonymous'; im.src = SAT.url(z, x, y); }; im.src = vwUrl(z, x, y); }   // 국내 = 브이월드, 실패하면 해외 지도
+    else { im.crossOrigin = 'anonymous'; im.src = SAT.url(z, x, y); }
+    SAT.cache.set(k, im);
   }
   return im;
 }
@@ -3884,7 +3897,7 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
     g.fillStyle = '#f0a03c'; g.fillRect(10 * DPR, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legUp, 26 * DPR, y);
     const x2 = 34 * DPR + g.measureText(T.legUp).width; g.fillStyle = '#4a8fd9'; g.fillRect(x2, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legDown, x2 + 16 * DPR, y);
   }
-  if (sat){ g.font = (10 * DPR) + 'px sans-serif'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(MAPSTY[mapSty()].credit, 8 * DPR, vh - 12 * DPR); }
+  if (sat){ g.font = (10 * DPR) + 'px sans-serif'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(mapCredit(), 8 * DPR, vh - 12 * DPR); }
 }
 /* 작은 칸 글자: 왼쪽 위 이름표(누르면 바뀐다는 표시) + 아래 진행 숫자 */
 function miniTag(txt, foot){
