@@ -630,7 +630,7 @@
 </div>
 
 <script>
-const BUILD = '202611161842';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611162018';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1060,7 +1060,7 @@ const TEXT = {
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
     cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
     nearWait: '📍 지금 위치를 찾는 중…', nearHere: '📍 지금 위치에서 가까운 순', nearFallback: '📍 위치를 못 받아서 {s} 기준으로 가까운 순 (위치 권한을 켜면 내 주변으로)',
-    nearPass: '(지나가는 길)', kcToday: '오늘 소모 칼로리', kcLife: '생활 걸음', kcSteps: '보', kcNone: '아직 기록이 없어요', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
+    nearPass: '(지나가는 길)', tempLow: '산 아래보다 {t}℃ 낮아요', kcToday: '오늘 소모 칼로리', kcLife: '생활 걸음', kcSteps: '보', kcNone: '아직 기록이 없어요', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
     rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
     mapNote: '지도 모양은 임시 (GPX 받으면 실제 모양으로)',
     myRec: '📒 내 기록', myRecAll: '📒 내 기록 전체 보기', myRecTitle: '📒 내 기록', back: '← 돌아가기',
@@ -1646,6 +1646,34 @@ TARGETS.forEach(t => { if (!t.photo && HUB_PHOTO['mtn_' + t.id]) t.photo = HUB_P
 const MOUNTAINS = TARGETS.filter(t => t.kind === 'mountain').sort((a, b) => a.gain - b.gain);
 const TOWERS = TARGETS.filter(t => t.kind === 'tower').sort((a, b) => a.gain - b.gain);
 const TGT = id => TARGETS.find(t => t.id === id) || MOUNTAINS[MOUNTAINS.length - 1];
+/* ---- 11/16 산·빌딩 화면 개선
+   빌딩: 실제 외형(높이 비율 → 폭 비율, 같은 높이 두 점 = 계단식으로 좁아짐) · 유명 층 이정표 · 도시 현지 시각으로 낮/밤 · 창밖 도시가 점점 발아래로
+   산: 높이에 따라 하늘색·식생(활엽수 → 침엽수 → 관목 → 바위) · 1,300m 위 구름바다 · 기온(100m당 0.6℃) · 이정표 실제 사진(위키) */
+const TOWER_X = {
+  lotte: { tz: 'Asia/Seoul', glass: '#86a9c8', shape: [[0, 1], [0.25, 0.94], [0.55, 0.78], [0.8, 0.55], [0.95, 0.3], [1, 0.16]],
+           ms: [[76, '시그니엘 호텔'], [118, '서울스카이 유리바닥 스카이데크'], [120, '스카이테라스'], [122, '서울스카이 라운지']] },
+  b63:   { tz: 'Asia/Seoul', glass: '#d6b25c', shape: [[0, 1], [1, 0.88]], ms: [[60, '전망대 층']] },
+  lct:   { tz: 'Asia/Seoul', glass: '#8fb4c9', shape: [[0, 1], [0.88, 0.94], [1, 0.72]], ms: [[98, '부산엑스더스카이 전망대'], [100, '전망대 꼭대기 층']] },
+  esb:   { tz: 'America/New_York', glass: '#bdb4a3', shape: [[0, 1], [0.07, 1], [0.07, 0.84], [0.72, 0.84], [0.72, 0.62], [0.82, 0.62], [0.82, 0.42], [0.92, 0.42], [0.92, 0.2], [1, 0.12]],
+           ms: [[80, '80층 전시 공간'], [86, '86층 메인 전망대']] },
+  burj:  { tz: 'Asia/Dubai', glass: '#a9c4d8', shape: [[0, 1], [0.22, 1], [0.22, 0.8], [0.4, 0.8], [0.4, 0.62], [0.56, 0.62], [0.56, 0.46], [0.7, 0.46], [0.7, 0.32], [0.82, 0.32], [0.82, 0.2], [0.92, 0.2], [0.92, 0.1], [1, 0.06]],
+           ms: [[124, 'At the Top 전망대'], [125, 'At the Top 125층']] }
+};
+TOWERS.forEach(m => { const x = TOWER_X[m.id]; if (!x || m.waypoints) return;
+  m.waypoints = x.ms.filter(([f]) => f < m.floors).map(([f, n]) => ({ name: { ko: (/층/.test(n) ? '' : f + '층 ') + n }, elev: Math.round(m.base + f / m.floors * m.gain), at: f / m.floors })); });
+function towerW(m, t){   // 높이 비율 t(0~1)에서 빌딩 폭 비율
+  const sh = (TOWER_X[m.id] || {}).shape || [[0, 1], [1, 0.8]]; t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < sh.length; i++){ const a = sh[i - 1], b = sh[i]; if (t <= b[0]){ if (b[0] === a[0]) return a[1]; return a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]); } }
+  return sh[sh.length - 1][1];
+}
+function localHour(tz){ try { return +new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date()) % 24; } catch(e){ return new Date().getHours(); } }
+function skyCols(m, t){   // [위, 아래] 하늘색 · t = 올라간 비율 · 빌딩은 현지 시각 반영
+  const h = localHour((TOWER_X[m.id] || {}).tz || (m.kind === 'tower' ? 'Asia/Seoul' : 'Asia/Seoul'));
+  if (m.kind === 'tower' && (h >= 19 || h < 6)) return [mix('#0d1c38', '#050b1a', t), mix('#2c4670', '#1a2c4e', t), 'night'];
+  if (m.kind === 'tower' && (h >= 17 || h < 7)) return [mix('#557fb8', '#2e5490', t), mix('#f2b98a', '#e8a37a', t), 'dusk'];
+  return [mix('#9cc9e8', '#2f6db5', t), mix('#eaf3ea', '#d6e7f5', t), 'day'];
+}
+const tempDrop = st => Math.round(Math.max(0, st.climbed) * 0.006);
 const roadName = id => { const c = ALL_ROADS[id]; return c ? tr(c.short || c.name) : ''; };
 
 /* ---- 저장 ---- */
@@ -1717,7 +1745,7 @@ function walkPassed(before, after){
 function climbPassed(m, before, after){
   const out = [];
   for (let k = Math.floor(before / m.gain); k <= Math.floor(after / m.gain); k++){
-    (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after) out.push({ name: tr(w.name), desc: T.elevAt.replace('{e}', w.elev.toLocaleString()) }); });
+    (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after){ const wk = WIKI[w.wiki || ('ko:' + tr(w.name).replace(/^\d+층 /, ''))]; out.push({ name: tr(w.name), desc: T.elevAt.replace('{e}', w.elev.toLocaleString()) + (m.kind !== 'tower' ? ' · 🌡 ' + T.tempLow.replace('{t}', Math.round((w.elev - m.base) * 0.006)) : ''), photo: wk && wk.u ? (PHOTO_CREDIT[wk.u] = wk.c, PHOTO_LINK[wk.u] = wk.l, wk.u) : undefined }); } });
     const top = (k + 1) * m.gain;
     if (top > before && top <= after) out.push({ name: tr(m.name) + ' ' + T.summit, short: tr(m.name), photo: m.photo || true,
       desc: (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : T.elevAt.replace('{e}', m.summit.toLocaleString())) + ' · ' + tr(m.desc || m.trail) });
@@ -1838,7 +1866,7 @@ function hudClimb(st){
   if (autoActive()) autoSpeedTick();
   const tower = st.m.kind === 'tower';
   $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');
-  $('altiPill').textContent = tower ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm';
+  $('altiPill').textContent = tower ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
   $('sNextLabel').textContent = tower ? T.toTop : T.toSummit;
   $('sNextDist').textContent = Math.round(st.remain) + ' m';
   $('sNextName').textContent = (tower ? (st.m.floors - st.floor) + T.floorUnit + ' · ' : '') + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
@@ -2942,7 +2970,13 @@ function applyWiki(){
     lm.photo = w.u; lm._wiki = 1; PHOTO_CREDIT[w.u] = w.c; PHOTO_LINK[w.u] = w.l;
   });
 }
+function loadClimbWiki(){   // 고른 산·빌딩의 이정표 사진 미리 받기
+  if (DB.pick.type !== 'climb') return; const m = TGT(DB.pick.id); let k = 0;
+  const list = (m.waypoints || []).filter(w => m.kind !== 'tower').map(w => ({ wiki: w.wiki || 'ko:' + tr(w.name) }));
+  const next = () => { if (k < list.length) wikiOne(list[k++]).then(() => setTimeout(next, 200)); }; next();
+}
 function loadWiki(){
+  setTimeout(loadClimbWiki, 3000);
   const todo = LMS.filter(lm => (lm.wiki || WIKI_TITLE[lm.id]) && typeof lm.photo !== 'string');
   applyWiki(); let k = 0;
   const next = () => { if (k >= todo.length) return; wikiOne(todo[k++]).then(() => { applyWiki(); setTimeout(next, 150); }); };
@@ -3258,21 +3292,31 @@ function drawClimbView(st){
   const top = AREA.top + 44 * DPR, bot = AREA.bot - 44 * DPR, fs = Math.round(14 * DPR);
   ctx.font = '800 ' + fs + 'px sans-serif';
   if (tower){
-    const bw = W * 0.34, bx = W / 2 - bw / 2, hh = bot - top;
-    ctx.fillStyle = '#c3cfdb'; ctx.fillRect(bx, top, bw, hh);
-    const fh = hh * st.ratio;
-    ctx.fillStyle = '#7fbf8c'; ctx.fillRect(bx, bot - fh, bw, fh);
-    const stepF = m.floors > 80 ? 20 : 10;
-    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1 * DPR; ctx.fillStyle = '#556677';
-    for (let f = stepF; f < m.floors; f += stepF){ const y = bot - hh * f / m.floors; ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx + bw, y); ctx.stroke(); ctx.fillText(f + 'F', bx + bw + 8 * DPR, y + fs * 0.35); }
-    ctx.fillStyle = '#24332a'; ctx.textAlign = 'center'; ctx.fillText('🏙 ' + tr(m.name) + ' · ' + m.floors + 'F · ' + m.summit + 'm', W / 2, top - 12 * DPR); ctx.textAlign = 'left';
-    const y = bot - fh; ctx.fillStyle = '#e8574a'; ctx.fillRect(bx - 10 * DPR, y - 2 * DPR, bw + 20 * DPR, 4 * DPR);
-    ctx.font = '900 ' + Math.round(18 * DPR) + 'px sans-serif'; ctx.fillText(st.floor + 'F', bx - 62 * DPR, y + 6 * DPR);
+    const sc = skyCols(m, st.ratio), night = sc[2] === 'night', tx = TOWER_X[m.id] || {}, hh = bot - top, bw0 = Math.min(W * 0.34, hh * 0.24), mid = W / 2;   // 실제 비율처럼 가늘게
+    const sk = ctx.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, sc[0]); sk.addColorStop(1, sc[1]); ctx.fillStyle = sk; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = night ? '#16253d' : 'rgba(120,138,156,.9)'; for (let i = 0; i < 26; i++){ const bh2 = (10 + rnd(i + 5) * 46) * DPR; ctx.fillRect(i / 26 * W, bot - bh2, W / 26 * (0.7 + rnd(i) * 0.6), bh2); }
+    const yAt = t => bot - hh * t, N = 120;
+    ctx.beginPath(); ctx.moveTo(mid - bw0 * towerW(m, 0) / 2, bot); for (let i = 0; i <= N; i++){ const t = i / N; ctx.lineTo(mid - bw0 * towerW(m, t) / 2, yAt(t)); } for (let i = N; i >= 0; i--){ const t = i / N; ctx.lineTo(mid + bw0 * towerW(m, t) / 2, yAt(t)); } ctx.closePath();
+    ctx.fillStyle = tx.glass || '#c3cfdb'; ctx.fill(); ctx.save(); ctx.clip(); ctx.fillStyle = 'rgba(63,154,82,.55)'; ctx.fillRect(0, yAt(st.ratio), W, bot - yAt(st.ratio)); ctx.restore();
+    ctx.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif'; ctx.fillStyle = night ? 'rgba(255,255,255,.7)' : '#556677';
+    const stepF = m.floors > 80 ? 20 : 10; for (let f = stepF; f < m.floors; f += stepF){ const y = yAt(f / m.floors); ctx.fillText(f + 'F', mid + bw0 / 2 + 8 * DPR, y + 4 * DPR); }
+    let lastY = top + 4 * DPR;   // 이정표 글자: 위에서부터 차례로, 겹치면 아래로 내림 (제목과도 안 겹치게)
+    (m.waypoints || []).slice().sort((a, b) => b.at - a.at).forEach(w => { const y0 = yAt(w.at), y = Math.max(y0, lastY + 22 * DPR); lastY = y;
+      ctx.font = '800 ' + Math.round(12 * DPR) + 'px sans-serif'; const lb = '⭐ ' + tr(w.name), tw = ctx.measureText(lb).width, ex = mid - bw0 * towerW(m, w.at) / 2, lx = Math.max(6 * DPR, ex - tw - 22 * DPR);
+      ctx.fillStyle = 'rgba(255,255,255,.93)'; ctx.fillRect(lx - 4 * DPR, y - 15 * DPR, tw + 8 * DPR, 20 * DPR); ctx.fillStyle = '#7a4e0a'; ctx.fillText(lb, lx, y);
+      ctx.strokeStyle = '#d4a017'; ctx.lineWidth = 2 * DPR; ctx.beginPath(); ctx.moveTo(lx + tw + 4 * DPR, y - 4 * DPR); ctx.lineTo(ex, y0); ctx.stroke(); });
+    ctx.fillStyle = night ? '#fff' : '#24332a'; ctx.font = '800 ' + fs + 'px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🏙 ' + tr(m.name) + ' · ' + m.floors + 'F · ' + m.summit + 'm', W / 2, top - 12 * DPR); ctx.textAlign = 'left';
+    const y = yAt(st.ratio), wc = bw0 * towerW(m, st.ratio); ctx.fillStyle = '#e8574a'; ctx.fillRect(mid - wc / 2 - 12 * DPR, y - 2 * DPR, wc + 24 * DPR, 4 * DPR);
+    ctx.font = '900 ' + Math.round(18 * DPR) + 'px sans-serif'; ctx.fillText(st.floor + 'F', mid + wc / 2 + 16 * DPR, y + 6 * DPR);
     return;
   }
   const x0 = W * 0.08, x1 = W * 0.92, X = t => x0 + (x1 - x0) * t, Y = t => bot - (bot - top) * climbCurve(t);
+  { const sc = skyCols(m, Math.min(1, Math.max(0, (st.elev - 200) / 1700))), sk = ctx.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, sc[0]); sk.addColorStop(0.8, sc[1]); ctx.fillStyle = sk; ctx.fillRect(0, 0, W, H); }
   ctx.beginPath(); ctx.moveTo(x0, bot + 30 * DPR); for (let i = 0; i <= 100; i++) ctx.lineTo(X(i / 100), Y(i / 100)); ctx.lineTo(x1, bot + 30 * DPR); ctx.closePath();
-  ctx.fillStyle = '#c9d9c3'; ctx.fill();
+  { const gr = ctx.createLinearGradient(0, top, 0, bot); gr.addColorStop(0, m.summit > 1500 ? '#bdb9ae' : '#b9cdb3'); gr.addColorStop(1, '#bcd3b4'); ctx.fillStyle = gr; } ctx.fill();
+  if (m.summit > 1500 && m.base < 1500){ const t15 = (1500 - m.base) / m.gain; let i15 = 0; for (let i = 0; i <= 100; i++) if (climbCurve(i / 100) <= t15) i15 = i; const yc = Y(i15 / 100);   // 구름선 1,500m
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; for (let i = 0; i < 9; i++){ ctx.beginPath(); ctx.ellipse(W * (i + 0.5) / 9, yc + 8 * DPR + Math.sin(i * 2) * 6 * DPR, 34 * DPR, 9 * DPR, 0, 0, 7); ctx.fill(); }
+    ctx.fillStyle = 'rgba(36,51,42,.55)'; ctx.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif'; ctx.fillText('☁ 1,500m', 8 * DPR, yc - 4 * DPR); }
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 12 * DPR; ctx.beginPath(); for (let i = 0; i <= 100; i++) ctx.lineTo(X(i / 100), Y(i / 100)); ctx.stroke();
   ctx.strokeStyle = '#9aa59a'; ctx.lineWidth = 7 * DPR; ctx.beginPath(); for (let i = 0; i <= 100; i++) ctx.lineTo(X(i / 100), Y(i / 100)); ctx.stroke();
@@ -3999,25 +4043,45 @@ function drawClimbNav(g, x, y, vw, vh, st, mini){
   const dot = (px, py) => { g.fillStyle = 'rgba(232,87,74,.25)'; g.beginPath(); g.arc(px, py, (mini ? 9 : 17) * DPR * pulse, 0, 7); g.fill();
     g.fillStyle = '#e8574a'; g.strokeStyle = '#fff'; g.lineWidth = (mini ? 2 : 3) * DPR; g.beginPath(); g.arc(px, py, (mini ? 5 : 9) * DPR, 0, 7); g.fill(); g.stroke(); };
   if (tower){
-    const fh = m.gain / m.floors, nfl = mini ? 6 : 12, ppm = vh / (nfl * fh), bw = vw * (mini ? 0.56 : 0.5), bx = x + (vw - bw) / 2;
+    const fh = m.gain / m.floors, nfl = mini ? 6 : 12, ppm = vh / (nfl * fh), bw0 = vw * (mini ? 0.56 : 0.5), mid = x + vw / 2, tx = TOWER_X[m.id] || {};
     const yOf = hgt => cy - (hgt - st.climbed) * ppm, yGround = yOf(0), yTop = Math.max(-10, yOf(m.gain)), yBot = Math.min(chh + 10, yGround);
-    if (yGround < chh){ g.fillStyle = '#b9c4b2'; g.fillRect(0, yGround, cw, chh - yGround); }
-    g.fillStyle = '#c3cfdb'; g.fillRect(bx, yTop, bw, yBot - yTop);
-    g.fillStyle = '#7fbf8c'; g.fillRect(bx, cy, bw, Math.max(0, yBot - cy));
-    const k0 = Math.max(0, Math.floor(st.climbed / fh) - nfl), k1 = Math.min(m.floors, Math.ceil(st.climbed / fh) + nfl);
-    g.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif';
-    for (let k = k0; k <= k1; k++){
-      const yy = yOf(k * fh); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1 * DPR; g.beginPath(); g.moveTo(bx, yy); g.lineTo(bx + bw, yy); g.stroke();
-      if (mini) continue;
-      if (k < m.floors){ g.fillStyle = 'rgba(255,255,255,.4)'; const wh = fh * ppm * 0.45, wy = yy - fh * ppm * 0.75; for (let i = 0; i < 4; i++) g.fillRect(bx + bw * (0.09 + i * 0.23), wy, bw * 0.13, wh); }
-      if (k > 0 && yy < vh){ g.fillStyle = k % 5 === 0 ? '#24332a' : 'rgba(36,51,42,.5)'; g.fillText(k + 'F', bx + bw + 9 * DPR, yy + 4 * DPR); }
+    const sc = skyCols(m, st.ratio), night = sc[2] === 'night';
+    if (!mini){
+      const sk = g.createLinearGradient(0, 0, 0, chh); sk.addColorStop(0, sc[0]); sk.addColorStop(1, sc[1]); g.fillStyle = sk; g.fillRect(0, 0, cw, chh);
+      if (night) for (let i = 0; i < 40; i++){ g.fillStyle = 'rgba(255,255,255,' + (0.3 + rnd(i) * 0.5) + ')'; g.fillRect(rnd(i + 1) * cw, rnd(i + 2) * chh * 0.5, 1.5 * DPR, 1.5 * DPR); }
+      // 창밖 도시: 올라갈수록 발아래로 내려가고 작아짐
+      const hz = Math.min(chh + 40 * DPR, cy + vh * (0.12 + st.ratio * 0.55)), shrink = 1 - st.ratio * 0.75;
+      g.fillStyle = night ? '#0f1b30' : sc[2] === 'dusk' ? '#5b5f78' : '#9fb0bf'; g.fillRect(0, hz, cw, chh - hz);
+      for (let i = 0; i < 34; i++){ const bx2 = (i / 34) * cw, bwid = cw / 34 * (0.7 + rnd(i) * 0.6), bh2 = (20 + rnd(i + 5) * 90) * DPR * shrink;
+        g.fillStyle = night ? '#16253d' : sc[2] === 'dusk' ? '#6a6c86' : 'rgba(120,138,156,.9)'; g.fillRect(bx2, hz - bh2, bwid, bh2);
+        if (night) for (let j = 0; j < 4; j++) if (rnd(i * 7 + j) > 0.45){ g.fillStyle = 'rgba(255,214,120,.8)'; g.fillRect(bx2 + bwid * rnd(i + j * 3), hz - bh2 * rnd(i * 3 + j), 2 * DPR, 2 * DPR); } }
+    } else { g.fillStyle = sc[0]; g.fillRect(0, 0, cw, chh); }
+    if (yGround < chh){ g.fillStyle = night ? '#1d2a3f' : '#b9c4b2'; g.fillRect(0, yGround, cw, chh - yGround); }
+    const k0 = Math.max(0, Math.floor(st.climbed / fh) - nfl - 1), k1 = Math.min(m.floors, Math.ceil(st.climbed / fh) + nfl + 1);
+    const wOf = k => bw0 * towerW(m, k / m.floors);
+    for (let k = k0; k < k1; k++){   // 한 층씩: 실제 외형 폭 · 유리색 · 창문
+      const ya = yOf(k * fh), yb = yOf((k + 1) * fh), wa = wOf(k), wb = wOf(k + 1);
+      g.fillStyle = tx.glass || '#c3cfdb'; g.beginPath(); g.moveTo(mid - wa / 2, ya); g.lineTo(mid + wa / 2, ya); g.lineTo(mid + wb / 2, yb); g.lineTo(mid - wb / 2, yb); g.closePath(); g.fill();
+      if (ya > cy){ g.fillStyle = 'rgba(63,154,82,.35)'; g.fill(); }
+      if (!mini){ const nw = Math.max(2, Math.round(wa / (22 * DPR))), wh = (ya - yb) * 0.5;
+        for (let i = 0; i < nw; i++){ const lit = night ? rnd(k * 31 + i) > 0.4 : false; g.fillStyle = lit ? 'rgba(255,220,140,.85)' : night ? 'rgba(20,30,50,.5)' : 'rgba(255,255,255,.35)';
+          g.fillRect(mid - wa / 2 + wa * (i + 0.2) / nw, yb + (ya - yb) * 0.25, wa / nw * 0.6, wh); } }
+      g.strokeStyle = night ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.6)'; g.lineWidth = 1 * DPR; g.beginPath(); g.moveTo(mid - wa / 2, ya); g.lineTo(mid + wa / 2, ya); g.stroke();
+      if (!mini && k > 0 && ya < vh && ya > 0){ g.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif'; g.fillStyle = night ? (k % 5 === 0 ? '#fff' : 'rgba(255,255,255,.55)') : (k % 5 === 0 ? '#24332a' : 'rgba(36,51,42,.5)'); g.fillText(k + 'F', mid + bw0 / 2 + 9 * DPR, ya + 4 * DPR); }
     }
-    if (!mini && yOf(m.gain) > 20 * DPR){ g.fillStyle = '#24332a'; g.font = '800 ' + Math.round(13 * DPR) + 'px sans-serif'; g.textAlign = 'center'; g.fillText('🏙 ' + tr(m.name) + ' ' + m.summit + 'm', x + vw / 2, yOf(m.gain) - 10 * DPR); g.textAlign = 'left'; }
+    if (!mini) (m.waypoints || []).forEach(w => { const yy = yOf(w.at * m.gain); if (yy < 10 * DPR || yy > vh) return;   // 유명 층 이정표
+      g.font = '800 ' + Math.round(13 * DPR) + 'px sans-serif'; const lb = '⭐ ' + tr(w.name), tw = g.measureText(lb).width;
+      g.fillStyle = 'rgba(255,255,255,.93)'; g.fillRect(x + 6 * DPR, yy - 20 * DPR, tw + 10 * DPR, 22 * DPR); g.fillStyle = '#7a4e0a'; g.fillText(lb, x + 11 * DPR, yy - 4 * DPR); });
+    if (!mini && yOf(m.gain) > 20 * DPR){ g.fillStyle = night ? '#fff' : '#24332a'; g.font = '800 ' + Math.round(13 * DPR) + 'px sans-serif'; g.textAlign = 'center'; g.fillText('🏙 ' + tr(m.name) + ' ' + m.summit + 'm', mid, yOf(m.gain) - 10 * DPR); g.textAlign = 'left'; }
     if (!mini) fadeBottom(g, vh);
-    g.fillStyle = '#e8574a'; g.fillRect(bx - 10 * DPR, cy - 2 * DPR, bw + 20 * DPR, 4 * DPR);
-    dot(bx + bw / 2, cy);
+    const wc = wOf(st.climbed / fh); g.fillStyle = '#e8574a'; g.fillRect(mid - wc / 2 - 10 * DPR, cy - 2 * DPR, wc + 20 * DPR, 4 * DPR);
+    dot(mid, cy);
     return;
   }
+  if (!mini){ const sc = skyCols(m, Math.min(1, Math.max(0, (st.elev - 200) / 1700))), sk = g.createLinearGradient(0, 0, 0, chh); sk.addColorStop(0, sc[0]); sk.addColorStop(0.75, sc[1]); g.fillStyle = sk; g.fillRect(0, 0, cw, chh);
+    // 먼 산 능선 (높이 오를수록 더 많이 보임)
+    g.fillStyle = 'rgba(70,100,130,' + (0.12 + Math.min(0.18, st.elev / 10000)) + ')'; g.beginPath(); g.moveTo(0, chh);
+    for (let i = 0; i <= 24; i++){ const xx = cw * i / 24, yy = y + vh * (0.42 - Math.min(0.12, st.elev / 16000)) + Math.sin(i * 1.7 + m.gain) * vh * 0.04 + Math.sin(i * 0.6) * vh * 0.05; g.lineTo(xx, yy); } g.lineTo(cw, chh); g.closePath(); g.fill(); }
   const range = mini ? 50 : 90, ppm = vh / range, cx = x + vw * (mini ? 0.5 : 0.45), s0 = st.ratio;
   const hz = s => (s + 0.035 * Math.sin(s * Math.PI * 6) * s * (1 - s) * 4) * m.gain * 1.25;
   const X = s => cx + (hz(s) - hz(s0)) * ppm, Y = s => cy - (s - s0) * m.gain * ppm;
@@ -4026,7 +4090,7 @@ function drawClimbNav(g, x, y, vw, vh, st, mini){
   g.beginPath(); g.moveTo(-10, chh + 10); g.lineTo(-10, Math.min(chh + 10, Y(from)));
   pts.forEach(p => g.lineTo(p[0], p[1]));
   if (to >= 1){ g.lineTo(X(1) + 40 * DPR, Y(1) + 6 * DPR); g.lineTo(cw + 10, Y(1) + Math.max(0, cw - X(1)) * 0.7); }
-  g.lineTo(cw + 10, chh + 10); g.closePath(); g.fillStyle = '#c9d9c3'; g.fill();
+  g.lineTo(cw + 10, chh + 10); g.closePath(); g.fillStyle = mix('#c9d9c3', '#c8c6bd', Math.min(1, Math.max(0, (st.elev - 1300) / 500))); g.fill();
   if (!mini){   // 높이 눈금 (10m마다, 50m마다 진하게)
     g.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif'; g.textAlign = 'right';
     for (let e = Math.ceil((st.elev - range) / 10) * 10; e <= st.elev + range; e += 10){ const yy = cy - (e - st.elev) * ppm; if (yy < 0 || yy > vh) continue; const major = e % 50 === 0;
@@ -4034,13 +4098,25 @@ function drawClimbNav(g, x, y, vw, vh, st, mini){
       g.fillStyle = major ? 'rgba(36,51,42,.75)' : 'rgba(36,51,42,.4)'; g.fillText(e.toLocaleString() + 'm', cw - 8 * DPR, yy - 3 * DPR); }
     g.textAlign = 'left';
   }
-  if (!mini){   // 길가 나무 (1,500m 위는 키 작은 나무·바위)
-    for (let e = Math.ceil((st.elev - range) / 5) * 5; e <= st.elev + range; e += 5){
-      const s = (e - m.base) / m.gain, r = rnd(e + 3); if (s < 0 || s > 1 || r < 0.3) continue;
-      const hi = e > 1500, px = X(s) + (16 + r * 70) * DPR, py = Y(s) + (16 + r * 70) * DPR * 0.8 + 6 * DPR, th = (hi ? 9 : 20) * DPR * (0.7 + r * 0.6);
-      if (py < 0 || py > vh) continue;
-      if (hi && r > 0.7){ g.fillStyle = 'rgba(128,128,120,.5)'; g.beginPath(); g.arc(px, py, th * 0.45, 0, 7); g.fill(); continue; }
-      g.fillStyle = hi ? 'rgba(86,128,82,.5)' : 'rgba(47,107,52,.5)'; g.beginPath(); g.moveTo(px, py - th); g.lineTo(px + th * 0.42, py); g.lineTo(px - th * 0.42, py); g.closePath(); g.fill();
+  if (!mini){   // 길가 식생: 900m 아래 활엽수 · 1,400m 아래 침엽수 · 1,700m 아래 관목 · 그 위 바위와 풀
+    for (let e = Math.ceil((st.elev - range) / 4) * 4; e <= st.elev + range; e += 4){
+      const s = (e - m.base) / m.gain; if (s < 0 || s > 1) continue;
+      for (const side of [1, -1]){
+        const r = rnd(e * (side > 0 ? 3 : 7) + 3); if (r < 0.35) continue;
+        const off = (14 + r * 80) * DPR * side, px = X(s) + off, py = Y(s) + Math.abs(off) * 0.55 * side + 4 * DPR;
+        if (py < -20 || py > vh + 20) continue;
+        if (e < 900){ const th = 22 * DPR * (0.7 + r * 0.6); g.fillStyle = 'rgba(110,80,50,.55)'; g.fillRect(px - 1.5 * DPR, py - th * 0.45, 3 * DPR, th * 0.45);
+          g.fillStyle = r > 0.8 ? 'rgba(196,120,52,.65)' : 'rgba(70,128,58,.62)'; g.beginPath(); g.arc(px, py - th * 0.6, th * 0.38, 0, 7); g.fill(); }
+        else if (e < 1400){ const th = 24 * DPR * (0.7 + r * 0.6); g.fillStyle = 'rgba(38,92,52,.65)'; g.beginPath(); g.moveTo(px, py - th); g.lineTo(px + th * 0.36, py); g.lineTo(px - th * 0.36, py); g.closePath(); g.fill(); }
+        else if (e < 1700){ const th = 10 * DPR * (0.7 + r * 0.6); g.fillStyle = 'rgba(92,128,78,.6)'; g.beginPath(); g.ellipse(px, py - th * 0.4, th * 0.7, th * 0.45, 0, 0, 7); g.fill(); }
+        else if (r > 0.6){ const th = 9 * DPR * (0.6 + r * 0.7); g.fillStyle = 'rgba(128,124,116,.6)'; g.beginPath(); g.moveTo(px - th, py); g.lineTo(px - th * 0.3, py - th * 0.8); g.lineTo(px + th * 0.6, py - th * 0.5); g.lineTo(px + th, py); g.closePath(); g.fill(); }
+        else { g.strokeStyle = 'rgba(150,150,90,.55)'; g.lineWidth = 1.5 * DPR; g.beginPath(); g.moveTo(px, py); g.lineTo(px - 3 * DPR, py - 7 * DPR); g.moveTo(px, py); g.lineTo(px + 3 * DPR, py - 8 * DPR); g.stroke(); }
+      }
+    }
+    if (st.elev > 1300){   // 구름바다: 발아래로 구름이 깔림
+      const a = Math.min(0.85, (st.elev - 1300) / 450), base = cy + vh * 0.18, tt = performance.now() / 9000;
+      for (let i = 0; i < 18; i++){ const cxp = ((i * 0.13 + tt * (0.3 + rnd(i) * 0.4)) % 1.3 - 0.15) * cw, cyp = base + rnd(i + 9) * vh * 0.35, rr = (40 + rnd(i + 4) * 70) * DPR;
+        g.fillStyle = 'rgba(255,255,255,' + (a * 0.55) + ')'; g.beginPath(); g.ellipse(cxp, cyp, rr * 1.6, rr * 0.5, 0, 0, 7); g.fill(); }
     }
   }
   const stroke = (arr, col, w) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); arr.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); };
@@ -4063,9 +4139,10 @@ function drawClimbMini(st){   // 작은 칸: 산·빌딩 전체에서 어디쯤�
   const g = mctx, sz = mapCv.width, m = st.m, top = 28 * DPR, bot = sz - 30 * DPR;
   g.clearRect(0, 0, sz, sz);
   if (m.kind === 'tower'){
-    const bw = sz * 0.3, bx = (sz - bw) / 2, hh = bot - top, fh = hh * st.ratio;
-    g.fillStyle = '#c3cfdb'; g.fillRect(bx, top, bw, hh); g.fillStyle = '#7fbf8c'; g.fillRect(bx, bot - fh, bw, fh);
-    g.fillStyle = '#e8574a'; g.fillRect(bx - 8 * DPR, bot - fh - 2 * DPR, bw + 16 * DPR, 4 * DPR);
+    const bw = sz * 0.34, mid = sz / 2, hh = bot - top, fh = hh * st.ratio, N = 60;
+    g.beginPath(); for (let i = 0; i <= N; i++) g.lineTo(mid - bw * towerW(m, i / N) / 2, bot - hh * i / N); for (let i = N; i >= 0; i--) g.lineTo(mid + bw * towerW(m, i / N) / 2, bot - hh * i / N); g.closePath();
+    g.fillStyle = (TOWER_X[m.id] || {}).glass || '#c3cfdb'; g.fill(); g.save(); g.clip(); g.fillStyle = 'rgba(63,154,82,.6)'; g.fillRect(0, bot - fh, sz, fh); g.restore();
+    const wc = bw * towerW(m, st.ratio); g.fillStyle = '#e8574a'; g.fillRect(mid - wc / 2 - 8 * DPR, bot - fh - 2 * DPR, wc + 16 * DPR, 4 * DPR);
     miniTag(T.tagAll, st.floor + ' / ' + m.floors + 'F'); return;
   }
   const x0 = 12 * DPR, x1 = sz - 12 * DPR, X = t => x0 + (x1 - x0) * t, Y = t => bot - (bot - top) * climbCurve(t);
