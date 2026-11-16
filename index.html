@@ -286,6 +286,7 @@
   <div class="pill note hidden" id="notePill"></div>
   <div class="pill hidden" id="gpsPill"></div>
   <button class="pill satb hidden" id="bSat"></button>
+  <button class="pill satb hidden" id="bAll">🗺 전체 코스</button>
 </div>
 
 <div id="hudBottom" class="hidden">
@@ -594,7 +595,7 @@
 </div>
 
 <script>
-const BUILD = '202611161458';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161511';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1065,7 +1066,7 @@ const TEXT = {
     gpsWait: '📡 GPS 찾는 중…', gpsOk: '📡 GPS ±{a}m', gpsWeak: '📡 GPS 약함 ±{a}m', gpsLost: 'GPS를 쓸 수 없어 기록을 멈춥니다', srcGps: '📡 GPS',
     cancel: '취소', edit: '수정', delSure: '지울까요?', addBtn: '＋ 빠진 기록 넣기 (앱 없이 한 운동)', addTitle: '✍ 빠진 기록 넣기',
     resetBtn: '↺ {s} 처음부터 다시', resetSure: '한 번 더 누르면 진행 위치가 0으로 (기록은 남음)', resetDone: '처음부터 다시 시작합니다',
-    tagAll: '전체 ⤢', tagHere: '현위치 ⤢', tagTheme: '테마 ⤢', legUp: '오르막', legDown: '내리막', hubsOf: '거점 {a}/{b}', nWp: '곧 {s}',
+    tagAll: '전체 ⤢', tagHere: '현위치 ⤢', tagTheme: '테마 ⤢', allOn: '🗺 전체 코스', allBack: '↩ 돌아가기', tagReal: '실제 ⤢', realBack: '실제 지도로', legUp: '오르막', legDown: '내리막', hubsOf: '거점 {a}/{b}', nWp: '곧 {s}',
     siteBtn: '📍 현장 인증 · {s}에 와 있을 때', siteOk: '✅ 오늘 현장 확인 · {s}', siteWait: '위치 확인 중…', siteYes: '✅ 현장 확인! 오늘 이 코스 기록에 📍가 붙습니다',
     siteFar: '여기는 {s}에서 {d}km 떨어져 있어요', siteNo: '이 화면에서는 위치를 읽을 수 없어요', siteTag: '📍 현장',
     walk: '걷기', run: '달리기', gain: '오를 높이', realDone: '실제 완등'
@@ -1738,10 +1739,18 @@ function loop(now){
     if (!AREA) AREA = viewArea();
     const far = S.act === 'bike';
     if (NAV.full){ drawMapView(pos); drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); }
-    else if (S.gps){   $('map').classList.add('big');   /* 11/16 보스: 바깥 = 큰 화면 실제 지도 + 오른쪽 위 '테마 그림 지도'(가상 위치 확대, 전체 경로만은 안 됨). 누르면 전체 경로·정보 */
-      drawRealMap(null, false);
-      drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
-      miniTag(T.tagTheme, (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km');
+    else if (S.gps){   $('map').classList.add('big');   /* 11/16 보스: 바깥 = 큰 화면 실제 지도 + 오른쪽 위 '테마 그림 지도'(가상 위치 확대). 누르면 서로 바뀜 */
+      if (NAV.alt){   // 큰 화면 = 테마 길 확대 (방구석과 같은 화면), 오른쪽 위 = 실제 지도로 돌아가기
+        drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false);
+        const g = mctx, sz = mapCv.width; g.fillStyle = '#1f3a2c'; g.fillRect(0, 0, sz, sz);
+        g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '800 ' + Math.round(26 * DPR) + 'px sans-serif'; g.fillText('🏃', sz / 2, sz * 0.45);
+        g.font = '800 ' + Math.round(11 * DPR) + 'px sans-serif'; g.fillText(T.realBack, sz / 2, sz * 0.62); g.textAlign = 'left';
+        miniTag(T.tagReal, (S.sessionM / 1000).toFixed(2) + 'km');
+      } else {
+        drawRealMap(null, false);
+        drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
+        miniTag(T.tagTheme, (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km');
+      }
     } else { drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
@@ -2839,13 +2848,17 @@ function satBtn(){ $('bSat').textContent = !satOn() ? T.satOff : mapSty() === 'm
 $('bSat').onclick = e => { e.stopPropagation(); if (!satOn()){ DB.sat = true; DB.mapSty = 'sat'; } else if (mapSty() === 'sat') DB.mapSty = 'map'; else DB.sat = false; saveDB(); satBtn(); };
 function showViewMode(on){
   $('bSat').classList.toggle('hidden', !(on && !isClimb() && (S.gps || SAT_OK))); satBtn();
+  $('bAll').classList.toggle('hidden', !(on && outTheme())); $('bAll').textContent = NAV.full ? T.allBack : T.allOn;
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
   AREA = null; hudTick = 5;
 }
 /* 오른쪽 위 작은 칸을 누르면 큰 화면과 서로 바뀜: 내비(현위치 확대) ↔ 전체 지도 + 사진·코스 정보 */
-$('map').onclick = () => { if (!S.running) return; NAV.full = !NAV.full; showViewMode(true); };
+/* 11/16 보스: 바깥 테마 = 오른쪽 위를 누르면 큰 화면이 '테마 길 확대 지도'로 (다시 누르면 실제 지도) · 전체 코스 모양은 왼쪽 위 '🗺 전체 코스' 버튼 */
+function outTheme(){ return S.gps && !S.free && !isClimb(); }
+$('map').onclick = () => { if (!S.running) return; if (outTheme() && !NAV.full){ NAV.alt = !NAV.alt; return; } NAV.full = !NAV.full; showViewMode(true); };
+$('bAll').onclick = e => { e.stopPropagation(); if (!S.running) return; NAV.full = !NAV.full; showViewMode(true); };
 /* 손가락 두 개로 지도 확대·축소 (11/16) · 0.25배 ~ 5배 · 두 번 톡 = 원래대로 (NAV.zoom은 NAV 정의에서 1) */
 (() => {
   let d0 = 0, z0 = 1, lastTap = 0;
@@ -3419,7 +3432,7 @@ function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GP
    · 큰 화면 = 현위치 확대 지도 (가는 방향이 위, 앞길 색 = 오르막 주황·빨강 / 내리막 파랑)
    · 오른쪽 위 작은 칸 = 코스 전체 + 진행 거리. 누르면 서로 바뀌고 사진·고도·코스 정보가 나옴
    ===================================================================== */
-var NAV = { full: false, zoom: 1 }, AREA = null;
+var NAV = { full: false, zoom: 1, alt: false }, AREA = null;
 function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위
   const hb = $('hudBottom').offsetHeight || innerHeight * 0.4, ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
   return { top: Math.round(ip * DPR), bot: Math.round((innerHeight - hb + 36) * DPR) };
