@@ -595,7 +595,7 @@
 </div>
 
 <script>
-const BUILD = '202611161546';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161552';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2564,9 +2564,10 @@ let mv = null;
 function buildMapView(){
   const xs = P.map(p => p.x), ys = P.map(p => p.y), minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const x0 = W * 0.07, x1 = W * 0.93, y0 = AREA.top + 34 * DPR, y1 = AREA.bot - 34 * DPR;
-  const sc = Math.min((x1 - x0) / ((maxX - minX) || 1), (y1 - y0) / ((maxY - minY) || 1));
-  const ox = x0 + ((x1 - x0) - (maxX - minX) * sc) / 2, oy = y0 + ((y1 - y0) - (maxY - minY) * sc) / 2;
-  const tf = p => [ox + (p.x - minX) * sc, oy + (maxY - p.y) * sc];
+  const fz = NAV.fz || 1, sc = Math.min((x1 - x0) / ((maxX - minX) || 1), (y1 - y0) / ((maxY - minY) || 1)) * fz;
+  let ox = x0 + ((x1 - x0) - (maxX - minX) * sc) / 2, oy = y0 + ((y1 - y0) - (maxY - minY) * sc) / 2;
+  if (fz > 1){ const a = pointAt(NAV.fa || 0); ox = (x0 + x1) / 2 + NAV.fx - (a.x - minX) * sc; oy = (y0 + y1) / 2 + NAV.fy - (maxY - a.y) * sc; }   // 확대하면 그 지점을 가운데로
+  const tf = p => [ox + (p.x - minX) * sc, oy + (maxY - p.y) * sc], step = L / Math.min(20000, 400 * fz);
   const base = document.createElement('canvas'); base.width = W; base.height = H;
   const g = base.getContext('2d');
   const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#e9efe2'); bg.addColorStop(1, '#dfe7d6');
@@ -2575,7 +2576,7 @@ function buildMapView(){
   for (let x = 0; x < W; x += 40 * DPR){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
   for (let y = 0; y < H; y += 40 * DPR){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   g.lineJoin = 'round'; g.lineCap = 'round';
-  const line = (w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let d = 0; d <= L - 1; d += L / 400){ const q = tf(pointAt(d)); d ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.stroke(); };
+  const line = (w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let d = 0; d <= L - 1; d += step){ const q = tf(pointAt(d)); d ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.stroke(); };
   line(14 * DPR, '#ffffff'); line(8 * DPR, '#9aa59a');
   const fs = Math.round(13 * DPR);
   LMS.forEach(lm => {
@@ -2591,13 +2592,13 @@ function buildMapView(){
   });
   const s0 = tf(pointAt(0)); g.fillStyle = '#16382a'; g.font = '800 ' + fs + 'px sans-serif'; g.fillText('▶ ' + tr(LMS[0] ? LMS[0].name : ''), s0[0] + 10 * DPR, s0[1] + 18 * DPR);
   g.fillStyle = 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(T.mapNote, 12 * DPR, AREA.bot - 8 * DPR);
-  mv = { base, tf, w: W, h: H, top: AREA.top, bot: AREA.bot };
+  mv = { base, tf, step, w: W, h: H, top: AREA.top, bot: AREA.bot, key: fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa };
 }
 function drawMapView(pos){
-  if (!mv || mv.w !== W || mv.h !== H || mv.top !== AREA.top || mv.bot !== AREA.bot) buildMapView();
+  if (!mv || mv.w !== W || mv.h !== H || mv.top !== AREA.top || mv.bot !== AREA.bot || mv.key !== NAV.fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa) buildMapView();
   ctx.drawImage(mv.base, 0, 0);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#3f9a52'; ctx.lineWidth = 8 * DPR;
-  ctx.beginPath(); for (let d = 0; d <= pos; d += Math.max(5, L / 400)){ const q = mv.tf(pointAt(d)); d ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
+  ctx.beginPath(); for (let d = 0; d <= pos; d += Math.max(5, mv.step)){ const q = mv.tf(pointAt(d)); d ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
   const qe = mv.tf(pointAt(pos)); ctx.lineTo(qe[0], qe[1]); ctx.stroke();
   LMS.forEach(lm => { if (lm.at <= pos && isHub(lm)){ const q = mv.tf(pointAt(lm.at)); ctx.fillStyle = '#3f9a52'; ctx.beginPath(); ctx.arc(q[0], q[1], 7 * DPR, 0, 7); ctx.fill(); } });
   const pulse = 1 + 0.25 * Math.sin(performance.now() / 300);
@@ -2886,13 +2887,20 @@ $('map').onclick = () => {
 (() => {
   let d0 = 0, z0 = 1, lastTap = 0;
   const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-  cv.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = NAV.zoom; e.preventDefault(); }
-    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ NAV.zoom = 1; zoomTag(); } lastTap = n; } }, { passive: false });
-  cv.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0){ NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); e.preventDefault(); } }, { passive: false });
-  cv.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; });
-  cv.addEventListener('wheel', e => { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); e.preventDefault(); }, { passive: false });
+  let pan = null;
+  const fullOn = () => NAV.full && S.running && !isClimb();   // 전체 경로 화면(큰 화면)인지
+  const setFz = z => { const was = NAV.fz; NAV.fz = Math.max(1, Math.min(30, z)); if (was <= 1 && NAV.fz > 1){ NAV.fa = Math.round(((totalNow() % L) + L) % L); NAV.fx = NAV.fy = 0; } if (NAV.fz <= 1){ NAV.fx = NAV.fy = 0; } zoomTag(); };
+  cv.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
+    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; } else NAV.zoom = 1; zoomTag(); } lastTap = n;
+      if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; } } }, { passive: false });
+  cv.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
+    else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); } }, { passive: false });
+  cv.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) pan = null; });
+  cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
-function zoomTag(){ const t = $('zoomTag'); if (!t) return; t.textContent = NAV.zoom === 1 ? '' : (1 / NAV.zoom >= 1 ? '🔍 ' + (1 / NAV.zoom).toFixed(1) + '배' : '🔍 ' + (1 / NAV.zoom).toFixed(2) + '배'); t.classList.toggle('hidden', NAV.zoom === 1); }
+function zoomTag(){ const t = $('zoomTag'); if (!t) return;
+  if (NAV.full && S.running && !isClimb()){ t.textContent = NAV.fz > 1 ? '🔍 ' + NAV.fz.toFixed(1) + '배 · 끌어서 이동' : ''; t.classList.toggle('hidden', NAV.fz <= 1); return; }
+  t.textContent = NAV.zoom === 1 ? '' : (1 / NAV.zoom >= 1 ? '🔍 ' + (1 / NAV.zoom).toFixed(1) + '배' : '🔍 ' + (1 / NAV.zoom).toFixed(2) + '배'); t.classList.toggle('hidden', NAV.zoom === 1); }
 $('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showViewMode(true); };
 
 /* =====================================================================
@@ -3467,7 +3475,7 @@ function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GP
    · 큰 화면 = 현위치 확대 지도 (가는 방향이 위, 앞길 색 = 오르막 주황·빨강 / 내리막 파랑)
    · 오른쪽 위 작은 칸 = 코스 전체 + 진행 거리. 누르면 서로 바뀌고 사진·고도·코스 정보가 나옴
    ===================================================================== */
-var NAV = { full: false, zoom: 1, alt: false }, AREA = null;
+var NAV = { full: false, zoom: 1, alt: false, fz: 1, fx: 0, fy: 0, fa: 0 }   /* fz = 전체 경로 확대 배율, fx·fy = 끌어 옮긴 양, fa = 확대 중심(진행 거리) */, AREA = null;
 function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위
   const hb = $('hudBottom').offsetHeight || innerHeight * 0.4, ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
   return { top: Math.round(ip * DPR), bot: Math.round((innerHeight - hb + 36) * DPR) };
