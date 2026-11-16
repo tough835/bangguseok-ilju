@@ -630,7 +630,7 @@
 </div>
 
 <script>
-const BUILD = '202611162053';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611162109';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3834,6 +3834,23 @@ function fadeBottom(g, vh){
   g.fillStyle = gr; g.fillRect(0, vh - 6 * DPR, g.canvas.width, g.canvas.height);
 }
 const gradeCol = g => g > 6 ? '#d9534a' : g > 2.5 ? '#f0a03c' : g < -2.5 ? '#4a8fd9' : '#8f9a8f';
+/* 11/16 보스: 경사 색이 짧게 번갈아 깜빡거려 눈이 피곤함 → 앞뒤 150m 평균 경사 + 바뀔 때 여유(문턱 두 개) + 150m보다 짧은 구간은 이웃 색에 합침 */
+let GRADE_BANDS = null;
+function gradeBands(){
+  if (GRADE_BANDS) return GRADE_BANDS;
+  const st = 25, g = d => (elevAt(Math.min(L - 1, d + 150)) - elevAt(Math.max(0, d - 150))) / (Math.min(L - 1, d + 150) - Math.max(0, d - 150)) * 100;
+  const out = []; let cls = 0;   // 0 평지 · 1 오르막 · 2 가파름 · -1 내리막
+  for (let d = 0; d < L; d += st){ const v = g(d);
+    if (cls === 2 && v < 5) cls = v > 2 ? 1 : 0; else if (cls === 1 && (v > 7.5 || v < 1.5)) cls = v > 7.5 ? 2 : 0; else if (cls === -1 && v > -1.5) cls = 0;
+    else if (cls === 0){ if (v > 7.5) cls = 2; else if (v > 3) cls = 1; else if (v < -3) cls = -1; }
+    const last = out[out.length - 1]; if (last && last.c === cls) last.to = d + st; else out.push({ from: d, to: d + st, c: cls }); }
+  for (let k = 0; k < 3; k++) for (let i = 0; i < out.length; i++){ const b = out[i]; if (b.to - b.from >= 150 || out.length < 2) continue;   // 짧은 구간은 앞(없으면 뒤) 구간에 합침
+    const nb = out[i - 1] || out[i + 1]; nb.from = Math.min(nb.from, b.from); nb.to = Math.max(nb.to, b.to); out.splice(i, 1); i--;
+    if (out[i] && out[i + 1] && out[i].c === out[i + 1].c){ out[i].to = out[i + 1].to; out.splice(i + 1, 1); } }
+  const col = { 2: '#d9534a', 1: '#f0a03c', 0: '#8f9a8f', '-1': '#4a8fd9' };
+  return GRADE_BANDS = out.map(b => ({ from: b.from, to: Math.min(L, b.to), col: col[b.c] }));
+}
+const bandCol = d => { const B = gradeBands(); let lo = 0, hi = B.length - 1; while (lo < hi){ const m = (lo + hi) >> 1; if (B[m].to <= d) lo = m + 1; else hi = m; } return B[lo]; };
 /* ---- 실제 길 붙이기: 대충 찍은 점들 → 오픈스트리트맵 걷는 길 (FOSSGIS 공개 경로 서버, 하루 한 코스 한 번)
    · 받은 길 길이가 코스 길이와 너무 다르면 쓰지 않음 (7일 뒤 다시 시도) */
 function thinPath(c, maxN){ if (c.length <= maxN) return c; const k = c.length / maxN, out = []; for (let i = 0; i < maxN; i++) out.push(c[Math.floor(i * k)]); out.push(c[c.length - 1]); return out; }
@@ -4087,7 +4104,7 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
   g.lineJoin = 'round'; g.lineCap = 'round';
   g.strokeStyle = '#fff'; g.lineWidth = wd + 6 * DPR; path(from, to); g.stroke();
   for (let d = pos; d < to; ){   // 앞길: 경사에 따라 색
-    const col = gradeCol(gradeAt(d)); let e = d + stp; while (e < to && gradeCol(gradeAt(e)) === col) e += stp; e = Math.min(e, to);
+    const bd = bandCol(d), col = bd.col; let e = Math.min(to, Math.max(d + stp, bd.to));
     g.strokeStyle = col; g.lineWidth = wd; path(d, e); g.stroke(); d = e;
   }
   if (pos > from){ g.strokeStyle = '#3f9a52'; g.lineWidth = wd; path(from, pos); g.stroke(); }
@@ -4113,8 +4130,8 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
   g.fillStyle = 'rgba(232,87,74,.22)'; g.beginPath(); g.arc(ax, ay, a * 1.7 * pulse, 0, 7); g.fill();
   g.fillStyle = '#e8574a'; g.strokeStyle = '#fff'; g.lineWidth = 2.5 * DPR;
   g.beginPath(); g.moveTo(ax, ay - a); g.lineTo(ax + a * 0.75, ay + a * 0.75); g.lineTo(ax, ay + a * 0.35); g.lineTo(ax - a * 0.75, ay + a * 0.75); g.closePath(); g.fill(); g.stroke();
-  if (!mini && ELEV_MAX - ELEV_MIN > 15){   // 색 안내
-    const y = vh - 14 * DPR; g.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif';
+  if (!mini && ELEV_MAX - ELEV_MIN > 15){   // 색 안내 (출처 글자 위로)
+    const y = vh - 32 * DPR; g.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif';
     g.fillStyle = '#f0a03c'; g.fillRect(10 * DPR, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legUp, 26 * DPR, y);
     const x2 = 34 * DPR + g.measureText(T.legUp).width; g.fillStyle = '#4a8fd9'; g.fillRect(x2, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legDown, x2 + 16 * DPR, y);
   }
