@@ -347,7 +347,8 @@
   <div class="sb">
     <div class="st" data-t="rsTitle">이어서 할까요?</div>
     <div class="rs" id="rsBody"></div>
-    <div class="mbtn"><button id="rsCancel" data-t="cancel">취소</button><button id="rsGo" class="go" data-t="rsGo">▶ 이어서 하기</button></div>
+    <div class="mbtn"><button id="rsRestart" data-t="rsRestart">↺ 처음부터</button><button id="rsGo" class="go" data-t="rsGo">▶ 이어서 하기</button></div>
+    <button id="rsCancel" class="lnk" data-t="cancel" style="display:block;margin:10px auto 0;background:none;border:0;color:inherit;opacity:.6">취소</button>
   </div>
 </div>
 <div id="toast" class="hidden"></div>
@@ -595,7 +596,7 @@
 </div>
 
 <script>
-const BUILD = '202611161552';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161559';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1022,7 +1023,7 @@ const TEXT = {
     syncBtn: '📏 거리 맞추기', syncTitle: '자전거에 보이는 거리 (km)', close: '닫기',
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
     cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
-    rsTitle: '이어서 할까요?', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
+    rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
     mapNote: '지도 모양은 임시 (GPX 받으면 실제 모양으로)',
     myRec: '📒 내 기록', myRecAll: '📒 내 기록 전체 보기', myRecTitle: '📒 내 기록', back: '← 돌아가기',
     pWeek: '이번 주', pMonth: '이번 달', pAll: '전체', fAll: '전체', fUpAct: '계단·등산',
@@ -2076,6 +2077,8 @@ function showRun(on){
 }
 function clearPopups(){ $('popup').classList.add('hidden'); popupQueue = []; clearTimeout(popupTimer); popupTimer = null; }
 $('bStart').onclick = () => {
+  if (!rsPass && askResume()) return;   // 완주 안 한 코스 → 이어서 / 처음부터 먼저 고르기
+  rsPass = false;
   if (DB.zone === 'out' && (isClimb() || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.gps = DB.zone === 'out'; GPS.track = [];
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
@@ -2120,7 +2123,7 @@ function fillEnd(){
   $('endLandmarks').querySelectorAll('[data-lm]').forEach(el => el.onclick = () => openSpot(LMS[+el.dataset.lm]));
 }
 function doEnd(){
-  S.running = false; cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
+  S.running = false; zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
   showRun(false); clearPopups(); $('fixMsg').textContent = ''; $('fixIn').value = '';
   fillEnd(); $('endScreen').classList.remove('hidden');
@@ -2899,6 +2902,7 @@ $('map').onclick = () => {
   cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
 function zoomTag(){ const t = $('zoomTag'); if (!t) return;
+  if (!S.running){ t.classList.add('hidden'); return; }   // 시작 화면에 배율 안내가 남지 않게
   if (NAV.full && S.running && !isClimb()){ t.textContent = NAV.fz > 1 ? '🔍 ' + NAV.fz.toFixed(1) + '배 · 끌어서 이동' : ''; t.classList.toggle('hidden', NAV.fz <= 1); return; }
   t.textContent = NAV.zoom === 1 ? '' : (1 / NAV.zoom >= 1 ? '🔍 ' + (1 / NAV.zoom).toFixed(1) + '배' : '🔍 ' + (1 / NAV.zoom).toFixed(2) + '배'); t.classList.toggle('hidden', NAV.zoom === 1); }
 $('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showViewMode(true); };
@@ -2906,26 +2910,37 @@ $('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showV
 /* =====================================================================
    이어하기: 하다 만 코스를 열면 먼저 묻기 (이어서 / 처음부터)
    ===================================================================== */
-function askResume(){
+function askResume(){   // 물었으면 true (11/16 보스: 완주 안 한 코스는 출발 전에 반드시 묻기)
   let body = '', key = '';
-  if (isFree()) return;   // 일반 모드는 이어하기 없음
+  if (isFree()) return false;   // 일반 모드는 이어하기 없음
   if (DB.pick.type === 'climb'){
-    const st = climbState(); if (st.climbed < 3) return;
+    const st = climbState(); if (st.climbed < 3) return false;
     key = 'c:' + st.m.id;
     body = (st.m.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(st.m.name) + ' · ' + Math.floor(st.ratio * 100) + '%\n' +
       (st.m.kind === 'tower' ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + (st.m.kind === 'tower' ? T.toTop : T.toSummit) + ' ' + Math.round(st.remain) + 'm';
   } else {
-    const pos = walkTotal() % L; if (pos < 30) return;
+    const pos = walkTotal() % L; if (pos < 30) return false;
     key = COURSE.id;
-    const past = HUBS.filter(h => h.at <= pos).pop();
-    body = '🛣 ' + tr(COURSE.short || COURSE.name) + ' · ' + (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km\n' +
-      (past ? '🚩 ' + T.rsStopped.replace('{s}', tr(past.name)) : '');
+    const past = HUBS.filter(h => h.at <= pos).pop(), next = HUBS.find(h => h.at > pos);
+    body = (COURSE.long ? '🧭 ' : '🛣 ') + tr(COURSE.short || COURSE.name) + ' · ' + (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km (' + Math.floor(pos / L * 100) + '%)\n' +
+      (past ? '🚩 ' + T.rsStopped.replace('{s}', tr(past.name)) + '\n' : '') +
+      (next ? '➡ ' + T.rsNext.replace('{s}', tr(next.name)).replace('{d}', ((next.at - pos) / 1000).toFixed(1)) + '\n' : '') +
+      T.rsLeft.replace('{d}', ((L - pos) / 1000).toFixed(1));
   }
   $('rsBody').textContent = body;
   $('resumeBox').dataset.key = key;
   $('resumeBox').classList.remove('hidden');
+  return true;
 }
-$('rsGo').onclick = () => { $('resumeBox').classList.add('hidden'); $('bStart').click(); };   // 바로 이어서 출발
+let rsPass = false;   // 팝업에서 고른 뒤 출발할 때만 true (한 번 쓰고 끔)
+$('rsGo').onclick = () => { $('resumeBox').classList.add('hidden'); rsPass = true; $('bStart').click(); };   // 이어서 출발
+$('rsRestart').onclick = () => {   // 처음부터: 기록은 그대로 두고 진행 위치만 0으로 → 바로 출발
+  $('resumeBox').classList.add('hidden');
+  if (DB.pick.type === 'climb'){ const st = climbState(), key = 'c:' + st.m.id; DB.base[key] = (DB.base[key] || 0) + st.climbed; }
+  else DB.base[COURSE.id] = (DB.base[COURSE.id] || 0) + walkTotal() % L;
+  saveDB(); try { resetLabel(); refreshRec(); refreshStart(); } catch(e){}
+  toastMsg(T.resetDone); rsPass = true; $('bStart').click();
+};
 $('rsCancel').onclick = () => $('resumeBox').classList.add('hidden');
 /* 처음부터 다시: 내 기록 화면 맨 아래 (기록은 그대로, 진행 위치만 0으로) */
 let resetArm = false;
