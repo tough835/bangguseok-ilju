@@ -133,6 +133,10 @@
   #popup .d{white-space:pre-line}
   #map{cursor:pointer}
   #map.big{width:136px;height:136px}
+  #infoPanel.mini{padding:6px 10px}
+  #infoPanel.mini .ip-ph,#infoPanel.mini .ipv,#infoPanel.mini .ip-gr,#infoPanel.mini .ip-note,#infoPanel.mini #ipElev,#infoPanel.mini .ip-co{display:none!important}
+  #infoPanel.mini .ip-nm{font-size:15px;margin:0}
+  .ip-fold{text-align:center;font-size:12px;opacity:.55;margin-top:2px}
   #infoPanel{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:116px;background:rgba(255,253,246,.96);color:#24332a;border-radius:16px;padding:8px;box-shadow:0 2px 10px rgba(0,0,0,.3);box-sizing:border-box;cursor:pointer}
   .ip-top{display:flex;gap:8px}
   .ip-ph{flex:none;width:72px;height:72px;border-radius:10px;border:2px dashed #b9b19a;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#8a8370;background:#f3efe2;overflow:hidden}
@@ -277,6 +281,7 @@
   </div>
   <canvas id="ipElev"></canvas>
   <div class="ip-co" id="ipCourse"></div>
+  <div class="ip-fold" id="ipFold"></div>
 </div>
 
 <!-- 운동 중 화면 -->
@@ -607,7 +612,7 @@
 </div>
 
 <script>
-const BUILD = '202611161720';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161727';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1037,7 +1042,7 @@ const TEXT = {
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
     cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
     nearWait: '📍 지금 위치를 찾는 중…', nearHere: '📍 지금 위치에서 가까운 순', nearFallback: '📍 위치를 못 받아서 {s} 기준으로 가까운 순 (위치 권한을 켜면 내 주변으로)',
-    nearPass: '(지나가는 길)', gOfficial: '공식 노선 · 두루누비 GPX', mapOfficial: '노선: 두루누비(한국관광공사) 코리아둘레길 GPX', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
+    nearPass: '(지나가는 길)', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 · 두루누비 GPX', mapOfficial: '노선: 두루누비(한국관광공사) 코리아둘레길 GPX', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
     rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
     mapNote: '지도 모양은 임시 (GPX 받으면 실제 모양으로)',
     myRec: '📒 내 기록', myRecAll: '📒 내 기록 전체 보기', myRecTitle: '📒 내 기록', back: '← 돌아가기',
@@ -2974,6 +2979,7 @@ function showViewMode(on){
   $('bSat').classList.toggle('hidden', !(on && !isClimb() && (S.gps || SAT_OK))); satBtn();
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
+  $('infoPanel').classList.toggle('mini', !!DB.ipMini); $('ipFold').textContent = DB.ipMini ? T.ipOpen : T.ipClose;
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
   AREA = null; hudTick = 5;
 }
@@ -2997,9 +3003,9 @@ $('map').onclick = () => {
   const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   let pan = null;
   const fullOn = () => NAV.full && S.running && !isClimb();   // 전체 경로 화면(큰 화면)인지
-  const setFz = z => { const was = NAV.fz; NAV.fz = Math.max(1, Math.min(30, z)); if (was <= 1 && NAV.fz > 1){ NAV.fa = Math.round(((totalNow() % L) + L) % L); NAV.fx = NAV.fy = 0; } if (NAV.fz <= 1){ NAV.fx = NAV.fy = 0; } zoomTag(); };
+  const setFz = z => { const was = NAV.fz; NAV.fz = Math.max(1, Math.min(30, z)); if (was <= 1 && NAV.fz > 1){ NAV.fa = Math.round(((totalNow() % L) + L) % L); NAV.fx = NAV.fy = 0; NAV.ipWas = !!DB.ipMini; ipFold(true); } if (NAV.fz <= 1){ NAV.fx = NAV.fy = 0; } zoomTag(); };
   cv.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
-    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; } else NAV.zoom = 1; zoomTag(); } lastTap = n;
+    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else NAV.zoom = 1; zoomTag(); } lastTap = n;
       if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; } } }, { passive: false });
   cv.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
     else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); } }, { passive: false });
@@ -3010,7 +3016,9 @@ function zoomTag(){ const t = $('zoomTag'); if (!t) return;
   if (!S.running){ t.classList.add('hidden'); return; }   // 시작 화면에 배율 안내가 남지 않게
   if (NAV.full && S.running && !isClimb()){ t.textContent = NAV.fz > 1 ? '🔍 ' + NAV.fz.toFixed(1) + '배 · 끌어서 이동' : ''; t.classList.toggle('hidden', NAV.fz <= 1); return; }
   t.textContent = NAV.zoom === 1 ? '' : (1 / NAV.zoom >= 1 ? '🔍 ' + (1 / NAV.zoom).toFixed(1) + '배' : '🔍 ' + (1 / NAV.zoom).toFixed(2) + '배'); t.classList.toggle('hidden', NAV.zoom === 1); }
-$('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showViewMode(true); };
+/* 11/16 보스: 정보창이 확대한 전체 경로를 가림 → 정보창을 누르면 한 줄로 접힘 / 다시 누르면 펼침 (화면 바꾸기는 오른쪽 위 작은 창) */
+function ipFold(mini){ DB.ipMini = !!mini; $('infoPanel').classList.toggle('mini', DB.ipMini); $('ipFold').textContent = DB.ipMini ? T.ipOpen : T.ipClose; AREA = viewArea(); }
+$('infoPanel').onclick = () => { if (!S.running) return; ipFold(!DB.ipMini); saveDB(); };
 
 /* =====================================================================
    이어하기: 하다 만 코스를 열면 먼저 묻기 (이어서 / 처음부터)
