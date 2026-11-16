@@ -220,6 +220,8 @@
   .goalRow{display:flex;gap:8px;align-items:center;margin-top:8px}
   .goalRow input{flex:1;height:52px;border-radius:12px;border:0;padding:0 14px;font-size:22px;font-weight:800;background:rgba(255,255,255,.1);color:#fff}
   .goalRow span{font-size:18px;font-weight:800;opacity:.8}
+  .myname{width:100%;margin-top:10px;height:46px;border-radius:12px;border:0;padding:0 12px;font-size:16px;background:rgba(255,255,255,.12);color:#fff}
+  #myBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(255,210,122,.12)}
   #applyBox,#trackBox{margin-top:14px;padding:14px;border-radius:16px;background:rgba(127,207,138,.14);border:1.5px solid rgba(127,207,138,.5)}
   #applyBox select{width:100%;height:46px;border-radius:10px;font-size:16px;margin:10px 0}
   .rb button.ap{background:#2f7a45}
@@ -541,6 +543,12 @@
     <select id="apTarget"></select>
     <div class="mbtn"><button id="apNo" data-t="apNo"></button><button id="apYes" class="go" data-t="apYes"></button></div>
   </div>
+  <div id="myBox" class="hidden">
+    <b id="myTitle"></b>
+    <div class="muted" style="margin-top:4px;line-height:1.5">⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.</div>
+    <input id="myName" class="myname" maxlength="30">
+    <div class="mbtn"><button id="myNo" data-t="apNo"></button><button id="myYes" class="go">⭐ 내 코스로 저장</button></div>
+  </div>
   <div id="trackBox" class="hidden">
     <b id="trTitle"></b>
     <div class="muted" id="trSub" style="margin-top:4px;line-height:1.5"></div>
@@ -555,7 +563,7 @@
 </div>
 
 <script>
-const BUILD = '202611161238';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161340';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -935,7 +943,7 @@ let MINE = []; try { MINE = JSON.parse(localStorage.getItem('bgsj_mine')) || [];
 if (MINE.length){
   WORLD.regions.unshift({ id: 'mine', name: { ko: '⭐ 내 코스' }, children: [ { id: 'mine-p', name: { ko: '내가 만든 코스' }, children: [ { id: 'mine', name: { ko: '내 코스' } } ] } ] });
   const cs = {};
-  MINE.forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: true, pathReal: true,
+  MINE.forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: m.loop !== false, pathReal: true,
     elev: [[0, 0], [L, 0]], note: m.note || '', source: '내 주변 순환 코스 추천', segments: [ { from: 0, to: L, scene: m.scene || 'road' } ],
     landmarks: [ { id: m.id + '-s', name: { ko: '출발' }, at: 10, side: 1, art: 'gate', photo: null, desc: { ko: '' } },
                  { id: m.id + '-h', name: { ko: '반환점' }, at: Math.round(L / 2), side: -1, art: 'sign', photo: null, desc: { ko: '절반 왔어요' }, hub: true },
@@ -1008,6 +1016,7 @@ const TEXT = {
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
+    myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myDone: '✅ 「{n}」 저장 · 테마 → ⭐ 내 코스에서 고르세요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
     lpErr: '⚠️ 코스를 만들지 못했어요', lpSet: '🔄 일반 목표를 이 코스로: {n}', lpNow: '🔄 따라갈 길: <b>{n}</b>', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '실제로 이 코스를 걸었을 때만 눌러 주세요. 다음부터 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
@@ -3433,7 +3442,27 @@ function trackOnCourse(t){
   return sample.filter(near).length >= sample.length / 2;
 }
 function trackLen(t){ let d = 0; for (let i = 1; i < t.length; i++) d += gpsDist({ lat: t[i-1][0], lon: t[i-1][1] }, { lat: t[i][0], lon: t[i][1] }); return d; }
+/* 11/16: 일반 + 바깥으로 아무 데나 뛴 길 → ⭐ 내 코스(테마)로 저장 */
+function fillMine(){
+  const t = GPS.track || [], d = trackLen(t), show = S.gps && S.free && !isClimb() && t.length > 10 && d > 300;
+  $('myBox').classList.toggle('hidden', !show); if (!show) return;
+  const dt = new Date(); $('myTitle').textContent = T.myTitle.replace('{a}', (d / 1000).toFixed(2));
+  $('myName').value = '내 길 ' + (d / 1000).toFixed(1) + 'km (' + (dt.getMonth() + 1) + '/' + dt.getDate() + ')';
+  $('myYes').disabled = false; $('myNo').disabled = false;
+}
+$('myYes').onclick = () => {
+  const t = GPS.track || []; if (t.length < 2) return;
+  const d = Math.round(trackLen(t)), id = 'my-' + Date.now().toString(36), loop = dM(t[0], t[t.length - 1]) < 150;
+  const name = ($('myName').value || '').trim() || ('내 길 ' + (d / 1000).toFixed(1) + 'km');
+  MINE = [{ id, name, lengthM: d, path: thinPath(t, 800), loop, scene: 'road', note: '직접 뛴 길 ' + new Date().toLocaleDateString('ko-KR') }].concat(MINE).slice(0, 30);
+  try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
+  const r = DB.records.find(x => x.id === S.sessionId); if (r && !r.credit){ r.credit = { course: 'walk', target: id, m: r.distM || d }; saveDB(); }
+  $('myTitle').textContent = T.myDone.replace('{n}', name); $('myYes').disabled = true; $('myNo').disabled = true;
+  if (!$('applyBox').classList.contains('hidden')){ $('apYes').disabled = true; $('apNo').disabled = true; $('applyBox').querySelector('b').textContent = T.myApplied; }
+};
+$('myNo').onclick = () => { $('myTitle').textContent = T.apLater; $('myYes').disabled = true; $('myNo').disabled = true; };
 function fillTrack(){
+  fillMine();
   const t = GPS.track || [], d = trackLen(t), show = S.gps && !S.free && !isClimb() && t.length > 10 && d > 300 && trackOnCourse(t);
   $('trackBox').classList.toggle('hidden', !show); if (!show) return;
   $('trTitle').textContent = T.trTitle.replace('{a}', (d / 1000).toFixed(2)).replace('{c}', tr(COURSE.short || COURSE.name));
