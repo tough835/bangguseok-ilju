@@ -300,7 +300,7 @@
 </div>
 <div id="loopBox" class="modal hidden">
   <div class="sb lb">
-    <div class="st">🔄 내 주변 순환 코스</div>
+    <div class="st" style="display:flex;align-items:center;justify-content:space-between">🔄 내 주변 순환 코스 <button id="lpSty" class="frx" style="font-size:14px;padding:6px 10px"></button></div>
     <div class="muted" style="margin-bottom:10px">지금 있는 곳에서 출발해 돌아오는 길을 찾아요</div>
     <div class="lbl">거리</div>
     <div class="lchips" id="lpDist"><button data-km="1">1km</button><button data-km="2">2km</button><button data-km="3" class="on">3km</button><button data-km="5">5km</button><button data-km="7">7km</button><button data-km="10">10km</button></div>
@@ -555,7 +555,7 @@
 </div>
 
 <script>
-const BUILD = '202611161202';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161232';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2598,7 +2598,7 @@ function lpCard(c, i){
   const d = document.createElement('div'); d.className = 'lpc';
   const tags = [(c.len / 1000).toFixed(1) + 'km'];
   if (c.green != null) tags.push('🌳 ' + Math.round(c.green * 100) + '%'); if (c.water != null) tags.push('🌊 ' + Math.round(c.water * 100) + '%');
-  d.innerHTML = '<canvas width="640" height="340"></canvas><div class="row"><b>' + T.lpCand.replace('{n}', i + 1) + ' · ' + tags.join(' · ') + '</b><button data-i="' + i + '">' + T.lpUse + '</button></div>';
+  d.innerHTML = '<canvas width="1280" height="680"></canvas><div class="row"><b>' + T.lpCand.replace('{n}', i + 1) + ' · ' + tags.join(' · ') + '</b><button data-i="' + i + '">' + T.lpUse + '</button></div>';
   $('lpList').appendChild(d); lpDraw(d.querySelector('canvas'), c.path);
   d.querySelector('button').onclick = () => lpSave(i);
 }
@@ -2608,13 +2608,15 @@ function lpDraw(cv, path){   // 위성 사진 위에 코스 선
   const X = (lo, z) => (lo + 180) / 360 * 256 * 2 ** z, Y = (la, z) => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 256 * 2 ** z; };
   let z = 18; while (z > 3 && (X(lo1, z) - X(lo0, z) > W * 0.85 || Y(la0, z) - Y(la1, z) > H * 0.85)) z--;
   const ox = (X(lo0, z) + X(lo1, z)) / 2 - W / 2, oy = (Y(la1, z) + Y(la0, z)) / 2 - H / 2;
-  const line = () => { g.lineJoin = g.lineCap = 'round'; g.strokeStyle = '#fff'; g.lineWidth = 9; g.beginPath(); path.forEach((p, i) => { const x = X(p[1], z) - ox, y = Y(p[0], z) - oy; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
-    g.strokeStyle = '#3fae5a'; g.lineWidth = 5; g.stroke(); const s = path[0]; g.fillStyle = '#e8574a'; g.beginPath(); g.arc(X(s[1], z) - ox, Y(s[0], z) - oy, 9, 0, 7); g.fill(); };
+  const line = () => { g.lineJoin = g.lineCap = 'round'; g.strokeStyle = '#fff'; g.lineWidth = 16; g.beginPath(); path.forEach((p, i) => { const x = X(p[1], z) - ox, y = Y(p[0], z) - oy; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    g.strokeStyle = '#3fae5a'; g.lineWidth = 9; g.stroke(); const s = path[0]; g.fillStyle = '#e8574a'; g.beginPath(); g.arc(X(s[1], z) - ox, Y(s[0], z) - oy, 16, 0, 7); g.fill(); };
   const draw = () => { g.fillStyle = '#21342a'; g.fillRect(0, 0, W, H);
     for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++){ const im = satTile(z, tx, ty, true); if (im && im.ok) g.drawImage(im, tx * 256 - ox, ty * 256 - oy, 256, 256); }
-    g.fillStyle = 'rgba(20,30,24,.15)'; g.fillRect(0, 0, W, H); line(); };
+    if (mapSty() === 'sat'){ g.fillStyle = 'rgba(20,30,24,.15)'; g.fillRect(0, 0, W, H); } line(); };
   draw(); let n = 0; const t = setInterval(() => { draw(); if (++n > 12) clearInterval(t); }, 400);
 }
+function lpStyBtn(){ $('lpSty').textContent = mapSty() === 'map' ? '🗺 지도 → 🛰' : '🛰 위성 → 🗺'; }
+$('lpSty').onclick = () => { DB.mapSty = mapSty() === 'map' ? 'sat' : 'map'; DB.sat = true; saveDB(); lpStyBtn(); document.querySelectorAll('#lpList canvas').forEach((cv, i) => LP.cands[i] && lpDraw(cv, LP.cands[i].path)); };
 function lpSave(i){   /* 11/16 보스: 추천 코스는 '일반'에서 쓰고, 끝난 뒤 원하면 테마에 반영 → 일반 목표 = 이 코스, 운동 화면에 길 표시 */
   const c = LP.cands[i]; if (!c) return;
   const d = new Date(), conds = [...LP.cond].map(k => ({ green: '녹지', water: '물가', quiet: '보행로' })[k]).join('·');
@@ -2633,7 +2635,7 @@ function freeRouteNote(){
   el.innerHTML = T.lpNow.replace('{n}', r.name.replace(/^내 코스 /, '')) + ' <button id="frOff" class="frx">✕</button>';
   $('frOff').onclick = e => { e.stopPropagation(); delete DB.free.route; saveDB(); refreshStart(); };
 }
-$('bLoop').onclick = () => { $('loopBox').classList.remove('hidden'); $('lpMsg').textContent = ''; $('lpList').innerHTML = ''; $('lpGo').textContent = T.lpFind; };
+$('bLoop').onclick = () => { lpStyBtn(); $('loopBox').classList.remove('hidden'); $('lpMsg').textContent = ''; $('lpList').innerHTML = ''; $('lpGo').textContent = T.lpFind; };
 $('lpClose').onclick = () => $('loopBox').classList.add('hidden');
 $('lpGo').onclick = lpFind;
 $('lpDist').querySelectorAll('button').forEach(b => b.onclick = () => { $('lpDist').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); LP.km = +b.dataset.km; });
@@ -3447,7 +3449,7 @@ $('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').dis
    · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
 const MAPSTY = {   // 🛰 위성(Esri) / 🗺 선명한 지도(CARTO, 오픈스트리트맵 바탕, 고해상도 @2x) — 버튼으로 돌아가며 바꿈
   sat: { max: 19, url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x, credit: '위성 사진 © Esri · Maxar' },
-  map: { max: 20, url: (z, x, y) => 'https://' + 'abcd'[(x + y) % 4] + '.basemaps.cartocdn.com/rastertiles/voyager/' + z + '/' + x + '/' + y + '@2x.png', credit: '지도 © OpenStreetMap · © CARTO' }
+  map: { max: 19, url: (z, x, y) => 'https://tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png', credit: '지도 © OpenStreetMap 기여자' }   // 11/16: CARTO가 키를 요구해서 오픈스트리트맵 기본 지도로
 };
 const SAT = { cache: new Map(), url: (z, x, y) => MAPSTY[mapSty()].url(z, x, y) };
 function mapSty(){ return DB.mapSty === 'map' ? 'map' : 'sat'; }
