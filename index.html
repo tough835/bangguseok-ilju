@@ -143,6 +143,7 @@
   .satb{pointer-events:auto;border:0;font-size:13px;font-weight:800}
   #gallery{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
   .galbox{width:100%;max-width:520px}
+  .galshot{display:block;margin:10px auto 0;border:0;border-radius:12px;padding:10px 16px;background:#7fcf8a;color:#0f2a1c;font-size:15px;font-weight:800}
   #galImg{width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:#222}
   #galImg .pcr{font-size:12px;padding:3px 8px}
   .galrow{display:flex;align-items:center;gap:10px;margin-top:12px;color:#fff;text-align:center}
@@ -239,6 +240,7 @@
     <div class="ip-ph" id="ipPhoto"></div>
     <div class="ip-tx">
       <button class="ipv hidden" id="ipView"></button>
+      <button class="ipv hidden" id="ipShot"></button>
       <div class="ip-nm" id="ipName"></div>
       <div class="ip-gr" id="ipGrade"></div>
       <div class="ip-note" id="ipNote"></div>
@@ -300,9 +302,11 @@
   </div>
 </div>
 <div id="speedFlash" class="hidden"><span id="flashVal"></span><small id="flashUnit"></small></div>
+<input type="file" id="shotIn" accept="image/*" capture="environment" style="display:none">
 <div id="gallery" class="hidden">
   <div class="galbox" onclick="event.stopPropagation()">
     <div id="galImg"></div>
+    <button id="galShot" class="galshot"></button>
     <div class="galrow"><button id="galPrev">‹</button><div><b id="galName"></b><div class="muted" id="galCnt"></div></div><button id="galNext">›</button></div>
   </div>
 </div>
@@ -876,6 +880,7 @@ const WORLD = {
         ] } } },
     /* ---- 해외 시험 코스 (2026-11-15) ---- */
     newyork: { id: 'newyork', name: { ko: '뉴욕' }, country: 'US', courses: {
+        'reservoir-2k': {"id": "reservoir-2k", "name": {"ko": "뉴욕 센트럴파크 저수지 한 바퀴"}, "short": {"ko": "저수지 트랙"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 2540, "loop": true, "pathExact": true, "elev": [[0, 30], [2540, 30]], "note": "재클린 케네디 오나시스 저수지 러닝 트랙 1.58마일 · 위성 지도·사진 체감용 시범 코스", "source": "86~96가, 반시계 방향", "segments": [{"from": 0, "to": 2540, "scene": "river"}], "landmarks": [{"id": "res-start", "name": {"ko": "저수지 동쪽 (90가)"}, "at": 20, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "출발 · 5번가 쪽"}, "wiki": "en:Jacqueline_Kennedy_Onassis_Reservoir"}, {"id": "res-north", "name": {"ko": "저수지 북쪽 끝 (96가)"}, "at": 640, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "북쪽 다리 쪽, 맨해튼 북부 전망"}, "hub": true, "wiki": "en:Central_Park"}, {"id": "res-west", "name": {"ko": "엘도라도 전망 (센트럴파크 웨스트)"}, "at": 1270, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "물 건너 쌍둥이 탑 아파트"}, "wiki": "en:The_El_Dorado"}, {"id": "res-south", "name": {"ko": "저수지 남쪽 끝 (86가)"}, "at": 1900, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "메트로폴리탄 미술관 방향"}, "hub": true, "wiki": "en:Metropolitan_Museum_of_Art"}, {"id": "res-guggen", "name": {"ko": "구겐하임 미술관 쪽 (5번가 89가)"}, "at": 2300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "나선형 미술관이 바로 옆"}, "wiki": "en:Solomon_R._Guggenheim_Museum"}], "path": [[40.78393, -73.95893], [40.7846, -73.9585], [40.7853, -73.95818], [40.786, -73.95799], [40.78667, -73.95792], [40.78731, -73.95798], [40.78788, -73.95817], [40.78837, -73.95849], [40.78878, -73.95891], [40.78907, -73.95944], [40.78925, -73.96005], [40.78931, -73.96072], [40.78925, -73.96144], [40.78907, -73.96219], [40.78878, -73.96293], [40.78837, -73.96365], [40.78788, -73.96433], [40.78731, -73.96494], [40.78667, -73.96547], [40.786, -73.9659], [40.7853, -73.96622], [40.7846, -73.96641], [40.78393, -73.96648], [40.78329, -73.96642], [40.78272, -73.96623], [40.78223, -73.96591], [40.78182, -73.96549], [40.78153, -73.96496], [40.78135, -73.96435], [40.78129, -73.96368], [40.78135, -73.96296], [40.78153, -73.96221], [40.78182, -73.96147], [40.78223, -73.96075], [40.78272, -73.96007], [40.78329, -73.95946], [40.78393, -73.95893]]},
         'centralpark-10k': {"id": "centralpark-10k", "name": {"ko": "뉴욕 센트럴파크 한 바퀴 (Park Drive)"}, "short": {"ko": "센트럴파크"}, "kind": "도보·조깅·자전거", "mode": "distance", "lengthM": 9800, "loop": true, "elev": [[0, 20], [2400, 25], [3900, 40], [5300, 45], [6200, 30], [7600, 35], [9800, 20]], "note": "한 바퀴 6.1마일(약 9.8km)은 센트럴파크 관리 기관 안내 기준, 중간 위치는 추정", "source": "반시계 방향 Park Drive 순환, 캣 힐·할렘 힐 오르막", "segments": [{"from": 0, "to": 9800, "scene": "forest"}], "landmarks": [{"id": "cp-gap", "name": {"ko": "그랜드 아미 플라자 (59가)"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "출발"}}, {"id": "cp-cathill", "name": {"ko": "캣 힐 (75~81가)"}, "at": 2400, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "첫 오르막"}, "hub": true}, {"id": "cp-res", "name": {"ko": "저수지 (재클린 케네디 오나시스)"}, "at": 3900, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "1.58mi 러닝 트랙"}}, {"id": "cp-harlem", "name": {"ko": "할렘 힐"}, "at": 5300, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "코스 북쪽 끝, 가장 힘든 오르막"}, "hub": true}, {"id": "cp-west", "name": {"ko": "웨스트 드라이브"}, "at": 7200, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "cp-tavern", "name": {"ko": "태번 온 더 그린"}, "at": 8600, "side": -1, "art": "pavilion", "photo": null, "desc": {"ko": ""}}, {"id": "cp-end", "name": {"ko": "그랜드 아미 플라자 (도착)"}, "at": 9750, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}, "hub": true}], "path": [[40.7644, -73.9734], [40.77, -73.971], [40.777, -73.9655], [40.785, -73.96], [40.793, -73.953], [40.799, -73.953], [40.7985, -73.9575], [40.79, -73.964], [40.78, -73.972], [40.772, -73.978], [40.766, -73.98], [40.7644, -73.9734]]},
       towers: { id: 'ny-towers', mode: 'climb', kind: 'tower', segments: [
       { id: 'esb', name: { ko: '엠파이어스테이트빌딩' }, short: { ko: 'ESB' }, summit: 303, floors: 86, steps: 1576, photo: null,
@@ -958,7 +963,7 @@ const TEXT = {
     satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km)이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
-    errMsg: '⚠️ 앱 오류: {e}', photoFail: '사진을 못 불러왔어요:',
+    errMsg: '⚠️ 앱 오류: {e}', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '실제로 이 코스를 걸었을 때만 눌러 주세요. 다음부터 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
@@ -1489,6 +1494,11 @@ function photoFail(img){
 HUB_PHOTO['choichiwon'] = small('https://portal.nrich.go.kr/file_link/newFolder/584/Image/original/20240828171604_00001.jpg');   // 11/15 20:37 아리 채택 (원본 11331×5898)
 HUB_CREDIT['choichiwon'] = '국립문화유산연구원 · 공공누리 1유형';
 HUB_LINK['choichiwon'] = 'https://portal.nrich.go.kr/kor/ksmUsrView.do?ksm_idx=13610&menuIdx=584';
+/* 위키백과 대표 사진 자동 연결 (11/16) — 거점 id → '언어:문서 제목'
+   · 앱이 처음 열 때 위키백과에서 그 문서의 '자유 이용 사진'(PageImages 기본값 = 자유 라이선스만)을 찾고,
+     위키미디어 공용에서 작가·라이선스를 읽어 CC·퍼블릭 도메인만 씀 (NC·ND 제외). 30일간 폰에 저장
+   · 우선순위: 내 사진 > 아리가 확인한 사진(HUB_PHOTO) > 위키 사진 */
+const WIKI_TITLE = {"cp-gap": "en:Grand_Army_Plaza_(Manhattan)", "cp-res": "en:Jacqueline_Kennedy_Onassis_Reservoir", "cp-harlem": "en:Harlem_Meer", "cp-tavern": "en:Tavern_on_the_Green", "cp-end": "en:Grand_Army_Plaza_(Manhattan)", "cp-cathill": "en:Central_Park", "kk-sakurada": "ja:桜田門", "kk-niju": "ja:二重橋", "kk-ote": "ja:大手門", "kk-takebashi": "ja:竹橋", "kk-chidori": "ja:千鳥ヶ淵", "kk-hanzo": "ja:半蔵門", "db-totei": "en:Dragon's_Back_(Hong_Kong)", "db-shekopeak": "en:Shek_O_Peak", "db-ridge": "en:Dragon's_Back_(Hong_Kong)", "db-bigwave": "en:Big_Wave_Bay", "gwanghwamun": "ko:광화문", "dongsip": "ko:동십자각", "folk": "ko:국립민속박물관", "sinmu": "ko:경복궁", "yeongchu": "ko:경복궁", "theater": "ko:국립극장_(대한민국)", "theater2": "ko:국립극장_(대한민국)", "jamsu": "ko:잠수교", "moonlight": "ko:반포대교", "moonlight2": "ko:반포대교", "seorae": "ko:서래섬", "dongjak": "ko:동작대교", "ydpark": "ko:여의도공원", "ydpark2": "ko:여의도공원", "wonhyo": "ko:원효대교", "mapo": "ko:마포대교", "hangang": "ko:여의도한강공원", "square": "ko:광화문광장", "square2": "ko:광화문광장", "anguk": "ko:안국역", "jongmyo": "ko:종묘", "cheonggye": "ko:청계천", "cgplaza": "ko:청계광장", "west": "ko:석촌호수", "tower": "ko:롯데월드타워", "east": "ko:석촌호수", "bridge": "ko:석촌호수", "dalmaji": "ko:달맞이길", "cheongsapo": "ko:청사포", "songjeong": "ko:송정해수욕장", "beach": "ko:해운대해수욕장", "beach2": "ko:해운대해수욕장", "westin": "ko:동백섬", "lighthouse": "ko:동백섬", "nurimaru": "ko:누리마루_APEC하우스", "dongsaengmal": "ko:이기대", "oryukdo": "ko:오륙도", "gwangan": "ko:광안리해수욕장", "namcheon": "ko:광안리해수욕장", "back": "ko:광안대교", "oedolgae": "ko:외돌개", "jeongbang": "ko:정방폭포", "soesokkak": "ko:쇠소깍", "seongsan": "ko:성산일출봉", "gwangchigi": "ko:광치기해변", "sumapo": "ko:성산일출봉", "bijarim": "ko:사려니숲길", "saryeonioreum": "ko:사려니숲길"};
 const PHOTO_CREDIT = {}, PHOTO_LINK = {};   // 사진 주소 → 출처·원본 (화면에서 찾아 쓰기)
 Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; if (HUB_LINK[k]) PHOTO_LINK[HUB_PHOTO[k]] = HUB_LINK[k]; });
 function photoHtml(src, r, small){
@@ -2449,6 +2459,64 @@ function climbNote(st){
   if (wp) return ['🥾 ' + T.nSoon.replace('{s}', tr(wp.name)), false];
   return [st.ratio > 0.5 ? T.nHalf : T.nKeep, true];
 }
+/* ---- 위키 사진 받기 ---- */
+let WIKI = {}; try { WIKI = JSON.parse(localStorage.getItem('bgsj_wiki')) || {}; } catch(e){}
+const saveWiki = () => { try { localStorage.setItem('bgsj_wiki', JSON.stringify(WIKI)); } catch(e){} };
+const stripTags = h => String(h || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+function wikiOne(lm){
+  const key = lm.wiki || WIKI_TITLE[lm.id]; if (!key) return Promise.resolve();
+  const old = WIKI[key]; if (old && Date.now() - old.t < 30 * 864e5) return Promise.resolve(old);
+  const i = key.indexOf(':'), lang = key.slice(0, i), title = key.slice(i + 1);
+  return fetch('https://' + lang + '.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=name&redirects=1&titles=' + encodeURIComponent(title))
+    .then(r => r.json()).then(j => {
+      const pg = Object.values((j.query && j.query.pages) || {})[0] || {}; if (!pg.pageimage) throw 0;
+      return fetch('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=800&titles=' + encodeURIComponent('File:' + pg.pageimage));
+    }).then(r => r.json()).then(j => {
+      const pg = Object.values((j.query && j.query.pages) || {})[0] || {}, ii = pg.imageinfo && pg.imageinfo[0]; if (!ii) throw 0;
+      const md = ii.extmetadata || {}, lic = stripTags(md.LicenseShortName && md.LicenseShortName.value);
+      if (!/^(CC|Public domain|PD|CC0|KOGL Type 1|공공누리 제1유형)/i.test(lic) || /NC|ND|fair/i.test(lic)) throw 0;
+      const who = stripTags(md.Artist && md.Artist.value).slice(0, 40) || 'Wikimedia';
+      return (WIKI[key] = { u: ii.thumburl || ii.url, c: who + ' · ' + lic, l: ii.descriptionurl, t: Date.now() });
+    }).catch(() => { WIKI[key] = { none: 1, t: Date.now() }; }).then(r => { saveWiki(); return r; });
+}
+function applyWiki(){
+  LMS.forEach(lm => {
+    if (MYPH[lm.id] || (typeof lm.photo === 'string' && !lm._wiki)) return;
+    const w = WIKI[lm.wiki || WIKI_TITLE[lm.id]]; if (!w || !w.u) return;
+    lm.photo = w.u; lm._wiki = 1; PHOTO_CREDIT[w.u] = w.c; PHOTO_LINK[w.u] = w.l;
+  });
+}
+function loadWiki(){
+  const todo = LMS.filter(lm => (lm.wiki || WIKI_TITLE[lm.id]) && typeof lm.photo !== 'string');
+  applyWiki(); let k = 0;
+  const next = () => { if (k >= todo.length) return; wikiOne(todo[k++]).then(() => { applyWiki(); setTimeout(next, 150); }); };
+  next();
+}
+/* ---- 내 사진: 거점에서 직접 찍은 사진 (폰 안에만 저장 · IndexedDB · 1024px로 줄임) ---- */
+const MYPH = {};
+function phDB(){ return new Promise((ok, no) => { const r = indexedDB.open('bgsj_photos', 1); r.onupgradeneeded = () => r.result.createObjectStore('p'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); }
+function phPut(id, d){ return phDB().then(db => new Promise((ok, no) => { const tx = db.transaction('p', 'readwrite'); tx.objectStore('p').put({ d, t: Date.now() }, id); tx.oncomplete = ok; tx.onerror = () => no(tx.error); })); }
+function phAll(){ return phDB().then(db => new Promise(ok => { const out = {}, rq = db.transaction('p').objectStore('p').openCursor(); rq.onsuccess = () => { const c = rq.result; if (c){ out[c.key] = c.value.d; c.continue(); } else ok(out); }; rq.onerror = () => ok(out); })); }
+function applyMine(){
+  Object.values(ALL_ROADS).forEach(c => (c.landmarks || []).forEach(lm => { if (MYPH[lm.id]){ lm.photo = MYPH[lm.id]; lm._wiki = 0; PHOTO_CREDIT[MYPH[lm.id]] = T.myPhoto; delete PHOTO_LINK[MYPH[lm.id]]; } }));
+}
+let shotLm = null;
+function shotFor(lm){ if (!lm) return; shotLm = lm; $('shotIn').value = ''; $('shotIn').click(); }
+$('shotIn').onchange = () => {
+  const f = $('shotIn').files && $('shotIn').files[0]; if (!f || !shotLm) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const k = Math.min(1, 1024 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    const d = cv.toDataURL('image/jpeg', 0.82); URL.revokeObjectURL(url);
+    phPut(shotLm.id, d).then(() => { MYPH[shotLm.id] = d; applyMine(); toastMsg(T.shotSaved.replace('{n}', tr(shotLm.name))); ipViewFor(shotLm); if (!$('gallery').classList.contains('hidden')) openGallery(shotLm); })
+      .catch(e => toastMsg(T.shotFail + ' ' + (e && e.message || '')));
+  };
+  img.onerror = () => toastMsg(T.shotFail);
+  img.src = url;
+};
+phAll().then(o => { Object.assign(MYPH, o); applyMine(); loadWiki(); }).catch(() => loadWiki());
+
 /* ---- 거점 사진 크게 보기 (11/15: 로드뷰·거리뷰 버튼 삭제 → 사진으로 대체)
    · 이 코스에서 사진이 있는 곳만 모아 좌우로 넘김. 출처(©)를 누르면 원본 페이지 */
 let ipViewLm = null, galList = [], galI = 0;
@@ -2456,7 +2524,12 @@ const coursePhotos = () => LMS.filter(l => typeof l.photo === 'string');
 function ipViewFor(lm){   // 이 코스에 사진이 한 장이라도 있으면 버튼 표시 (다음 거점에 사진이 있으면 그것부터)
   const n = coursePhotos().length; ipViewLm = n ? (lm || true) : null;
   $('ipView').textContent = T.photoBig.replace('{n}', n); $('ipView').classList.toggle('hidden', !n);
+  ipShotLm = lm && lm.id ? lm : null; $('ipShot').classList.toggle('hidden', !ipShotLm);
+  if (ipShotLm) $('ipShot').textContent = MYPH[ipShotLm.id] ? T.shotRe : T.shotNew;
 }
+let ipShotLm = null;
+$('ipShot').onclick = e => { e.stopPropagation(); shotFor(ipShotLm); };
+$('galShot').onclick = e => { e.stopPropagation(); shotFor(galList[galI]); };
 function openGallery(lm){
   galList = coursePhotos(); if (!galList.length) return;
   galI = Math.max(0, galList.indexOf(lm)); showGal(); $('gallery').classList.remove('hidden');
@@ -2466,6 +2539,7 @@ function showGal(){
   $('galImg').innerHTML = photoHtml(l.photo, 14);
   $('galName').textContent = tr(l.name) + (l.desc ? ' · ' + tr(l.desc) : '');
   $('galCnt').textContent = (galI + 1) + ' / ' + galList.length + ' · ' + T.galKm.replace('{k}', (l.at / 1000).toFixed(1));
+  $('galShot').textContent = MYPH[l.id] ? T.shotRe : T.shotMine;
   $('galPrev').style.visibility = galList.length > 1 ? '' : 'hidden'; $('galNext').style.visibility = galList.length > 1 ? '' : 'hidden';
 }
 $('galPrev').onclick = e => { e.stopPropagation(); galI = (galI - 1 + galList.length) % galList.length; showGal(); };
@@ -3103,7 +3177,7 @@ $('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').dis
    · Esri World Imagery 타일을 그때그때 불러와 그림 (저장하지 않음, 키 없음)
    · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
 const SAT = { cache: new Map(), url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x };
-const SAT_OK = !!GEO_NOW;   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
+const SAT_OK = !!GEO_NOW || !!COURSE.pathExact;   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
 const satOn = () => SAT_OK && DB.sat !== false;
 function satTile(z, x, y, load){
   const k = z + '/' + x + '/' + y; let im = SAT.cache.get(k);
