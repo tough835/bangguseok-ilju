@@ -4,7 +4,7 @@ android {
     namespace = "com.dolgurum.bangguseok"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.dolgurum.bangguseokrunner"
+        applicationId "com.re2.bangguseokrunner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode = Integer.parseInt(System.getenv("BUILD_NUMBER") ?: "1")

@@ -10,7 +10,7 @@
 ## 안드로이드 앱 (APK)
 
 - `app/` = 껍데기 앱 (Capacitor). 안에서 위 GitHub Pages 주소를 열고, 잠금 중 GPS·걸음 센서를 붙임
-- 앱 이름표 `com.dolgurum.bangguseokrunner` (옛 `com.dolgurum.bangguseok`과 다른 앱)
+- 앱 이름표 `com.re2.bangguseokrunner` (옛 `com.dolgurum.bangguseok`과 다른 앱)
 - `app/` 가 바뀌면 GitHub Actions가 APK를 만들어 Release에 올림
 - 폰에서 받기: https://github.com/tough835/bangguseok-runner/releases/latest/download/bangguseok-runner.apk
 - 화면·코스 수정은 `index.html`만 고치면 앱에도 반영 (앱 재설치 불필요)

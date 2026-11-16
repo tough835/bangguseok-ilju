@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">방구석러너</string>
     <string name="title_activity_main">방구석러너</string>
-    <string name="package_name">com.dolgurum.bangguseokrunner</string>
-    <string name="custom_url_scheme">com.dolgurum.bangguseokrunner</string>
+    <string name="package_name">com.re2.bangguseokrunner</string>
+    <string name="custom_url_scheme">com.re2.bangguseokrunner</string>
     <!-- 잠금 중 GPS 알림 (background-geolocation 플러그인) -->
     <string name="capacitor_background_geolocation_notification_channel_name">운동 기록</string>
     <string name="capacitor_background_geolocation_notification_icon">drawable/ic_tracking</string>
