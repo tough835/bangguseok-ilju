@@ -132,6 +132,7 @@
   .stat span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #popup .d{white-space:pre-line}
   #map{cursor:pointer}
+  #map.big{width:136px;height:136px}
   #infoPanel{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:116px;background:rgba(255,253,246,.96);color:#24332a;border-radius:16px;padding:8px;box-shadow:0 2px 10px rgba(0,0,0,.3);box-sizing:border-box;cursor:pointer}
   .ip-top{display:flex;gap:8px}
   .ip-ph{flex:none;width:72px;height:72px;border-radius:10px;border:2px dashed #b9b19a;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#8a8370;background:#f3efe2;overflow:hidden}
@@ -242,6 +243,19 @@
   .lpc .row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px}
   .lpc .row button{border:0;border-radius:10px;padding:9px 12px;background:#7fd18a;color:#0f2a1c;font-weight:800;font-size:14px;white-space:nowrap}
   #zoomTag{position:fixed;left:50%;top:46%;transform:translateX(-50%);z-index:6;padding:6px 12px;border-radius:12px;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:800;pointer-events:none}
+  .rgh{display:flex;align-items:center;justify-content:space-between}
+  .promobtn{position:relative;border:0;border-radius:12px;padding:7px 12px;background:rgba(255,210,122,.18);color:#ffd27a;font-size:14px;font-weight:800}
+  .promobtn i{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#e8574a}
+  .prc{margin-top:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.08);line-height:1.6}
+  .prc img{width:100%;border-radius:10px;margin-bottom:8px;display:block}
+  .prc a{color:#7fd18a;font-weight:800}
+  .conq{margin:2px 0 10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.07);font-size:14px}
+  .conq .bar{height:8px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+  .conq .bar b{display:block;height:100%;background:linear-gradient(90deg,#7fd18a,#ffd27a)}
+  .cq{text-align:center}
+  .cqflag{font-size:64px;line-height:1.1}
+  .cqmc{font-size:22px;font-weight:900;letter-spacing:2px;color:#ffd27a;margin-top:4px}
+  .cqname{font-size:19px;font-weight:900;margin-top:10px}
   .hidden{display:none!important}
 </style>
 </head>
@@ -313,6 +327,22 @@
     <div class="mbtn"><button id="lpClose">닫기</button><button id="lpGo" class="go">코스 찾기</button></div>
   </div>
 </div>
+<div id="promoBox" class="modal hidden">
+  <div class="sb lb">
+    <div class="st" id="prTitle"></div>
+    <div id="prList"></div>
+    <div class="mbtn"><button id="prClose">닫기</button></div>
+  </div>
+</div>
+<div id="conqBox" class="modal hidden">
+  <div class="sb cq">
+    <div class="cqflag">🏴</div>
+    <div class="cqmc">MISSION COMPLETE</div>
+    <div class="cqname" id="cqName"></div>
+    <div class="muted" id="cqSub" style="margin-top:6px;line-height:1.6;white-space:pre-line"></div>
+    <div class="mbtn"><button id="cqOk" class="go">정복 완료 🎉</button></div>
+  </div>
+</div>
 <div id="resumeBox" class="modal hidden">
   <div class="sb">
     <div class="st" data-t="rsTitle">이어서 할까요?</div>
@@ -379,7 +409,7 @@
   </div>
 
   <div id="themeBox">
-  <h2 data-t="region">지역</h2>
+  <h2 class="rgh"><span data-t="region">지역</span><button id="bPromo" class="promobtn">📣 행사<i id="promoDot" class="hidden"></i></button></h2>
   <div class="sel3">
     <select id="rCountry"></select>
     <select id="rProv"></select>
@@ -388,6 +418,7 @@
 
   <h2 data-t="course">코스</h2>
   <div class="seg" id="tabSeg"></div>
+  <div id="conqLine" class="conq hidden"></div>
   <div class="card" id="courseList"></div>
   <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
   <button id="courseToggle" class="toggle"></button>
@@ -563,7 +594,7 @@
 </div>
 
 <script>
-const BUILD = '202611161415';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161458';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1034,7 +1065,7 @@ const TEXT = {
     gpsWait: '📡 GPS 찾는 중…', gpsOk: '📡 GPS ±{a}m', gpsWeak: '📡 GPS 약함 ±{a}m', gpsLost: 'GPS를 쓸 수 없어 기록을 멈춥니다', srcGps: '📡 GPS',
     cancel: '취소', edit: '수정', delSure: '지울까요?', addBtn: '＋ 빠진 기록 넣기 (앱 없이 한 운동)', addTitle: '✍ 빠진 기록 넣기',
     resetBtn: '↺ {s} 처음부터 다시', resetSure: '한 번 더 누르면 진행 위치가 0으로 (기록은 남음)', resetDone: '처음부터 다시 시작합니다',
-    tagAll: '전체 ⤢', tagHere: '현위치 ⤢', legUp: '오르막', legDown: '내리막', hubsOf: '거점 {a}/{b}', nWp: '곧 {s}',
+    tagAll: '전체 ⤢', tagHere: '현위치 ⤢', tagTheme: '테마 ⤢', legUp: '오르막', legDown: '내리막', hubsOf: '거점 {a}/{b}', nWp: '곧 {s}',
     siteBtn: '📍 현장 인증 · {s}에 와 있을 때', siteOk: '✅ 오늘 현장 확인 · {s}', siteWait: '위치 확인 중…', siteYes: '✅ 현장 확인! 오늘 이 코스 기록에 📍가 붙습니다',
     siteFar: '여기는 {s}에서 {d}km 떨어져 있어요', siteNo: '이 화면에서는 위치를 읽을 수 없어요', siteTag: '📍 현장',
     walk: '걷기', run: '달리기', gain: '오를 높이', realDone: '실제 완등'
@@ -1707,7 +1738,11 @@ function loop(now){
     if (!AREA) AREA = viewArea();
     const far = S.act === 'bike';
     if (NAV.full){ drawMapView(pos); drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); }
-    else { if (S.gps) drawRealMap(null, false); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
+    else if (S.gps){   $('map').classList.add('big');   /* 11/16 보스: 바깥 = 큰 화면 실제 지도 + 오른쪽 위 '테마 그림 지도'(가상 위치 확대, 전체 경로만은 안 됨). 누르면 전체 경로·정보 */
+      drawRealMap(null, false);
+      drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
+      miniTag(T.tagTheme, (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km');
+    } else { drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
@@ -1795,7 +1830,52 @@ function regionNodes(){
   DB.region = { country: c.id, prov: p.id, city: ci.id };
   return { c, p, ci };
 }
+/* ---- 정복 (11/16 보스: 땅따먹기처럼 완주한 코스·지역에 깃발) ----
+   · 길 = 누적 거리 ≥ 코스 길이, 산·빌딩 = 누적 오름 ≥ 높이. 처음 정복한 날을 DB.conq에 남김 */
+function conqList(cid){
+  const city = WORLD.cities[cid]; if (!city) return [];
+  const out = [];
+  Object.values(city.courses).forEach(c => {
+    if (c.mode === 'distance') out.push({ key: 'r:' + c.id, name: tr(c.name), done: posTotal(c) >= c.lengthM });
+    else c.segments.forEach(sg => { const t = TGT(sg.id); out.push({ key: 'c:' + sg.id, name: tr(sg.name) + (sg.trailName ? ' · ' + tr(sg.trailName) : ''), done: climbTotal(sg.id) >= t.gain }); });
+  });
+  return out;
+}
+function conqLine(){
+  const cid = DB.region.city, l = conqList(cid), el = $('conqLine'); if (!el) return;
+  if (!l.length || isFree()){ el.classList.add('hidden'); return; }
+  const d = l.filter(x => x.done).length, all = d === l.length, nm = WORLD.cities[cid] ? tr(WORLD.cities[cid].name) : '';
+  el.innerHTML = (all ? '🏴 <b>' + nm + ' 완전 정복!</b>' : '🏴 ' + nm + ' 정복 <b>' + d + ' / ' + l.length + '</b> 코스') + '<div class="bar"><b style="width:' + Math.round(d / l.length * 100) + '%"></b></div>';
+  el.classList.remove('hidden');
+}
+function checkConquest(){   // 새로 정복한 코스가 있으면 축하 창
+  DB.conq = DB.conq || {}; const now = new Date().toISOString().slice(0, 10), fresh = [];
+  Object.keys(WORLD.cities).forEach(cid => conqList(cid).forEach(x => { if (x.done && !DB.conq[x.key]){ DB.conq[x.key] = now; fresh.push({ cid, ...x }); } }));
+  if (!fresh.length) return; saveDB();
+  const f = fresh[0], l = conqList(f.cid), allDone = l.every(x => x.done), cityNm = tr(WORLD.cities[f.cid].name);
+  $('cqName').textContent = f.name;
+  $('cqSub').textContent = now + ' 정복' + (allDone ? '\n🏆 ' + cityNm + ' 모든 코스 정복!' : '\n' + cityNm + ' ' + l.filter(x => x.done).length + ' / ' + l.length + ' 정복') + (fresh.length > 1 ? '\n(이 밖에 ' + (fresh.length - 1) + '곳 더)' : '');
+  $('conqBox').classList.remove('hidden');
+}
+$('cqOk').onclick = () => { $('conqBox').classList.add('hidden'); conqLine(); };
+/* ---- 지역 행사·프로모션 소식 (11/16) — 지역을 고르면 📣 버튼에 표시, 진행 중이면 빨간 점
+   · 운영자가 여기에 넣음 (나중엔 서버·아리 문서에서). 실제 행사만 넣고, 기간이 지나면 자동으로 안 보임
+   · 형식: { title, from:'YYYY-MM-DD', to:'YYYY-MM-DD', text, img(선택), link(선택), by:'주최' } */
+const PROMO = {
+  // hamyang: [ { title: '…', from: '2027-09-01', to: '2027-09-10', text: '…', link: 'https://…', by: '함양군' } ]
+};
+function promoNow(cid){ const t = new Date().toISOString().slice(0, 10); return (PROMO[cid] || []).filter(p => (!p.from || p.from <= t) && (!p.to || p.to >= t)); }
+function promoDot(){ const n = promoNow(DB.region.city).length; $('promoDot').classList.toggle('hidden', !n); }
+$('bPromo').onclick = () => {
+  const cid = DB.region.city, nm = WORLD.cities[cid] ? tr(WORLD.cities[cid].name) : '', list = promoNow(cid);
+  $('prTitle').textContent = '📣 ' + nm + ' 행사·혜택 소식';
+  $('prList').innerHTML = list.length ? list.map(p => '<div class="prc">' + (p.img ? '<img src="' + p.img + '">' : '') + '<b>' + p.title + '</b><br><span class="muted">' + (p.from || '') + (p.to ? ' ~ ' + p.to : '') + (p.by ? ' · ' + p.by : '') + '</span><br>' + p.text + (p.link ? '<br><a href="' + p.link + '" target="_blank">자세히 보기 ›</a>' : '') + '</div>').join('')
+    : '<div class="prc">지금 ' + nm + '에서 진행 중인 행사 소식이 없어요.<br><span class="muted">실제 방문 행사·할인이 생기면 여기에 안내되고, 지역을 고를 때 📣에 빨간 점이 떠요.</span></div>';
+  $('promoBox').classList.remove('hidden');
+};
+$('prClose').onclick = () => $('promoBox').classList.add('hidden');
 function refreshRegion(){
+  setTimeout(() => { conqLine(); promoDot(); }, 0);
   const { c, p, ci } = regionNodes();
   const opt = (list, sel) => list.map(x => '<option value="' + x.id + '"' + (x.id === sel ? ' selected' : '') + '>' + tr(x.name) + '</option>').join('');
   $('rCountry').innerHTML = opt(WORLD.regions, c.id); $('rProv').innerHTML = opt(c.children, p.id); $('rCity').innerHTML = opt(p.children, ci.id);
@@ -1989,7 +2069,7 @@ $('bStart').onclick = () => {
   lastFrame = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 };
 function fillEnd(){
-  const a = ACTS[S.act]; fillTrack();
+  const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600);
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free);
   if (S.free){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
@@ -3112,7 +3192,7 @@ function applyTheme(r, kind, target){
     r.credit = { course: 'walk', target: rd.id, m: amt };
     toastMsg(T.apDone.replace('{c}', tr(rd.short || rd.name)).replace('{a}', (amt / 1000).toFixed(2) + 'km'));
   }
-  saveDB(); try { refreshSteps(); } catch(e){}
+  saveDB(); try { refreshSteps(); } catch(e){} setTimeout(checkConquest, 400);
 }
 function fillApply(){
   const up = isClimb(), sel = $('apTarget');
