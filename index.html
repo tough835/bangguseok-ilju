@@ -238,6 +238,7 @@
   .lpc canvas{display:block;width:100%;height:170px}
   .lpc .row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px}
   .lpc .row button{border:0;border-radius:10px;padding:9px 12px;background:#7fd18a;color:#0f2a1c;font-weight:800;font-size:14px;white-space:nowrap}
+  #zoomTag{position:fixed;left:50%;top:46%;transform:translateX(-50%);z-index:6;padding:6px 12px;border-radius:12px;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:800;pointer-events:none}
   .hidden{display:none!important}
 </style>
 </head>
@@ -245,6 +246,7 @@
 
 <canvas id="view"></canvas>
 <canvas id="map" class="hidden"></canvas>
+<div id="zoomTag" class="hidden"></div>
 <div id="infoPanel" class="hidden">
   <div class="ip-top">
     <div class="ip-ph" id="ipPhoto"></div>
@@ -551,6 +553,8 @@
 </div>
 
 <script>
+const BUILD = '202611161154';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
    ---------------------------------------------------------------------
@@ -998,7 +1002,7 @@ const TEXT = {
     apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
     photoBig: '📷 거점 사진 {n}', galKm: '{k}km 지점', geoWait: '🛰 위성 지도는 실제 길 모양을 받은 뒤에 켜져요',
-    satOn: '🛰 위성 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
+    satOn: '🛰 위성 지도', mapOn: '🗺 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
@@ -1138,7 +1142,7 @@ const S = {
   sessionM: 0, startTotal: 0, elapsed: 0, lastT: 0, phase: 0,
   passed: [], sessionId: null, lastSave: 0
 };
-const DPR = Math.min(window.devicePixelRatio || 1, 1.5);   // 배터리 위해 해상도 상한
+const DPR = Math.min(window.devicePixelRatio || 1, 2);   // 배터리 위해 해상도 상한 (11/16: 위성이 흐려서 1.5 → 2)
 const cv = document.getElementById('view'), ctx = cv.getContext('2d');
 const mapCv = document.getElementById('map'), mctx = mapCv.getContext('2d');
 let W = 0, H = 0;
@@ -1691,7 +1695,7 @@ function loop(now){
     if (!AREA) AREA = viewArea();
     const far = S.act === 'bike';
     if (NAV.full){ drawMapView(pos); drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); }
-    else { drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, far ? 600 : 220, pos, false); drawMiniOverview(pos); }
+    else { drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }
   }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
@@ -2339,6 +2343,16 @@ const SENS = { on: false, ok: false, times: [], lastPeak: 0, avg: 9.8, f: 0, ris
 const autoCapable = () => S.act === 'tread' || S.act === 'stair';
 const autoActive = () => SENS.on && SENS.ok;
 window.addEventListener('error', e => errNote(e.message || 'error'));
+/* 새 버전 확인: 폰(앱 안 화면)이 예전 파일을 저장해 두고 쓰는 문제(11/16) → 열 때 서버 파일의 BUILD와 비교해 다르면 새로 받음 */
+setTimeout(() => {
+  fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(t => {
+    const m = /const BUILD = '(\d+)'/.exec(t); if (!m || m[1] === BUILD) return;
+    let tried = ''; try { tried = sessionStorage.getItem('bgsj_upd') || ''; } catch(e){}
+    if (tried === m[1] || S.running) return;
+    try { sessionStorage.setItem('bgsj_upd', m[1]); sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){}
+    location.replace(location.pathname + '?v=' + m[1]);
+  }).catch(() => {});
+}, 1200);
 window.addEventListener('unhandledrejection', e => errNote(String(e.reason && e.reason.message || e.reason)));
 function errNote(m){
   m = String(m).slice(0, 120); if (/ResizeObserver|Script error/.test(m)) return;
@@ -2703,8 +2717,8 @@ $('galNext').onclick = e => { e.stopPropagation(); galI = (galI + 1) % galList.l
 $('gallery').onclick = () => $('gallery').classList.add('hidden');
 $('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) openGallery(ipViewLm); };
 $('ipPhoto').addEventListener('click', e => { if (ipViewLm && typeof ipViewLm.photo === 'string'){ e.stopPropagation(); openGallery(ipViewLm); } });
-function satBtn(){ $('bSat').textContent = satOn() ? T.satOn : T.satOff; }
-$('bSat').onclick = e => { e.stopPropagation(); DB.sat = !satOn(); saveDB(); satBtn(); };
+function satBtn(){ $('bSat').textContent = !satOn() ? T.satOff : mapSty() === 'map' ? T.mapOn : T.satOn; }
+$('bSat').onclick = e => { e.stopPropagation(); if (!satOn()){ DB.sat = true; DB.mapSty = 'sat'; } else if (mapSty() === 'sat') DB.mapSty = 'map'; else DB.sat = false; saveDB(); satBtn(); };
 function showViewMode(on){
   $('bSat').classList.toggle('hidden', !(on && SAT_OK && !isClimb() && !S.free)); satBtn();
   $('map').classList.toggle('hidden', !on);
@@ -2714,6 +2728,17 @@ function showViewMode(on){
 }
 /* 오른쪽 위 작은 칸을 누르면 큰 화면과 서로 바뀜: 내비(현위치 확대) ↔ 전체 지도 + 사진·코스 정보 */
 $('map').onclick = () => { if (!S.running) return; NAV.full = !NAV.full; showViewMode(true); };
+/* 손가락 두 개로 지도 확대·축소 (11/16) · 0.25배 ~ 5배 · 두 번 톡 = 원래대로 (NAV.zoom은 NAV 정의에서 1) */
+(() => {
+  let d0 = 0, z0 = 1, lastTap = 0;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  cv.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = NAV.zoom; e.preventDefault(); }
+    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ NAV.zoom = 1; zoomTag(); } lastTap = n; } }, { passive: false });
+  cv.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0){ NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); e.preventDefault(); } }, { passive: false });
+  cv.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; });
+  cv.addEventListener('wheel', e => { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); e.preventDefault(); }, { passive: false });
+})();
+function zoomTag(){ const t = $('zoomTag'); if (!t) return; t.textContent = NAV.zoom === 1 ? '' : (1 / NAV.zoom >= 1 ? '🔍 ' + (1 / NAV.zoom).toFixed(1) + '배' : '🔍 ' + (1 / NAV.zoom).toFixed(2) + '배'); t.classList.toggle('hidden', NAV.zoom === 1); }
 $('infoPanel').onclick = () => { if (!S.running) return; NAV.full = false; showViewMode(true); };
 
 /* =====================================================================
@@ -3236,7 +3261,7 @@ function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GP
    · 큰 화면 = 현위치 확대 지도 (가는 방향이 위, 앞길 색 = 오르막 주황·빨강 / 내리막 파랑)
    · 오른쪽 위 작은 칸 = 코스 전체 + 진행 거리. 누르면 서로 바뀌고 사진·고도·코스 정보가 나옴
    ===================================================================== */
-var NAV = { full: false }, AREA = null;
+var NAV = { full: false, zoom: 1 }, AREA = null;
 function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위
   const hb = $('hudBottom').offsetHeight || innerHeight * 0.4, ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
   return { top: Math.round(ip * DPR), bot: Math.round((innerHeight - hb + 36) * DPR) };
@@ -3375,11 +3400,16 @@ $('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').dis
 /* ---- 위성 지도 바닥 (2026-11-15 시험) ----
    · Esri World Imagery 타일을 그때그때 불러와 그림 (저장하지 않음, 키 없음)
    · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
-const SAT = { cache: new Map(), url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x };
+const MAPSTY = {   // 🛰 위성(Esri) / 🗺 선명한 지도(CARTO, 오픈스트리트맵 바탕, 고해상도 @2x) — 버튼으로 돌아가며 바꿈
+  sat: { max: 19, url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x, credit: '위성 사진 © Esri · Maxar' },
+  map: { max: 20, url: (z, x, y) => 'https://' + 'abcd'[(x + y) % 4] + '.basemaps.cartocdn.com/rastertiles/voyager/' + z + '/' + x + '/' + y + '@2x.png', credit: '지도 © OpenStreetMap · © CARTO' }
+};
+const SAT = { cache: new Map(), url: (z, x, y) => MAPSTY[mapSty()].url(z, x, y) };
+function mapSty(){ return DB.mapSty === 'map' ? 'map' : 'sat'; }
 const SAT_OK = !!GEO_NOW || !!COURSE.pathReal;   /* 11/16 보스: 저수지 코스가 물 위로 그려짐 → 손으로 맞춘 좌표도 실제 길에 붙인 뒤에만 위성. pathReal = 길 찾기 서버가 만든 길(내 코스) */   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
-const satOn = () => SAT_OK && DB.sat !== false;
+const satOn = () => SAT_OK && DB.sat !== false;   // 바닥 지도 켜짐 (종류는 mapSty)
 function satTile(z, x, y, load){
-  const k = z + '/' + x + '/' + y; let im = SAT.cache.get(k);
+  const k = mapSty() + z + '/' + x + '/' + y; let im = SAT.cache.get(k);
   if (!im && load){
     if (SAT.cache.size > 360) SAT.cache.delete(SAT.cache.keys().next().value);
     im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { im.ok = 1; }; im.src = SAT.url(z, x, y); SAT.cache.set(k, im);
@@ -3388,7 +3418,7 @@ function satTile(z, x, y, load){
 }
 function drawSat(g, tf, c, R, sc){
   const ll = geoOf(c), cl = Math.cos(ll[0] * Math.PI / 180);
-  let z = Math.max(3, Math.min(18, Math.floor(Math.log2(156543.03 * cl * sc))));
+  let z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * sc) - 0.2)));   // 11/16: 내림 → 올림 (더 선명하게)
   const dLa = R / ky, dLo = R / kx;
   let n, x0, x1, y0, y1;
   const ty = (la, n) => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
@@ -3404,10 +3434,10 @@ function drawSat(g, tf, c, R, sc){
     if (!im.ok){ const pa = satTile(z - 1, x >> 1, y >> 1, false); if (!pa || !pa.ok) continue; im = pa; sx = (x & 1) * 128; sy = (y & 1) * 128; sw = 128; }   // 아직 안 온 칸은 한 단계 위 사진을 늘려서
     const a = tf(pOf(latOf(y), lonOf(x))), b = tf(pOf(latOf(y), lonOf(x + 1))), d = tf(pOf(latOf(y + 1), lonOf(x)));
     g.setTransform((b[0] - a[0]) / 256, (b[1] - a[1]) / 256, (d[0] - a[0]) / 256, (d[1] - a[1]) / 256, a[0], a[1]);
-    g.drawImage(im, sx, sy, sw, sw, 0, 0, 256.8, 256.8);
+    const f = (im.naturalWidth || 256) / 256; g.drawImage(im, sx * f, sy * f, sw * f, sw * f, 0, 0, 256.8, 256.8);
   }
   g.restore();
-  g.fillStyle = 'rgba(20,30,24,.18)'; g.fillRect(0, 0, g.canvas.width, g.canvas.height);   // 길 선이 잘 보이게 살짝 어둡게
+  if (mapSty() === 'sat'){ g.fillStyle = 'rgba(20,30,24,.12)'; g.fillRect(0, 0, g.canvas.width, g.canvas.height); }   // 길 선이 잘 보이게 살짝 어둡게 (위성만)
 }
 function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
   const sc = vw / viewM, c = pointAt(pos), h = headingAt(pos), ch = Math.cos(h), sh = Math.sin(h);
@@ -3480,7 +3510,7 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
     g.fillStyle = '#f0a03c'; g.fillRect(10 * DPR, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legUp, 26 * DPR, y);
     const x2 = 34 * DPR + g.measureText(T.legUp).width; g.fillStyle = '#4a8fd9'; g.fillRect(x2, y - 9 * DPR, 12 * DPR, 9 * DPR); g.fillStyle = 'rgba(36,51,42,.7)'; g.fillText(T.legDown, x2 + 16 * DPR, y);
   }
-  if (sat){ g.font = (10 * DPR) + 'px sans-serif'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(T.satCredit, 8 * DPR, vh - 12 * DPR); }
+  if (sat){ g.font = (10 * DPR) + 'px sans-serif'; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(MAPSTY[mapSty()].credit, 8 * DPR, vh - 12 * DPR); }
 }
 /* 작은 칸 글자: 왼쪽 위 이름표(누르면 바뀐다는 표시) + 아래 진행 숫자 */
 function miniTag(txt, foot){
