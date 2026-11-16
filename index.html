@@ -188,6 +188,8 @@
   #recScreen h1{font-size:21px;flex:1;text-align:right}
   .sum4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
   .sum4 div{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px}
+  .sum4 .kc{grid-column:span 2}
+  .bodyrow{display:flex;align-items:center;gap:8px;margin:6px 0}.bodyrow label{width:44px}.bodyrow input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;font-size:17px}
   .sum4 span{display:block;font-size:12px;opacity:.7}
   .sum4 b{font-size:22px}
   .fchips{display:flex;gap:6px;margin-top:14px}
@@ -491,6 +493,7 @@
     <button data-per="week" data-t="pWeek">이번 주</button><button data-per="month" data-t="pMonth">이번 달</button><button data-per="all" data-t="pAll">전체</button>
   </div>
   <div class="sum4" id="recSum"></div>
+  <button id="bBody" class="toggle" style="margin-top:8px"></button>
   <div id="stampBox">
     <h2 id="stampTitle"></h2>
     <div class="stamps" id="stampGrid"></div>
@@ -511,6 +514,19 @@
   <button id="bAdd" class="toggle" data-t="addBtn" style="margin-top:18px"></button>
   <button id="bBackup" class="toggle" data-t="bkBtn" style="margin-top:10px"></button>
   <button id="bReset" class="x2"></button>
+</div>
+<div id="bodyBox" class="modal hidden">
+  <div class="sb">
+    <div class="st">⚖️ 내 몸 정보 (칼로리 계산용)</div>
+    <div class="muted" style="line-height:1.5;margin-bottom:10px">넣을수록 정확해져요. 비워 두면 기본값(체중 65kg)으로 계산해요.<br>이 정보는 내 폰에만 저장돼요.</div>
+    <div class="bodyrow"><label>체중</label><input id="bdKg" type="number" inputmode="decimal" min="20" max="250" step="0.1" placeholder="예: 70"><span>kg</span></div>
+    <div class="bodyrow"><label>키</label><input id="bdCm" type="number" inputmode="decimal" min="100" max="230" step="0.1" placeholder="예: 172"><span>cm</span></div>
+    <div class="bodyrow"><label>나이</label><input id="bdAge" type="number" inputmode="numeric" min="10" max="100" placeholder="예: 45"><span>세</span></div>
+    <div class="seg" id="bdSex" style="margin-top:8px"><button data-sex="m">남</button><button data-sex="f">여</button><button data-sex="">선택 안 함</button></div>
+    <div class="muted" id="bdNote" style="margin-top:8px;line-height:1.5"></div>
+    <div class="mbtn"><button id="bdClear">지우기</button><button id="bdSave" class="go">저장</button></div>
+    <button id="bdClose" style="display:block;margin:10px auto 0;background:none;border:0;color:inherit;opacity:.6">닫기</button>
+  </div>
 </div>
 <div id="stepBox" class="modal hidden">
   <div class="sb">
@@ -612,7 +628,7 @@
 </div>
 
 <script>
-const BUILD = '202611161828';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161836';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1042,7 +1058,7 @@ const TEXT = {
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
     cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
     nearWait: '📍 지금 위치를 찾는 중…', nearHere: '📍 지금 위치에서 가까운 순', nearFallback: '📍 위치를 못 받아서 {s} 기준으로 가까운 순 (위치 권한을 켜면 내 주변으로)',
-    nearPass: '(지나가는 길)', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
+    nearPass: '(지나가는 길)', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
     rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
     mapNote: '지도 모양은 임시 (GPX 받으면 실제 모양으로)',
     myRec: '📒 내 기록', myRecAll: '📒 내 기록 전체 보기', myRecTitle: '📒 내 기록', back: '← 돌아가기',
@@ -2174,6 +2190,17 @@ function saveManual(amt, min, act){
   toastMsg('✅ ' + msg + (hubs.length ? ' · 🚩 ' + hubs.join(', ') : ''));
 }
 $('bAdd').onclick = openAdd;
+let bdSex = '';
+function bodyNote(){ const n = [$('bdKg').value, $('bdCm').value, $('bdAge').value].filter(v => v).length;
+  $('bdNote').textContent = !$('bdKg').value ? T.kcalLv0 + ' — 체중만 넣어도 훨씬 정확해져요' : (n === 3 && bdSex) ? T.kcalLv2 + ' — 기초대사량까지 반영해요' : T.kcalLv1 + ' — 키·나이·성별까지 넣으면 개인 맞춤'; }
+function bodySexBtns(){ $('bdSex').querySelectorAll('[data-sex]').forEach(b => b.classList.toggle('on', b.dataset.sex === bdSex)); bodyNote(); }
+$('bBody').onclick = () => { const b = DB.body || {}; $('bdKg').value = b.kg || ''; $('bdCm').value = b.cm || ''; $('bdAge').value = b.age || ''; bdSex = b.sex || ''; bodySexBtns(); $('bodyBox').classList.remove('hidden'); };
+$('bdSex').querySelectorAll('[data-sex]').forEach(b => b.onclick = () => { bdSex = b.dataset.sex; bodySexBtns(); });
+['bdKg', 'bdCm', 'bdAge'].forEach(id => $(id).oninput = bodyNote);
+$('bdSave').onclick = () => { const n = id => { const v = parseFloat($(id).value); return v > 0 ? v : 0; };
+  DB.body = { kg: n('bdKg'), cm: n('bdCm'), age: Math.round(n('bdAge')), sex: bdSex }; saveDB(); $('bodyBox').classList.add('hidden'); refreshRec(); toastMsg('⚖️ ' + T.bodySaved); };
+$('bdClear').onclick = () => { delete DB.body; saveDB(); $('bodyBox').classList.add('hidden'); refreshRec(); toastMsg('⚖️ ' + T.bodyCleared); };
+$('bdClose').onclick = () => $('bodyBox').classList.add('hidden');
 $('addClose').onclick = () => $('addBox').classList.add('hidden');
 
 /* ---- 출발 / 종료 ---- */
@@ -2204,8 +2231,9 @@ $('bStart').onclick = () => {
   showRun(true); resize(); keepAwake(); hudTick = 5; refreshSpeedBox(false);
   lastFrame = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 };
+function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted">(' + T['kcalLv' + bodyFix()[2]] + ')</span>' : ''; }
 function fillEnd(){
-  const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600);
+  const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600); setTimeout(() => { const el = $('endSummary'); if (el && el.innerHTML.indexOf('🔥') < 0) el.innerHTML += endKcal(); }, 0);
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free);
   if (S.free){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
@@ -3070,6 +3098,40 @@ $('bReset').onclick = () => {
    (고치면 credit도 같이 바뀌어 코스 진행이 자동으로 맞춰짐)
    ===================================================================== */
 const REC = { per: 'week', f: 'all', edit: null, delArm: false };
+/* ---- 칼로리 (11/16) — 운동 강도(MET) × 체중 × 시간
+   · 걷기·달리기: 미국스포츠의학회(ACSM) 속도 공식 (분당 100m 미만 = 걷기 / 이상 = 달리기)
+   · 자전거: 속도별 MET (운동강도 표 기준) / 계단·등산: 시간 있으면 MET, 없으면 오른 높이로 일량 계산
+   · 몸 정보: 체중만 = 체중 반영 / 키·나이·성별까지 = 기초대사량(미플린 공식)으로 개인 보정. 비우면 65kg 기본값
+   · 기록에 저장하지 않고 볼 때마다 계산 → 몸 정보를 바꾸면 지난 기록도 같이 바뀜 */
+const BODY_KG0 = 65;
+function bodyFix(){   // [체중, 보정 배수, 정확도 단계]
+  const b = DB.body || {}, kg = b.kg > 20 ? b.kg : BODY_KG0;
+  if (b.kg > 20 && b.cm > 100 && b.age > 9 && (b.sex === 'm' || b.sex === 'f')){
+    const bmr = 10 * b.kg + 6.25 * b.cm - 5 * b.age + (b.sex === 'm' ? 5 : -161);   // 하루 기초대사량(kcal)
+    return [kg, Math.max(0.75, Math.min(1.25, bmr / 24 / b.kg)), 2];   // 표준 = 체중 1kg당 시간당 1kcal
+  }
+  return [kg, 1, b.kg > 20 ? 1 : 0];
+}
+function kcalOf(r){
+  const [kg, k] = bodyFix(), a = ACTS[r.act] || ACTS.tread;
+  let sec = r.sec || 0, met;
+  if (a.kind === 'up'){
+    const up = r.upM || 0;
+    if (sec >= 60) met = r.act === 'hike' ? 6.5 : 9;   // 등산 / 천국의 계단
+    else return Math.round(up * kg * 9.81 / 4184 / 0.2 * 1.3 * k);   // 시간 없으면: 오른 높이 일량 (몸 효율 20%) + 걷는 몫
+  } else {
+    const d = r.distM || 0; if (!d) return 0;
+    if (r.act === 'bike'){
+      if (sec < 60) sec = d / (18 / 3.6);
+      const v = d / sec * 3.6; met = v < 16 ? 4 : v < 19 ? 6.8 : v < 22 ? 8 : v < 25 ? 10 : 12;
+    } else {
+      if (sec < 60 || r.src === 'steps') sec = d / (5 / 3.6);   // 시간 모르면 시속 5km 걷기로
+      const v = Math.min(400, d / sec * 60); met = (v < 100 ? 0.1 * v + 3.5 : 0.2 * v + 3.5) / 3.5;
+    }
+  }
+  return Math.round(met * kg * sec / 3600 * k);
+}
+const kcalTxt = n => n.toLocaleString() + ' kcal';
 const recWhere = r => { const c = r.credit || {}; if (r.free && !r.credit) return T.freeTag + (r.free.goal ? ' ' + freeGoalText(r.free.goal, r.free.unit === 'floor') : ''); return (r.free ? T.freeTag + ' ' : '') + (c.course === 'climb' ? tr(TGT(c.target).short || TGT(c.target).name).replace('지리산 ', '') : roadName(c.course === 'sangnim' ? 'sangnim-3k' : c.target)); };
 const recAmt = r => (ACTS[r.act] || ACTS.tread).kind === 'up' ? (r.upM || 0).toLocaleString() + 'm' : ((r.distM || 0) / 1000).toFixed(2) + 'km';
 function recLine(r){ const d = new Date(r.date), a = ACTS[r.act] || ACTS.tread;
@@ -3101,7 +3163,9 @@ function refreshRec(){
     '<div><span>' + T.sDist + '</span><b>' + (dist / 1000).toFixed(1) + ' km</b></div>' +
     '<div><span>' + T.sUp + '</span><b>' + up.toLocaleString() + ' m</b></div>' +
     '<div><span>' + T.sCount + '</span><b>' + cnt + T.cntUnit + '</b></div>' +
-    '<div><span>' + T.sTime + '</span><b>' + (sec >= 3600 ? (sec / 3600).toFixed(1) + T.hourUnit : Math.round(sec / 60) + T.min) + '</b></div>';
+    '<div><span>' + T.sTime + '</span><b>' + (sec >= 3600 ? (sec / 3600).toFixed(1) + T.hourUnit : Math.round(sec / 60) + T.min) + '</b></div>' +
+    '<div class="kc"><span>🔥 ' + T.sKcal + ' · ' + T['kcalLv' + bodyFix()[2]] + '</span><b>' + kcalTxt(list.reduce((a, r) => a + kcalOf(r), 0)) + '</b></div>';
+  $('bBody').textContent = T.bodyBtn;
   let html = '', day = '';
   list.forEach(r => {
     const d = new Date(r.date), key = r.src === 'legacy' ? T.srcLegacy : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + '일월화수목금토'[d.getDay()] + ')';
@@ -3109,7 +3173,7 @@ function refreshRec(){
     const a = ACTS[r.act] || ACTS.tread;
     html += '<div class="rrow"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
       (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
-      T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + ' · ' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
+      T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ' · ' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
       '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
