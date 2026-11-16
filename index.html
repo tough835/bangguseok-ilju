@@ -315,6 +315,61 @@
     display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 18px;box-shadow:0 6px 22px rgba(0,0,0,.5)}
   #bStart .bsN{font-size:13px;font-weight:700;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;min-width:0}
   #bStart .bsG{font-size:19px;font-weight:900;white-space:nowrap}
+
+  /* ── 11/17 보스: 다른 화면도 같은 규칙 (차콜 바탕·볼트 강조 하나·얇은 고르기·상자 줄이기) ── */
+  /* 첫 화면 */
+  #homeScreen{display:flex;flex-direction:column}
+  #homeScreen h1{text-align:center;font-size:26px;margin-top:22px}
+  .zones{min-height:0;flex:0 0 auto;margin:22px 0 12px;gap:10px}
+  .zones button{height:260px;border-radius:20px;background:var(--ch2)!important;border:1px solid rgba(255,255,255,.06)}
+  .zones button:active{border-color:var(--vt)}
+  .zones i{font-size:52px}
+  .zones b{font-size:26px}
+  .zones em{color:var(--vt);opacity:1;font-size:14px}
+  .zones small{color:var(--mut);opacity:1}
+  .homeToday{color:var(--mut);opacity:1}
+  /* 공통 고르기(이번 주/이번 달/전체 등) = 얇은 둘·셋 중 하나 */
+  .seg{gap:0;background:var(--ch2);border-radius:12px;padding:3px}
+  .seg button{height:40px;border:0;border-radius:10px;background:transparent;color:var(--mut);font-size:15px;font-weight:700}
+  .seg button.on{background:var(--ch3);color:#fff;border:0}
+  /* 공통 보조 버튼 = 점선 상자 대신 조용한 한 줄 */
+  .toggle{height:44px;border:0;border-radius:12px;background:var(--ch2);color:#fff;font-size:14px;font-weight:600}
+  .titlebar .back{height:34px;border:0;border-radius:999px;background:var(--ch2);color:#fff;font-size:13px;font-weight:700;padding:0 12px}
+  .stepbtn,.recbtn,.zoneBtn{background:var(--ch2)}
+  /* 내 기록 */
+  #recScreen h1{font-size:18px}
+  .sum4{gap:6px}
+  .sum4 div{background:var(--ch2);border-radius:12px;padding:9px 12px}
+  .sum4 span{color:var(--mut);opacity:1}
+  .sum4 b{font-size:20px}
+  #recScreen .chips button,#recScreen .lchips button{height:36px;border:0;border-radius:999px;background:var(--ch2);font-size:13px;padding:0 12px}
+  #recScreen .chips button.on,#recScreen .lchips button.on{background:var(--vt);color:var(--ch)}
+  .rrow{background:var(--ch2);border-radius:12px;padding:10px 12px}
+  .rrow .rt{color:var(--mut);opacity:1}
+  .rb button{height:32px;padding:0 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,.14);color:#c9cbd0;font-size:13px;font-weight:600}
+  .rb button.arm{background:#e8574a;border-color:#e8574a;color:#fff}
+  .stamp{background:var(--ch2)}
+  .stamp.goal{outline-color:var(--vt)}
+  /* 창(팝업) 공통 */
+  .modal{background:rgba(0,0,0,.7)}
+  .modal .sb,#syncBox .sb{background:var(--ch2);border:1px solid rgba(255,255,255,.06)}
+  .modal .st{font-size:19px;font-weight:800}
+  .mbtn button{height:50px;border-radius:12px;background:var(--ch3);font-size:16px}
+  .mbtn .go{background:var(--vt);color:var(--ch)}
+  .modal input:not([type=checkbox]),.modal select{background:var(--ch3)!important;color:#fff!important;border:0!important}
+  .lchips button{background:var(--ch3)}
+  .lpc{background:var(--ch3)}
+  .frx{background:var(--ch3)}
+  #homeScreen{justify-content:center}
+  #homeScreen .homeTop{position:absolute;top:calc(16px + env(safe-area-inset-top));right:18px}
+  #homeScreen .homeTop .stepbtn{height:34px;border-radius:999px;font-size:13px}
+  .modal .toggle{background:var(--ch3)}
+  .fchips button{border:0;background:var(--ch2);color:#c9cbd0}
+  .fchips button.on{background:var(--vt);color:var(--ch)}
+  .outRow input{background:var(--ch3)!important;color:#fff!important}
+  .outRow button{background:var(--vt);color:var(--ch)}
+  .form input,.form select{background:var(--ch3)!important;color:#fff!important}
+  #endScreen .card{background:var(--ch2)}
 </style>
 </head>
 <body>
@@ -682,7 +737,7 @@
 </div>
 
 <script>
-const BUILD = '202611170006';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611170012';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
