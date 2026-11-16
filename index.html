@@ -555,7 +555,7 @@
 </div>
 
 <script>
-const BUILD = '202611161232';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161238';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3148,7 +3148,10 @@ function importBackup(){
   DB.records.sort((a, b) => b.id - a.id);
   DB.base = DB.base || {}; Object.entries(src.base || {}).forEach(([k, v]) => { DB.base[k] = Math.max(DB.base[k] || 0, v || 0); });
   DB.steps = DB.steps || {}; Object.entries(src.steps || {}).forEach(([k, v]) => { const t = DB.steps[k] || { n: 0, run: 0, used: 0 };
-    DB.steps[k] = { n: Math.max(t.n || 0, v.n || 0), run: Math.max(t.run || 0, v.run || 0), used: Math.max(t.used || 0, v.used || 0), set: Math.max(t.set || 0, v.set || 0) || undefined }; });
+    // 11/16: 걸음 맞추기(set·setBase)는 나중에 맞춘 쪽을 통째로 씀 (숫자만 큰 쪽을 고르면 기준이 어긋남), 폰 걸음 칩 숫자(native)는 이 폰 것 유지
+    const useV = (v.setT || 0) > (t.setT || 0);
+    DB.steps[k] = { n: Math.max(t.n || 0, v.n || 0), run: Math.max(t.run || 0, v.run || 0), used: Math.max(t.used || 0, v.used || 0),
+      set: useV ? v.set : t.set, setBase: useV ? v.setBase : t.setBase, setT: useV ? v.setT : t.setT, native: t.native }; });
   if (src.site && (!DB.site || new Date(src.site.day) > new Date(DB.site.day))) DB.site = src.site;
   let reload = false;
   if (fresh){
@@ -3224,7 +3227,7 @@ function refreshSteps(){
 }
 document.querySelectorAll('[data-steps]').forEach(b => b.onclick = () => { stepsPermission(); $('stInput').value = ''; $('stepBox').classList.remove('hidden'); refreshSteps(); });
 $('stClose').onclick = () => $('stepBox').classList.add('hidden');
-$('stSet').onclick = () => { const v = parseInt($('stInput').value, 10); if (!(v >= 0)) return; const sd = stepDay(); sd.setBase = sd.native != null ? sd.native : Math.max(0, sd.n - sd.run) + Math.max(sd.run, DB.records.filter(r => new Date(r.date).toDateString() === new Date().toDateString()).reduce((a, r) => a + recSteps(r), 0)); sd.set = v; saveDB(); $('stInput').value = ''; refreshSteps(); };
+$('stSet').onclick = () => { const v = parseInt($('stInput').value, 10); if (!(v >= 0)) return; const sd = stepDay(); sd.setBase = sd.native != null ? sd.native : Math.max(0, sd.n - sd.run) + Math.max(sd.run, DB.records.filter(r => new Date(r.date).toDateString() === new Date().toDateString()).reduce((a, r) => a + recSteps(r), 0)); sd.set = v; sd.setT = Date.now(); saveDB(); $('stInput').value = ''; refreshSteps(); };
 $('stApply').onclick = () => {
   const free = stepFree(); if (free < 10 || DB.pick.type === 'climb') return;
   const m = Math.round(free * (DB.stride.walk || 0.7)), before = walkTotal(), ps = walkPassed(before, before + m).filter(p => !p.lap), id = Date.now();
