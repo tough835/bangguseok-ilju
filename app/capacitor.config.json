@@ -3,9 +3,10 @@
   "appName": "방구석일주",
   "webDir": "www",
   "server": {
-    "url": "https://symphonious-pasca-f5d6ba.netlify.app",
+    "url": "https://tough835.github.io/bangguseok-ilju/",
     "androidScheme": "https",
     "allowNavigation": [
+      "tough835.github.io",
       "symphonious-pasca-f5d6ba.netlify.app"
     ]
   },

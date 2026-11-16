@@ -228,6 +228,7 @@
   .sibs button{border:0;border-radius:10px;padding:6px 10px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700}
   .stamp{font-size:12px;font-weight:800;color:#ffd27a}
   .geonote{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:13px;line-height:1.45;opacity:.9}
+  .frx{margin-left:6px;border:0;border-radius:8px;background:rgba(255,255,255,.18);color:#fff;font-weight:800;padding:2px 8px}
   .loopbtn{width:100%;margin-top:10px;height:52px;border:2px dashed rgba(127,207,138,.6);border-radius:14px;background:transparent;color:#bfe8c5;font-size:16px;font-weight:800}
   .lb{max-height:88vh;overflow:auto}
   .lbl{font-size:13px;opacity:.75;margin:10px 0 6px}
@@ -371,6 +372,8 @@
     <div class="presets" id="freePresets"></div>
     <div class="goalRow"><input id="freeGoal" type="number" inputmode="decimal" step="0.1" min="0"><span id="freeUnit"></span></div>
     <div class="muted" data-t="freeHelp" style="margin-top:8px;line-height:1.5"></div>
+    <div id="freeRoute" class="geonote hidden"></div>
+    <button class="loopbtn hidden" id="bLoop">🔄 내 주변 순환 코스 만들기</button>
   </div>
 
   <div id="themeBox">
@@ -385,7 +388,6 @@
   <div class="seg" id="tabSeg"></div>
   <div class="card" id="courseList"></div>
   <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
-  <button class="loopbtn hidden" id="bLoop">🔄 내 주변 순환 코스 만들기</button>
   <button id="courseToggle" class="toggle"></button>
   <button id="bSite" class="toggle hidden"></button>
   </div>
@@ -553,7 +555,7 @@
 </div>
 
 <script>
-const BUILD = '202611161154';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161202';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1006,7 +1008,7 @@ const TEXT = {
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
-    lpErr: '⚠️ 코스를 만들지 못했어요', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
+    lpErr: '⚠️ 코스를 만들지 못했어요', lpSet: '🔄 일반 목표를 이 코스로: {n}', lpNow: '🔄 따라갈 길: <b>{n}</b>', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
     trTitle: '🗺 오늘 GPS로 다닌 길 {a}km를 「{c}」 지도로 쓸까요?', trSub: '실제로 이 코스를 걸었을 때만 눌러 주세요. 다음부터 위성 사진 위에 이 길이 그대로 그려져요. 기록·거리는 바뀌지 않아요.',
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
@@ -1676,7 +1678,7 @@ function loop(now){
   if (S.free){   // 일반: 목표 링 화면
     if (!S.paused){ S.elapsed += dt; if (isClimb()){ if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); } else if (!autoActive() && !S.gps) advance(effSpeed() / 3.6 * dt); }
     if (++hudTick % 6 === 0) hudFree();
-    drawFree();
+    if (S.gps && !isClimb()) drawFreeMap(); else drawFree();
   } else if (isClimb()){
     if (!S.paused){ S.elapsed += dt; if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); S.phase += dt * (autoActive() ? cadence() : levelToSpm(S.level)) / 60 * Math.PI; }
     const amp = S.paused ? 0 : 0.045, bob = Math.abs(Math.sin(S.phase)) * amp - amp/2, sway = Math.sin(S.phase / 2) * amp * 0.6;
@@ -1841,7 +1843,7 @@ function applyPick(){                                      // 코스 종류에 �
 /* ---- 3) 운동 + 4) 방식(지금 운동 | 기록만 입력) ---- */
 function setAct(a){
   const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
-  $('bLoop').classList.toggle('hidden', !out);
+  $('bLoop').classList.toggle('hidden', !out || !free || isClimb()); freeRouteNote();
   if (free){   // 일반: 방구석 = 러닝머신·자전거·천국의 계단 / 바깥 = 걷기·조깅·자전거
     if (out && (a === 'tread' || ACTS[a].kind === 'up')) a = 'walk';
     else if (!out && (a === 'walk' || a === 'jog' || a === 'hike')) a = 'tread';
@@ -2028,7 +2030,7 @@ $('bHome').onclick = () => { $('endScreen').classList.add('hidden'); $('startScr
 
 /* ---- 시작 화면 채우기 ---- */
 function refreshStart(){
-  updateAutoUI(); refreshRegion();
+  updateAutoUI(); refreshRegion(); setTimeout(freeRouteNote, 0);
   // 요약: 오늘 운동 / 지금 고른 코스
   const today = new Date().toDateString(), tr0 = DB.records.filter(r => new Date(r.date).toDateString() === today);
   const tDist = tr0.reduce((a, r) => a + (r.distM || 0), 0), tUp = tr0.reduce((a, r) => a + (r.upM || 0), 0);
@@ -2613,15 +2615,23 @@ function lpDraw(cv, path){   // 위성 사진 위에 코스 선
     g.fillStyle = 'rgba(20,30,24,.15)'; g.fillRect(0, 0, W, H); line(); };
   draw(); let n = 0; const t = setInterval(() => { draw(); if (++n > 12) clearInterval(t); }, 400);
 }
-function lpSave(i){
+function lpSave(i){   /* 11/16 보스: 추천 코스는 '일반'에서 쓰고, 끝난 뒤 원하면 테마에 반영 → 일반 목표 = 이 코스, 운동 화면에 길 표시 */
   const c = LP.cands[i]; if (!c) return;
   const d = new Date(), conds = [...LP.cond].map(k => ({ green: '녹지', water: '물가', quiet: '보행로' })[k]).join('·');
-  const name = '내 코스 ' + (c.len / 1000).toFixed(1) + 'km' + (conds ? ' ' + conds : '') + ' (' + (d.getMonth() + 1) + '/' + d.getDate() + ')';
-  const id = 'my-' + Date.now().toString(36), L = Math.round(c.len);
-  const list = MINE.slice(); list.unshift({ id, name, lengthM: L, path: thinPath(c.path, 600), scene: LP.cond.has('water') ? 'river' : LP.cond.has('green') ? 'forest' : 'road', note: '추천일 ' + d.toLocaleDateString('ko-KR') });
-  try { localStorage.setItem('bgsj_mine', JSON.stringify(list.slice(0, 30))); localStorage.setItem('bgsj_course', 'mine/' + id); sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){ toastMsg(T.lpErr); return; }
-  DB.region = { country: 'mine', prov: 'mine-p', city: 'mine' }; DB.pick = { type: 'road', id }; DB.tab = 'road'; saveDB();
-  location.reload();
+  const name = (c.len / 1000).toFixed(1) + 'km' + (conds ? ' ' + conds : '') + ' (' + (d.getMonth() + 1) + '/' + d.getDate() + ')';
+  const id = 'my-' + Date.now().toString(36), L0 = Math.round(c.len);
+  const list = MINE.slice(); list.unshift({ id, name: '내 코스 ' + name, lengthM: L0, path: thinPath(c.path, 600), scene: LP.cond.has('water') ? 'river' : LP.cond.has('green') ? 'forest' : 'road', note: '추천일 ' + d.toLocaleDateString('ko-KR') });
+  MINE = list.slice(0, 30);
+  try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
+  DB.free = DB.free || { km: 5, floors: 50 }; DB.free.on = true; DB.free.route = id; DB.free.km = Math.round(L0 / 100) / 10; saveDB();
+  $('loopBox').classList.add('hidden'); refreshStart(); try { refreshFree(); } catch(e){} freeRouteNote(); toastMsg(T.lpSet.replace('{n}', name));
+}
+function freeRoute(){ const id = DB.free && DB.free.route; return id ? MINE.find(m => m.id === id) || null : null; }
+function freeRouteNote(){
+  const el = $('freeRoute'); if (!el) return; const r = freeRoute(), show = !!r && isFree() && DB.zone === 'out' && !isClimb();
+  el.classList.toggle('hidden', !show); if (!show) return;
+  el.innerHTML = T.lpNow.replace('{n}', r.name.replace(/^내 코스 /, '')) + ' <button id="frOff" class="frx">✕</button>';
+  $('frOff').onclick = e => { e.stopPropagation(); delete DB.free.route; saveDB(); refreshStart(); };
 }
 $('bLoop').onclick = () => { $('loopBox').classList.remove('hidden'); $('lpMsg').textContent = ''; $('lpList').innerHTML = ''; $('lpGo').textContent = T.lpFind; };
 $('lpClose').onclick = () => $('loopBox').classList.add('hidden');
@@ -2720,7 +2730,7 @@ $('ipPhoto').addEventListener('click', e => { if (ipViewLm && typeof ipViewLm.ph
 function satBtn(){ $('bSat').textContent = !satOn() ? T.satOff : mapSty() === 'map' ? T.mapOn : T.satOn; }
 $('bSat').onclick = e => { e.stopPropagation(); if (!satOn()){ DB.sat = true; DB.mapSty = 'sat'; } else if (mapSty() === 'sat') DB.mapSty = 'map'; else DB.sat = false; saveDB(); satBtn(); };
 function showViewMode(on){
-  $('bSat').classList.toggle('hidden', !(on && SAT_OK && !isClimb() && !S.free)); satBtn();
+  $('bSat').classList.toggle('hidden', !(on && !isClimb() && (S.free ? S.gps : SAT_OK))); satBtn();
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
@@ -2974,6 +2984,7 @@ function refreshFree(){
   document.querySelectorAll('[data-mode2]').forEach(b => b.classList.toggle('on', (b.dataset.mode2 === 'free') === free));
   $('freeBox').classList.toggle('hidden', !free); $('themeBox').classList.toggle('hidden', free);
   $('sumPickName').parentElement.classList.toggle('hidden', free);
+  freeRouteNote();
   if (!free) return;
   $('freeTitle').textContent = up ? T.freeUp : T.freeDist;
   $('freeUnit').textContent = up ? T.floorUnit : 'km';
@@ -3022,6 +3033,40 @@ function drawFree(){   // 목표 링: 가운데 큰 숫자, 둘레가 차오름
   ctx.fillText((up ? T.floorUnit : 'km') + (S.freeGoal ? ' / ' + freeGoalText(S.freeGoal, up) : ''), cx, cy + r * 0.38);
   if (S.freeGoal){ ctx.fillStyle = S.freeHit ? '#ffd27a' : '#7fcf8a'; ctx.font = '800 ' + Math.round(r * 0.16) + 'px sans-serif'; ctx.fillText(Math.floor(ratio * 100) + '%', cx, cy - r * 0.38); }
   ctx.textAlign = 'left';
+}
+/* 일반 + 바깥(GPS): 지금 있는 곳 실제 지도 (북쪽이 위) · 초록 = 오늘 다닌 길, 회색 = 따라갈 추천 길 · 두 손가락 확대·축소 */
+function drawFreeMap(){
+  const top = 0, bot = (innerHeight - ($('hudBottom').offsetHeight || innerHeight * 0.4) + 30) * DPR;
+  ctx.fillStyle = '#1b2d23'; ctx.fillRect(0, 0, W, H);
+  const tk = GPS.track || [], rt = freeRoute(), here = GPS.last ? [GPS.last.lat, GPS.last.lon] : tk.length ? tk[tk.length - 1] : rt ? rt.path[0] : null;
+  if (!here){ ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.textAlign = 'center'; ctx.font = '700 ' + (16 * DPR) + 'px sans-serif'; ctx.fillText(T.gpsWait, W / 2, bot / 2); ctx.textAlign = 'left'; return; }
+  const viewM = 420 * (NAV.zoom || 1), pxPerM = W / viewM, cl = Math.cos(here[0] * Math.PI / 180);
+  const z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * pxPerM) - 0.2))), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;   // k = 화면 px / 타일 px
+  const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
+  const cx = W / 2, cy = bot * 0.55, hx = X(here[1]), hy = Y(here[0]);
+  const sx = lo => cx + (X(lo) - hx) * k, sy = la => cy + (Y(la) - hy) * k;
+  if (DB.sat !== false){
+    const t0x = Math.floor((hx - cx / k) / 256), t1x = Math.floor((hx + (W - cx) / k) / 256), t0y = Math.floor((hy - cy / k) / 256), t1y = Math.floor((hy + (H - cy) / k) / 256);
+    for (let tx = t0x; tx <= t1x; tx++) for (let ty = t0y; ty <= t1y; ty++){
+      const im = satTile(z, tx, ty, true); if (!im || !im.ok) continue; const f = (im.naturalWidth || 256) / 256;
+      ctx.drawImage(im, 0, 0, 256 * f, 256 * f, cx + (tx * 256 - hx) * k, cy + (ty * 256 - hy) * k, 256 * k + 1, 256 * k + 1);
+    }
+    if (mapSty() === 'sat'){ ctx.fillStyle = 'rgba(20,30,24,.12)'; ctx.fillRect(0, 0, W, H); }
+  }
+  const line = (pts, col, w) => { if (pts.length < 2) return; ctx.lineJoin = ctx.lineCap = 'round'; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(sx(p[1]), sy(p[0])) : ctx.moveTo(sx(p[1]), sy(p[0])));
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = (w + 3) * DPR; ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = w * DPR; ctx.stroke(); };
+  if (rt) line(rt.path, '#8a9590', 7);
+  line(tk, '#3fae5a', 6);
+  ctx.fillStyle = 'rgba(232,87,74,.25)'; ctx.beginPath(); ctx.arc(cx, cy, 22 * DPR, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8574a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3 * DPR; ctx.beginPath(); ctx.arc(cx, cy, 9 * DPR, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.font = (10 * DPR) + 'px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.75)';
+  if (DB.sat !== false) ctx.fillText(MAPSTY[mapSty()].credit, 8 * DPR, bot - 14 * DPR);
+  // 목표 진행 작은 원
+  if (S.freeGoal){ const r = 26 * DPR, ox = W - r - 14 * DPR, oy = 70 * DPR + r, ratio = Math.min(1, S.sessionM / freeGoalM());
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(ox, oy, r + 8 * DPR, 0, 7); ctx.fill();
+    ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 6 * DPR; ctx.beginPath(); ctx.arc(ox, oy, r, 0, 7); ctx.stroke();
+    ctx.strokeStyle = S.freeHit ? '#ffd27a' : '#7fcf8a'; ctx.beginPath(); ctx.arc(ox, oy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.01, ratio)); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '800 ' + (12 * DPR) + 'px sans-serif'; ctx.fillText(Math.floor(ratio * 100) + '%', ox, oy + 4 * DPR); ctx.textAlign = 'left'; }
 }
 /* 테마 반영: 기록 r에 credit을 붙임 → 코스 진행이 자동으로 늘어남 */
 function themeName(up){ if (up === undefined) up = DB.pick.type === 'climb'; return up ? tr(TGT(DB.climb.sel).short || TGT(DB.climb.sel).name) : tr(COURSE.short || COURSE.name); }
@@ -3407,7 +3452,7 @@ const MAPSTY = {   // 🛰 위성(Esri) / 🗺 선명한 지도(CARTO, 오픈스
 const SAT = { cache: new Map(), url: (z, x, y) => MAPSTY[mapSty()].url(z, x, y) };
 function mapSty(){ return DB.mapSty === 'map' ? 'map' : 'sat'; }
 const SAT_OK = !!GEO_NOW || !!COURSE.pathReal;   /* 11/16 보스: 저수지 코스가 물 위로 그려짐 → 손으로 맞춘 좌표도 실제 길에 붙인 뒤에만 위성. pathReal = 길 찾기 서버가 만든 길(내 코스) */   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
-const satOn = () => SAT_OK && DB.sat !== false;   // 바닥 지도 켜짐 (종류는 mapSty)
+const satOn = () => (S.free && S.gps ? true : SAT_OK) && DB.sat !== false;   // 바닥 지도 켜짐 (종류는 mapSty)
 function satTile(z, x, y, load){
   const k = mapSty() + z + '/' + x + '/' + y; let im = SAT.cache.get(k);
   if (!im && load){
