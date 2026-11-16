@@ -596,7 +596,7 @@
 </div>
 
 <script>
-const BUILD = '202611161559';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161601';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -613,10 +613,10 @@ const WORLD = {
      새 지역을 넣으려면 여기에 한 줄 + cities에 그 도시 데이터를 넣으면 됩니다. */
   regions: [
     { id: 'kr', name: { ko: '대한민국' }, children: [
-      { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'hamyang', name: { ko: '함양군' } }, { id: 'sancheong', name: { ko: '산청군' } } ] },
-      { id: 'jeonnam',   name: { ko: '전라남도' },   children: [ { id: 'gurye', name: { ko: '구례군' } } ] },
       { id: 'seoul-si',  name: { ko: '서울특별시' }, children: [ { id: 'seoul',   name: { ko: '서울' } } ] },
       { id: 'busan-si',  name: { ko: '부산광역시' }, children: [ { id: 'busan',   name: { ko: '부산' } } ] },
+      { id: 'jeonnam',   name: { ko: '전라남도' },   children: [ { id: 'gurye', name: { ko: '구례군' } } ] },
+      { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'sancheong', name: { ko: '산청군' } }, { id: 'hamyang', name: { ko: '함양군' } } ] },
       { id: 'jeju-do',   name: { ko: '제주특별자치도' }, children: [ { id: 'jeju', name: { ko: '제주' } } ] } ] },
     { id: 'long', name: { ko: '🧭 장거리 여정' }, children: [ { id: 'long-kr', name: { ko: '국내' }, children: [ { id: 'longwalk', name: { ko: '🚶 걷기 · 둘레길' } }, { id: 'longkr', name: { ko: '🚲 자전거 종주' } } ] }, { id: 'long-world', name: { ko: '해외' }, children: [ { id: 'longworld', name: { ko: '순례길·트레일' } } ] } ] },
     { id: 'us', name: { ko: '미국' },         children: [ { id: 'ny',      name: { ko: '뉴욕주' }, children: [ { id: 'newyork', name: { ko: '뉴욕' } } ] } ] },
@@ -1902,7 +1902,10 @@ function refreshRegion(){
   setTimeout(() => { conqLine(); promoDot(); }, 0);
   const { c, p, ci } = regionNodes();
   const opt = (list, sel) => list.map(x => '<option value="' + x.id + '"' + (x.id === sel ? ' selected' : '') + '>' + tr(x.name) + '</option>').join('');
-  $('rCountry').innerHTML = opt(WORLD.regions, c.id); $('rProv').innerHTML = opt(c.children, p.id); $('rCity').innerHTML = opt(p.children, ci.id);
+  /* 11/16 보스: 섞여 보임 → 순서 기준 = ① 나의 코스 ② 대한민국 ③ 해외 나라(가나다) ④ 테마 여정, 묶음 제목 표시 */
+  const R = WORLD.regions, ko = x => tr(x.name).replace(/^[^가-힣A-Za-z]+/, ''), grp = (lbl, list) => list.length ? '<optgroup label="' + lbl + '">' + opt(list, c.id) + '</optgroup>' : '';
+  const other = R.filter(x => !['mine', 'kr', 'long'].includes(x.id)).sort((a, b) => ko(a).localeCompare(ko(b), 'ko'));
+  $('rCountry').innerHTML = grp('나의 코스', R.filter(x => x.id === 'mine')) + grp('나라 · 지역', R.filter(x => x.id === 'kr').concat(other)) + grp('테마 여정', R.filter(x => x.id === 'long')); $('rProv').innerHTML = opt(c.children, p.id); $('rCity').innerHTML = opt(p.children, ci.id);
 }
 $('rCountry').onchange = () => { DB.region = { country: $('rCountry').value }; saveDB(); refreshStart(); };
 $('rProv').onchange = () => { DB.region = { country: DB.region.country, prov: $('rProv').value }; saveDB(); refreshStart(); };
