@@ -1473,6 +1473,10 @@ const HUB_LINK = {   // 출처 원본 페이지 (공공누리·CC 모두 링크 
   'hamhwaru': 'https://commons.wikimedia.org/wiki/File:%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg', 'gate-end': 'https://commons.wikimedia.org/wiki/File:%ED%95%A8%EC%96%91_%ED%95%A8%ED%99%94%EB%A3%A8.jpg',
   'start': 'https://commons.wikimedia.org/wiki/File:Hamyang_Sangrim.JPG'
 };
+const small = u => 'https://wsrv.nl/?url=' + encodeURIComponent(u) + '&w=800&q=80&output=jpg';   // 큰 원본을 800px로 줄여 받기 (무료 이미지 줄이기 서버)
+HUB_PHOTO['choichiwon'] = small('https://portal.nrich.go.kr/file_link/newFolder/584/Image/original/20240828171604_00001.jpg');   // 11/15 20:37 아리 채택 (원본 11331×5898)
+HUB_CREDIT['choichiwon'] = '국립문화유산연구원 · 공공누리 1유형';
+HUB_LINK['choichiwon'] = 'https://portal.nrich.go.kr/kor/ksmUsrView.do?ksm_idx=13610&menuIdx=584';
 const PHOTO_CREDIT = {}, PHOTO_LINK = {};   // 사진 주소 → 출처·원본 (화면에서 찾아 쓰기)
 Object.keys(HUB_PHOTO).forEach(k => { if (HUB_CREDIT[k]) PHOTO_CREDIT[HUB_PHOTO[k]] = HUB_CREDIT[k]; if (HUB_LINK[k]) PHOTO_LINK[HUB_PHOTO[k]] = HUB_LINK[k]; });
 function photoHtml(src, r, small){
@@ -2863,9 +2867,12 @@ function stepInfo(){   // { total 하루 합계, work 운동 걸음, other 운�
   const d = stepDay(), today = new Date().toDateString();
   const est = DB.records.filter(r => new Date(r.date).toDateString() === today).reduce((a, r) => a + recSteps(r), 0);
   const work = Math.max(d.run, est), other = Math.max(0, d.n - d.run);
-  let total = other + work;
-  if (d.set && d.set > total) total = d.set;          // 삼성 헬스 숫자가 더 크면 그 숫자
-  if (d.native && d.native > total) total = d.native; // 앱(APK): 폰 걸음 칩 24시간 숫자
+  /* 11/16 정정: 앱(APK)은 폰 걸음 칩 숫자만 씀 (흔들림으로 센 걸음은 손동작까지 세서 더 많이 나옴 → 더하지 않음)
+     웹은 폰 걸음 칩이 없으니 운동 기록 + 켜 둔 동안 센 걸음
+     '삼성 헬스 걸음수로 맞추기' = 그 순간 숫자를 그 값으로 고정, 이후 새로 걸은 만큼만 더함 (더 작은 숫자로도 낮아짐) */
+  const raw = d.native != null ? Math.max(d.native, 0) : other + work;
+  let total = raw;
+  if (d.set != null) total = d.set + Math.max(0, raw - (d.setBase != null ? d.setBase : raw));
   const free = Math.max(0, total - work - d.used);
   return { total, work, other: total - work, free };
 }
@@ -2902,7 +2909,7 @@ function refreshSteps(){
 }
 document.querySelectorAll('[data-steps]').forEach(b => b.onclick = () => { stepsPermission(); $('stInput').value = ''; $('stepBox').classList.remove('hidden'); refreshSteps(); });
 $('stClose').onclick = () => $('stepBox').classList.add('hidden');
-$('stSet').onclick = () => { const v = parseInt($('stInput').value, 10); if (!(v >= 0)) return; stepDay().set = v; saveDB(); $('stInput').value = ''; refreshSteps(); };
+$('stSet').onclick = () => { const v = parseInt($('stInput').value, 10); if (!(v >= 0)) return; const sd = stepDay(); sd.setBase = sd.native != null ? sd.native : Math.max(0, sd.n - sd.run) + Math.max(sd.run, DB.records.filter(r => new Date(r.date).toDateString() === new Date().toDateString()).reduce((a, r) => a + recSteps(r), 0)); sd.set = v; saveDB(); $('stInput').value = ''; refreshSteps(); };
 $('stApply').onclick = () => {
   const free = stepFree(); if (free < 10 || DB.pick.type === 'climb') return;
   const m = Math.round(free * (DB.stride.walk || 0.7)), before = walkTotal(), ps = walkPassed(before, before + m).filter(p => !p.lap), id = Date.now();
