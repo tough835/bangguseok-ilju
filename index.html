@@ -378,7 +378,8 @@
     <div class="st" style="display:flex;align-items:center;justify-content:space-between">🔄 내 주변 순환 코스 <button id="lpSty" class="frx" style="font-size:14px;padding:6px 10px"></button></div>
     <div class="muted" style="margin-bottom:10px">지금 있는 곳에서 출발해 돌아오는 길을 찾아요</div>
     <div class="lbl">거리</div>
-    <div class="lchips" id="lpDist"><button data-km="1">1km</button><button data-km="2">2km</button><button data-km="3" class="on">3km</button><button data-km="5">5km</button><button data-km="7">7km</button><button data-km="10">10km</button></div>
+    <div class="lchips" id="lpDist"><button data-km="1">1km</button><button data-km="2">2km</button><button data-km="3" class="on">3km</button><button data-km="5">5km</button><button data-km="7">7km</button><button data-km="10">10km</button><button data-km="0">✏️ 직접</button></div>
+    <div id="lpKmRow" class="hidden" style="display:none;align-items:center;gap:8px;margin-top:8px"><input id="lpKm" type="number" inputmode="decimal" step="0.1" min="0.5" max="42" placeholder="예: 4.2" style="flex:1;height:44px;border-radius:12px;border:0;padding:0 12px;font-size:18px;background:#26282c;color:#fff"><span>km</span></div>
     <div class="lbl">조건 (여러 개 가능)</div>
     <div class="lchips" id="lpCond"><button data-c="green">🌳 녹지·그늘</button><button data-c="water">🌊 물가</button><button data-c="quiet">🚶 보행로·큰길 피하기</button></div>
     <div id="lpMsg" class="muted" style="margin-top:12px;min-height:20px"></div>
@@ -681,7 +682,7 @@
 </div>
 
 <script>
-const BUILD = '202611162354';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611170006';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2440,7 +2441,7 @@ $('bHome').onclick = () => { $('endScreen').classList.add('hidden'); $('startScr
 
 /* ---- 시작 화면 채우기 ---- */
 function startLabel(){   // 11/16: 위쪽 '고른 코스' 칸을 없애고 출발 버튼에 코스 이름·진행을 함께 표시
-  const b = $('bStart'); if (!b) return; const lbl = b.dataset.lbl || T.start, free = isFree(), nm = ($('sumPickName').textContent || '').replace(/^\S+\s/, ''), pr = $('sumPick').textContent || '';
+  const b = $('bStart'); if (!b) return; const lbl = (b.dataset.lbl || T.start).replace(/▶/g, '').trim(), free = isFree(), nm = ($('sumPickName').textContent || '').replace(/^\S+\s/, ''), pr = $('sumPick').textContent || '';
   b.innerHTML = (free || !nm ? '' : '<span class="bsN">' + nm.split(' · ')[0] + ' · ' + pr + '</span>') + '<span class="bsG">' + lbl + ' ▶</span>';
   b.style.justifyContent = free || !nm ? 'center' : '';
 }
@@ -2987,12 +2988,14 @@ function lpRoute(pts){
   });
 }
 async function lpOne(ang){
-  const L = LP.km * 1000; let r = L / 7.2, best = null;
-  for (let i = 0; i < 3; i++){
+  /* 11/17 보스: 원하는 거리로 안 나옴 → 목표 ±8% 안에 들 때까지 최대 4번 고리 크기 조정 (전엔 ±15%·3번).
+     실제 길은 구불어서 같은 반지름이라도 길어짐 → 받은 길이 비율로 반지름을 줄이고 늘림 */
+  const L = LP.km * 1000; let r = L / 8, best = null;
+  for (let i = 0; i < 4; i++){
     const v = lpPull(lpVerts(LP.here, r, ang), r), rt = await lpRoute([LP.here].concat(v, [LP.here]));
     if (!best || Math.abs(rt.len - L) < Math.abs(best.len - L)) best = rt;
-    if (Math.abs(rt.len - L) / L < 0.15) break;
-    r *= Math.max(0.5, Math.min(1.8, L / rt.len));
+    if (Math.abs(rt.len - L) / L < 0.08) break;
+    r *= Math.max(0.4, Math.min(2.5, Math.pow(L / rt.len, 1.1)));
   }
   const near = (pool, m) => pool.length ? best.path.filter((p, i) => i % 3 === 0 && pool.some(q => dM(p, q) < m)).length / Math.ceil(best.path.length / 3) : 0;
   best.green = LP.cond.has('green') ? near(LP.feats.green, 220) : null; best.water = LP.cond.has('water') ? near(LP.feats.water, 80) : null;
@@ -3007,6 +3010,7 @@ async function lpFind(){
     for (let k = 0; k < 3; k++){
       $('lpMsg').textContent = T.lpRoute.replace('{n}', k + 1);
       try { const c = await lpOne(a0 + k * Math.PI * 2 / 3); LP.cands.push(c); lpCard(c, LP.cands.length - 1); } catch(e){}
+      if (k < 2) await new Promise(r => setTimeout(r, 400));   // 길 찾기 서버 부담 줄이기
     }
     $('lpMsg').textContent = LP.cands.length ? T.lpPick : T.lpNone;
   } catch(e){ $('lpMsg').textContent = T.lpErr + ' (' + (e && (e.message || e.code) || '') + ')'; }
@@ -3014,7 +3018,7 @@ async function lpFind(){
 }
 function lpCard(c, i){
   const d = document.createElement('div'); d.className = 'lpc';
-  const tags = [(c.len / 1000).toFixed(1) + 'km'];
+  const off = Math.round((c.len / (LP.km * 1000) - 1) * 100), tags = [(c.len / 1000).toFixed(1) + 'km' + (Math.abs(off) >= 8 ? ' (목표 ' + LP.km + 'km ' + (off > 0 ? '+' : '') + off + '%)' : ' ✓')];
   if (c.green != null) tags.push('🌳 ' + Math.round(c.green * 100) + '%'); if (c.water != null) tags.push('🌊 ' + Math.round(c.water * 100) + '%');
   d.innerHTML = '<canvas width="1280" height="680"></canvas><div class="row"><b>' + T.lpCand.replace('{n}', i + 1) + ' · ' + tags.join(' · ') + '</b><button data-i="' + i + '">' + T.lpUse + '</button></div>';
   $('lpList').appendChild(d); lpDraw(d.querySelector('canvas'), c.path);
@@ -3056,7 +3060,10 @@ function freeRouteNote(){
 $('bLoop').onclick = () => { lpStyBtn(); $('loopBox').classList.remove('hidden'); $('lpMsg').textContent = ''; $('lpList').innerHTML = ''; $('lpGo').textContent = T.lpFind; };
 $('lpClose').onclick = () => $('loopBox').classList.add('hidden');
 $('lpGo').onclick = lpFind;
-$('lpDist').querySelectorAll('button').forEach(b => b.onclick = () => { $('lpDist').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); LP.km = +b.dataset.km; });
+$('lpDist').querySelectorAll('button').forEach(b => b.onclick = () => { $('lpDist').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  const own = b.dataset.km === '0'; $('lpKmRow').classList.toggle('hidden', !own); $('lpKmRow').style.display = own ? 'flex' : 'none';
+  if (own){ $('lpKm').value = LP.km || 3; $('lpKm').focus(); } else LP.km = +b.dataset.km; });
+$('lpKm').oninput = () => { const v = parseFloat($('lpKm').value); if (v >= 0.5 && v <= 42) LP.km = Math.round(v * 10) / 10; };   // 11/17 보스: 원하는 거리 직접 입력 (0.5~42km)
 $('lpCond').querySelectorAll('button').forEach(b => b.onclick = () => { const k = b.dataset.c; LP.cond.has(k) ? LP.cond.delete(k) : LP.cond.add(k); b.classList.toggle('on', LP.cond.has(k)); });
 
 /* ---- 위키 사진 받기 ---- */
