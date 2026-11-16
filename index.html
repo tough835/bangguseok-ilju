@@ -929,7 +929,7 @@ let MINE = []; try { MINE = JSON.parse(localStorage.getItem('bgsj_mine')) || [];
 if (MINE.length){
   WORLD.regions.unshift({ id: 'mine', name: { ko: '⭐ 내 코스' }, children: [ { id: 'mine-p', name: { ko: '내가 만든 코스' }, children: [ { id: 'mine', name: { ko: '내 코스' } } ] } ] });
   const cs = {};
-  MINE.forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: true, pathExact: true,
+  MINE.forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: true, pathReal: true,
     elev: [[0, 0], [L, 0]], note: m.note || '', source: '내 주변 순환 코스 추천', segments: [ { from: 0, to: L, scene: m.scene || 'road' } ],
     landmarks: [ { id: m.id + '-s', name: { ko: '출발' }, at: 10, side: 1, art: 'gate', photo: null, desc: { ko: '' } },
                  { id: m.id + '-h', name: { ko: '반환점' }, at: Math.round(L / 2), side: -1, art: 'sign', photo: null, desc: { ko: '절반 왔어요' }, hub: true },
@@ -1065,7 +1065,7 @@ const GEO_KEY = 'bgsj_geo', GEO_ID = ACTIVE.city + '/' + COURSE.id;
 let RGEO = {}; try { RGEO = JSON.parse(localStorage.getItem(GEO_KEY)) || {}; } catch(e){}
 const saveGeo = () => { try { localStorage.setItem(GEO_KEY, JSON.stringify(RGEO)); } catch(e){} };
 const RAW_PATH = COURSE.path || null;
-const GEO_NOW = RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 ? RGEO[GEO_ID] : null;
+const GEO_NOW = RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 && !(COURSE.pathExact && RGEO[GEO_ID].src === 'osm' && !RGEO[GEO_ID].v2) ? RGEO[GEO_ID] : null;   // 손으로 맞춘 코스는 지도 맞추기(v2) 결과만 씀
 if (GEO_NOW) COURSE.path = GEO_NOW.p;
 const REAL_PATH = !!COURSE.path;   // 실제 좌표가 있는 코스만 위성 지도·거리뷰를 씀
 if (!COURSE.path){
@@ -3278,11 +3278,23 @@ function snapRoads(){
       return { distance: tp.summary.length * 1000, coords };
     });
   };
-  osrm().catch(e1 => valhalla().catch(e2 => { throw new Error(e1.message + ' / ' + e2.message); })).then(rt => {
+  // 모양을 맞춰 그린 코스(pathExact): 30m 간격으로 촘촘히 나눠 '가장 가까운 걷는 길'에 붙임(지도 맞추기) → 안 되면 길 찾기
+  const trace = () => {
+    const dense = []; for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], n = Math.max(1, Math.ceil(dM(a, b) / 30)); for (let k = 0; k < n; k++) dense.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } dense.push(pts[pts.length - 1]);
+    const q = { shape: dense.map(x => ({ lat: +x[0].toFixed(6), lon: +x[1].toFixed(6) })), costing: 'pedestrian', shape_match: 'map_snap', trace_options: { search_radius: 120 }, directions_type: 'none' };
+    return fetch('https://valhalla1.openstreetmap.de/trace_route', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(q) })
+      .then(r => { if (!r.ok) throw new Error('trace ' + r.status); return r.json(); }).then(j => {
+        const tp = j && j.trip; if (!tp) throw new Error('trace no trip'); let coords = []; tp.legs.forEach(l => coords = coords.concat(poly6(l.shape)));
+        return { distance: tp.summary.length * 1000, coords };
+      });
+  };
+  const chain = COURSE.pathExact ? trace().catch(e0 => osrm().catch(e1 => valhalla().catch(e2 => { throw new Error(e0.message + ' / ' + e1.message + ' / ' + e2.message); })))
+    : osrm().catch(e1 => valhalla().catch(e2 => { throw new Error(e1.message + ' / ' + e2.message); }));
+  chain.then(rt => {
     const ratio = rt.distance / COURSE.lengthM;
     if (ratio < 0.6 || ratio > 1.8){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance) }; saveGeo(); GEO_ST = 'bad'; geoNote(); return; }
     const c = thinPath(rt.coords.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
-    RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now() }; saveGeo();
+    RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now(), v2: 1 }; saveGeo();
     GEO_ST = 'ok'; geoNote();
     if (!S.running){ toastMsg(T.geoGot); setTimeout(() => { if (S.running || document.querySelector('.modal:not(.hidden), #gallery:not(.hidden), #stepBox:not(.hidden)')) return; try { sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, 1800);   /* 창이 열려 있으면 새로 고치지 않음 (다음에 열 때 반영) */ }
   }).catch(e => { GEO_ST = 'err'; GEO_ERR = String(e && e.message || e).slice(0, 60); geoNote(); });
@@ -3333,7 +3345,7 @@ $('trNo').onclick = () => { $('trTitle').textContent = T.apLater; $('trYes').dis
    · Esri World Imagery 타일을 그때그때 불러와 그림 (저장하지 않음, 키 없음)
    · 실제 좌표가 있는 길 코스에서만. 🛰 버튼으로 끄고 켬 (DB.sat) */
 const SAT = { cache: new Map(), url: (z, x, y) => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x };
-const SAT_OK = !!GEO_NOW || !!COURSE.pathExact;   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
+const SAT_OK = !!GEO_NOW || !!COURSE.pathReal;   /* 11/16 보스: 저수지 코스가 물 위로 그려짐 → 손으로 맞춘 좌표도 실제 길에 붙인 뒤에만 위성. pathReal = 길 찾기 서버가 만든 길(내 코스) */   // pathExact = 좌표를 실제 모양에 맞춰 넣은 코스   // 대충 찍은 좌표로는 건물을 가로질러 보여서, 실제 길 모양을 받은 뒤에만 위성 지도
 const satOn = () => SAT_OK && DB.sat !== false;
 function satTile(z, x, y, load){
   const k = z + '/' + x + '/' + y; let im = SAT.cache.get(k);
