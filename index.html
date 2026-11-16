@@ -630,7 +630,7 @@
 </div>
 
 <script>
-const BUILD = '202611162040';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611162050';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1858,10 +1858,10 @@ function loop(now){
     const st = climbState();
     if (++hudTick % 6 === 0){ AREA = viewArea(); hudClimb(st); if (NAV.full) updateInfoClimb(st); }
     if (!AREA) AREA = viewArea();
-    /* 11/16: 실제 등산로가 있는 산 = 오른쪽 위를 누를 때마다 큰 화면이 실제 지도 → 그림 → 전체(높이 그래프) → 실제 지도 … */
+    /* 11/16 보스: 실제 등산로가 있는 산은 그림(직선 경사) 불필요 → 실제 지도 ↔ 전체(실제 높이 그래프) 두 화면만 */
     const gOn = !!st.geo;
     if (NAV.full){ drawClimbView(st); if (gOn){ drawClimbMap(mctx, mapCv.width, mapCv.height, st, true); miniTag(T.tagReal); } else { drawClimbNav(mctx, 0, 0, mapCv.width, mapCv.height, st, true); miniTag(T.tagHere); } }
-    else if (gOn && !NAV.alt){ drawClimbMap(ctx, W, AREA.bot, st, false); drawClimbNav(mctx, 0, 0, mapCv.width, mapCv.height, st, true); miniTag(T.tagPic); }
+    else if (gOn){ drawClimbMap(ctx, W, AREA.bot, st, false); drawClimbMini(st); }
     else { drawClimbNav(ctx, 0, 0, W, AREA.bot, st, false); drawClimbMini(st); }
   } else {
     const sp = effSpeed();
@@ -3112,7 +3112,7 @@ function outTheme(){ return S.gps && !S.free && !isClimb(); }
 /* 11/16 보스: 오른쪽 위를 누를 때마다 큰 화면이 돌아가며 바뀜 — 실제 → 테마(확대) → 전체 경로 → 실제 … · 작은 칸에는 '다음 화면'을 미리 보여 줌 */
 $('map').onclick = () => {
   if (!S.running) return;
-  if (outTheme() || climbGeoOn()){
+  if (outTheme()){
     if (NAV.full){ NAV.full = false; NAV.alt = false; showViewMode(true); }
     else if (NAV.alt){ NAV.alt = false; NAV.full = true; showViewMode(true); }
     else NAV.alt = true;

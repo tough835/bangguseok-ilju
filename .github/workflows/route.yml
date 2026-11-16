@@ -1,0 +1,21 @@
+name: route-snap
+# 짧은 코스 지점들 → 실제 걷는 길 노선 파일 (data/route/*.json)
+on:
+  workflow_dispatch:
+  push:
+    paths: [ 'data/route_src.json', 'tools/route_fetch.py' ]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python tools/route_fetch.py
+      - run: |
+          git config user.name "route-bot"; git config user.email "route-bot@users.noreply.github.com"
+          git add data/route
+          git commit -m "짧은 코스 실제 길 노선 갱신" || echo "no change"
+          git pull --rebase origin main && git push origin HEAD:main
