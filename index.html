@@ -595,7 +595,7 @@
 </div>
 
 <script>
-const BUILD = '202611161539';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161546';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1121,6 +1121,8 @@ const saveGeo = () => { try { localStorage.setItem(GEO_KEY, JSON.stringify(RGEO)
 const RAW_PATH = COURSE.path || null;
 const GEO_NOW = RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 && !(COURSE.pathExact && RGEO[GEO_ID].src === 'osm' && !RGEO[GEO_ID].v2) ? RGEO[GEO_ID] : null;   // 손으로 맞춘 코스는 지도 맞추기(v2) 결과만 씀
 if (GEO_NOW) COURSE.path = GEO_NOW.p;
+/* 장거리: 실제 길을 따라 받은 구간별 거리로 거점 위치를 다시 잡음 → 지도 위 거점 = 진행 거리 위 거점 */
+if (GEO_NOW && GEO_NOW.ats && COURSE.long && GEO_NOW.ats.length === COURSE.landmarks.length) COURSE.landmarks.forEach((m, i) => { m.at = Math.max(20, Math.min(COURSE.lengthM - 20, GEO_NOW.ats[i])); });
 const REAL_PATH = !!COURSE.path;   // 실제 좌표가 있는 코스만 위성 지도·거리뷰를 씀
 if (!COURSE.path){
   const n = 40, step = COURSE.lengthM / n, pts = [[35.52, 127.72]];
@@ -3487,24 +3489,24 @@ function poly6(str){   // Valhalla 경로 문자열 → [[경도, 위도]...] (O
   return out;
 }
 function snapRoads(){
-  if (!RAW_PATH || GEO_NOW || S.free || COURSE.long) return;   // 장거리(수백 km)는 큰 지점끼리 이은 대략 모양으로만
+  if (!RAW_PATH || GEO_NOW || S.free) return;   // 장거리도 거점끼리 실제 길(도보·자전거)로 이어 받음 (11/16 보스: 그림 지도만 나옴)
   const old = RGEO[GEO_ID]; if (old && old.bad && old.v3 && Date.now() - old.t < 864e5) return;   // v3 이전 실패 기록은 무시하고 다시
   if (navigator.onLine === false){ GEO_ST = 'off'; geoNote(); return; }
   GEO_ST = 'wait'; geoNote();
   const pts = RAW_PATH.slice(); if (COURSE.loop){ const a = pts[0], b = pts[pts.length - 1]; if (a[0] !== b[0] || a[1] !== b[1]) pts.push(a); }
-  const prof = DB.roadAct === 'bike' ? 'bike' : 'foot';
+  const prof = (COURSE.long ? COURSE.kind === '자전거' : DB.roadAct === 'bike') ? 'bike' : 'foot';
   const url = 'https://routing.openstreetmap.de/routed-' + prof + '/route/v1/driving/' + pts.map(q => q[1].toFixed(5) + ',' + q[0].toFixed(5)).join(';') + '?overview=full&geometries=geojson';
   // 1순위 OSRM(FOSSGIS) → 안 되면 2순위 Valhalla(FOSSGIS). 둘 다 오픈스트리트맵 기반 무료 공개 서버
   const osrm = () => fetch(url).then(r => { if (!r.ok) throw new Error('OSRM ' + r.status); return r.json(); }).then(j => {
     const rt = j && j.routes && j.routes[0]; if (!rt || !rt.geometry) throw new Error('OSRM ' + ((j && j.code) || 'no route'));
-    return { distance: rt.distance, coords: rt.geometry.coordinates, how: 'OSRM' };
+    return { distance: rt.distance, coords: rt.geometry.coordinates, how: 'OSRM', legs: (rt.legs || []).map(l => l.distance) };
   });
   const valhalla = () => {
     const q = { locations: pts.map(x => ({ lat: x[0], lon: x[1], type: 'break_through' })), costing: prof === 'bike' ? 'bicycle' : 'pedestrian', directions_type: 'none' };
     return fetch('https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(q))).then(r => { if (!r.ok) throw new Error('Valhalla ' + r.status); return r.json(); }).then(j => {
       const tp = j && j.trip; if (!tp) throw new Error('Valhalla no trip');
       let coords = []; tp.legs.forEach(l => coords = coords.concat(poly6(l.shape)));
-      return { distance: tp.summary.length * 1000, coords, how: 'Valhalla' };
+      return { distance: tp.summary.length * 1000, coords, how: 'Valhalla', legs: tp.legs.map(l => l.summary.length * 1000) };
     });
   };
   // 모양을 맞춰 그린 코스(pathExact): 30m 간격으로 촘촘히 나눠 '가장 가까운 걷는 길'에 붙임(지도 맞추기) → 안 되면 길 찾기
@@ -3552,9 +3554,11 @@ function snapRoads(){
     : osrm().catch(e1 => valhalla().catch(e2 => { throw new Error(e1.message + ' / ' + e2.message); }));
   chain.then(rt => {
     const ratio = rt.distance / COURSE.lengthM;
-    if (ratio < 0.6 || ratio > 1.8){ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance), v3: 1, how: rt.how || '' }; saveGeo(); GEO_ST = 'bad'; geoNote(); return; }
-    const c = thinPath(rt.coords.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), 500);
-    RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now(), v2: 1 }; saveGeo();
+    if (ratio < (COURSE.long ? 0.3 : 0.6) || ratio > (COURSE.long ? 3 : 1.8)){   /* 장거리는 공식 길과 일반 길 차이가 커서 넓게 */ RGEO[GEO_ID] = { bad: 1, t: Date.now(), d: Math.round(rt.distance), v3: 1, how: rt.how || '' }; saveGeo(); GEO_ST = 'bad'; geoNote(); return; }
+    const c = thinPath(rt.coords.map(q => [+q[1].toFixed(5), +q[0].toFixed(5)]), COURSE.long ? 3000 : 500);
+    RGEO[GEO_ID] = { p: c, src: 'osm', d: Math.round(rt.distance), t: Date.now(), v2: 1 };
+    if (COURSE.long && rt.legs && rt.legs.length === COURSE.landmarks.length - 1){ let a = 0; const k = COURSE.lengthM / rt.distance; RGEO[GEO_ID].ats = [0].concat(rt.legs.map(d => Math.round((a += d) * k))); }
+    saveGeo();
     GEO_ST = 'ok'; geoNote();
     if (!S.running){ toastMsg(T.geoGot); setTimeout(() => { if (S.running || document.querySelector('.modal:not(.hidden), #gallery:not(.hidden), #stepBox:not(.hidden)')) return; try { sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, 1800);   /* 창이 열려 있으면 새로 고치지 않음 (다음에 열 때 반영) */ }
   }).catch(e => { GEO_ST = 'err'; GEO_ERR = String(e && e.message || e).slice(0, 60); geoNote(); });
