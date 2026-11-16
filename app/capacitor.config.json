@@ -12,6 +12,8 @@
   },
   "android": {
     "allowMixedContent": false,
-    "useLegacyBridge": true
-  }
+    "useLegacyBridge": true,
+    "backgroundColor": "#1b1c1f"
+  },
+  "backgroundColor": "#1b1c1f"
 }

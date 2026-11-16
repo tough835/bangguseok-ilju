@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>방구석러너 · 러닝머신·100대명산 가상코스</title>
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#1b1c1f">
 <style>
   html,body{margin:0;height:100%;background:#131416;overflow:hidden;color:#fff;
     font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
@@ -373,6 +374,8 @@
 </style>
 </head>
 <body>
+<!-- 11/17 보스: 열 때 예전 화면이 잠깐 보였다 바뀌던 문제 → 새 버전 확인이 끝날 때까지 앱 표식 화면(안드로이드 첫 화면과 같은 그림)으로 가림 -->
+<div id="boot" style="position:fixed;inset:0;z-index:100;background:#1b1c1f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .25s"><svg viewBox="0 0 100 100" width="112" height="112" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 55L32 42L46 55M22 52V76H28M36 76H42V52" stroke="#6e7178" stroke-width="5"/><path d="M32 76C32 90 62 92 64 70C66 52 80 56 76 36" stroke="#d7f548" stroke-width="7.5"/></g><circle cx="74" cy="22" r="9.5" fill="#d7f548"/><path d="M66.2 26.8H81.8L74 38.6Z" fill="#d7f548"/><circle cx="74" cy="22" r="3.8" fill="#1b1c1f"/></svg><b style="font-size:22px;letter-spacing:.5px">방구석러너</b></div>
 
 <canvas id="view"></canvas>
 <canvas id="map" class="hidden"></canvas>
@@ -737,7 +740,7 @@
 </div>
 
 <script>
-const BUILD = '202611170012';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611170021';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2819,15 +2822,17 @@ const autoCapable = () => S.act === 'tread' || S.act === 'stair';
 const autoActive = () => SENS.on && SENS.ok;
 window.addEventListener('error', e => errNote(e.message || 'error'));
 /* 새 버전 확인: 폰(앱 안 화면)이 예전 파일을 저장해 두고 쓰는 문제(11/16) → 열 때 서버 파일의 BUILD와 비교해 다르면 새로 받음 */
-setTimeout(() => {
+function bootDone(){ const b = document.getElementById('boot'); if (!b || b.dataset.off) return; b.dataset.off = 1; b.style.opacity = 0; setTimeout(() => b.remove(), 260); }
+setTimeout(bootDone, 2000);   // 인터넷이 느려도 2초 넘게 가리지 않음
+(() => {   /* 11/17: 확인을 1.2초 뒤가 아니라 바로 → 새 버전이면 표식 화면 뒤에서 바로 새로 받음 */
   fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(t => {
-    const m = /const BUILD = '(\d+)'/.exec(t); if (!m || m[1] === BUILD) return;
+    const m = /const BUILD = '(\d+)'/.exec(t); if (!m || m[1] === BUILD) return bootDone();
     let tried = ''; try { tried = sessionStorage.getItem('bgsj_upd') || ''; } catch(e){}
-    if (tried === m[1] || S.running) return;
+    if (tried === m[1] || S.running) return bootDone();
     try { sessionStorage.setItem('bgsj_upd', m[1]); sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){}
     location.replace(location.pathname + '?v=' + m[1]);
-  }).catch(() => {});
-}, 1200);
+  }).catch(bootDone);
+})();
 window.addEventListener('unhandledrejection', e => errNote(String(e.reason && e.reason.message || e.reason)));
 function errNote(m){
   m = String(m).slice(0, 120); if (/ResizeObserver|Script error/.test(m)) return;
