@@ -594,7 +594,7 @@
 </div>
 
 <script>
-const BUILD = '202611161519';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611161521';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1009,7 +1009,7 @@ const TEXT = {
     done: '🎉 {course} 완주!', doneN: '누적 {n}회째', photoSlot: '사진 자리', approx: '약', min: '분', times: '회',
     goal: '오늘 목표', gNext: '다음 거점', gSpot: '거점 고르기', gDist: '거리', toGoal: '🎯', nextHub: '다음 거점',
     goalReach: '🎯 목표 달성!', soClose: '{s}까지 {d} 남았어요', reachBy: '→ {s} 도착',
-    arrive: '도착', passedBy: '지나온 곳', trail: '지나온 길',
+    arrive: '도착', passedBy: '지나온 곳', trail: '지나온 길', trailPre: '이 코스 거점 (앞으로 지날 곳)', trailNone: '아직 이 코스에서 지나온 곳이 없어요. 흐린 칸은 앞으로 지날 거점이에요.',
     stampSum: '거점 {a}/{b} · 지나온 명소 {c}/{d}', visits: '도착 {n}회 · 처음 {d}', notYet: '아직 도착 전', aheadOf: '여기서 {d}', atKm: '{k}km 지점',
     autoBtn: '📱 폰 센서로 자동 (폰을 쥐고 운동)', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
     stepsN: '걸음 {n}', calibrated: '보폭을 맞췄습니다 (다음부터 더 정확)', spmUnit2: '칸/분',
@@ -2412,7 +2412,7 @@ document.querySelectorAll('[data-goal]').forEach(b => b.onclick = () => { DB.goa
 function refreshStamps(){
   const wt = walkTotal(); let hg = 0, sg = 0, sAll = 0;
   const siteNames = new Set(DB.records.filter(r => r.site && creditOf(r, COURSE)).flatMap(r => r.passed || []));
-  $('stampTitle').textContent = T.trail + ' · ' + tr(COURSE.short || COURSE.name);
+  $('stampTitle').textContent = (wt > 0 ? T.trail : T.trailPre) + ' · ' + tr(COURSE.short || COURSE.name);   // 11/16: 기록이 없으면 '지나온 길'이 아니라 '이 코스 거점'(앞으로 지날 곳)
   $('stampGrid').innerHTML = HUBS.map(h => {
     const n = stampCount(h, wt); if (n) hg++;
     const chips = stickersBefore(h).map(l => { const c = stampCount(l, wt); sAll++; if (c) sg++;
@@ -2421,7 +2421,7 @@ function refreshStamps(){
       '<div class="hubrow' + (n ? '' : ' off') + (siteNames.has(tr(h.name)) ? ' site' : '') + '" data-lm="' + LMS.indexOf(h) + '"><span>🚩 <b>' + tr(h.name) + '</b>' + (siteNames.has(tr(h.name)) ? ' <span class="gold">📍</span>' : '') + '</span>' +
       '<span class="r">' + (h.at / 1000).toFixed(1) + 'km' + (n ? ' · ' + n + T.times : '') + '</span></div>';
   }).join('');
-  $('stampSum').textContent = T.stampSum.replace('{a}', hg).replace('{b}', HUBS.length).replace('{c}', sg).replace('{d}', sAll);
+  $('stampSum').textContent = wt > 0 ? T.stampSum.replace('{a}', hg).replace('{b}', HUBS.length).replace('{c}', sg).replace('{d}', sAll) : T.trailNone;
   $('stampGrid').querySelectorAll('[data-lm]').forEach(el => el.onclick = () => openSpot(LMS[+el.dataset.lm]));
 }
 function openSpot(lm){
