@@ -20,3 +20,4 @@ nakdong-bike-18k OSRM 22.09km / 공식 18.00km (x1.23) 626점
 hangang-bike-11k OSRM 12.28km / 공식 11.00km (x1.12) 483점
 nakdong-bike-18k OSRM 18.07km / 공식 18.00km (x1.00) 448점
 hangang-bike-11k OSRM 10.68km / 공식 11.00km (x0.97) 403점
+
