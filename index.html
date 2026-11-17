@@ -659,6 +659,7 @@
     </div>
     <div class="gpsNote hidden" id="gpsNote"></div>
   </div>
+  <button id="bPre" class="toggle hidden" style="margin-top:10px"></button>   <!-- 11/17 와이파이에서 미리 받기 -->
   <button class="big" id="bStart" data-t="start">출발</button>
 
 </div>
@@ -680,6 +681,7 @@
     <button data-per="week" data-t="pWeek">이번 주</button><button data-per="month" data-t="pMonth">이번 달</button><button data-per="all" data-t="pAll">전체</button>
   </div>
   <div class="sum4" id="recSum"></div>
+  <div class="card hidden" id="meterBox" style="margin-top:10px;font-size:13px;line-height:1.6"></div>   <!-- 11/17 측정 평균 (측정 보기를 켠 폰만) -->
   <button id="bBody" class="toggle" style="margin-top:8px"></button>
   <div id="stampBox">
     <h2 id="stampTitle"></h2>
@@ -700,6 +702,7 @@
   <div class="muted" data-t="recHelp" style="margin-top:10px"></div>
   <button id="bAdd" class="toggle" data-t="addBtn" style="margin-top:18px"></button>
   <button id="bBackup" class="toggle" data-t="bkBtn" style="margin-top:10px"></button>
+  <button id="bSaver" class="toggle" style="margin-top:10px"></button>
   <button id="bTel" class="toggle" style="margin-top:10px"></button>
   <a href="privacy.html" target="_blank" style="display:block;text-align:center;margin-top:10px;font-size:13px;color:var(--mut)">개인정보처리방침</a>
   <button id="bReset" class="x2 hidden"></button>   <!-- 11/17 보스 승인: 출발 전 '이어서 할까요?' 창의 '처음부터'와 겹쳐서 숨김 -->
@@ -786,6 +789,7 @@
 <div id="endScreen" class="screen hidden">
   <h1 data-t="endTitle">오늘 운동 끝 👏</h1>
   <div class="card" id="endSummary"></div>
+  <div class="muted hidden" id="endMeter" style="font-size:12px;margin:-4px 2px 8px"></div>   <!-- 11/17 측정 (측정 보기를 켠 폰만) -->
   <h2 id="fixLabel"></h2>
   <div class="outRow">
     <input id="fixIn" type="number" inputmode="decimal" step="0.1" min="0">
@@ -818,7 +822,7 @@
 </div>
 
 <script>
-const BUILD = '202611171504';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171535';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2083,7 +2087,7 @@ function sessionRecord(){
     distM: up ? 0 : Math.round(S.sessionM), upM: up ? Math.round(S.sessionM) : 0,
     credit: S.free ? freeCredit() : up ? { course: 'climb', target: DB.climb.sel, m: S.sessionM } : { course: 'walk', target: COURSE.id, m: S.sessionM },
     free: S.free ? { goal: S.freeGoal, unit: up ? 'floor' : 'km' } : undefined,
-    passed: S.passed.slice(), site: S.free ? undefined : (siteOK(sitePlace().key) || undefined) };
+    passed: S.passed.slice(), site: S.free ? undefined : (siteOK(sitePlace().key) || undefined), meter: METER.res || undefined };
 }
 function autosave(final){
   if (S.sessionM >= 1) upsertRecord(sessionRecord());
@@ -2094,7 +2098,7 @@ function autosave(final){
 let lastFrame = 0, raf = 0, hudTick = 0;
 function loop(now){
   raf = requestAnimationFrame(loop);
-  if (now - lastFrame < 31) return;
+  if (now - lastFrame < (LOWP ? 66 : 31)) return;   // 11/17: 배터리 20% 아래면 초당 15번
   const wallNow = Date.now(), dt = Math.min((wallNow - S.lastT) / 1000, 6 * 3600); S.lastT = wallNow; lastFrame = now;
   if (S.free){   // 일반: 목표 링 화면
     if (!S.paused){ S.elapsed += dt; if (isClimb()){ if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); } else if (!autoActive() && !S.gps) advance(effSpeed() / 3.6 * dt); }
@@ -2132,7 +2136,7 @@ function loop(now){
       }
     } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
-  v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); }
+  meterFrame(dt); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2623,7 +2627,7 @@ $('bStart').onclick = () => {
   S.gps = DB.zone === 'out'; GPS.track = [];
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
-  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false; voiceReset();
+  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
@@ -2670,6 +2674,128 @@ function fillEnd(){
    · 인터넷이 없으면 폰에 모아 뒀다가(최대 200개·7일) 다음에 보냄 */
 const TEL = { url: 'https://mhlhebopdivaeremwtpl.supabase.co/rest/v1/bgr_event', key: 'sb_publishable_GmygReuNgD9Vw1RZ_8wdjw_EuHqnIx-' };
 function telDid(){ let d = ''; try { d = localStorage.getItem('bgsj_did') || ''; if (!d){ d = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 24); localStorage.setItem('bgsj_did', d); } } catch(e){ d = 'nostore' + Math.random().toString(36).slice(2, 10); } return d; }
+/* =====================================================================
+   운동 1회 데이터·배터리 측정 + 절약 장치 (11/17)
+   · 측정값은 늘 이 폰의 기록에만 저장(r.meter). 화면 표시는 '측정 보기'를 켠 폰만 — 내 기록 제목을 5번 톡
+     (공유받은 사람에게 배터리·데이터 숫자가 보이면 앱이 무겁다는 인상만 줌 → 대표·개발용으로만)
+   · 앱(APK v0.1.12~) = 안드로이드가 직접 센 이 앱의 실제 바이트 · 웹 = 브라우저 기록 합산(다른 회사 지도는 장수 × 평균 크기로 '약')
+   · 익명 통계로는 아직 안 보냄 — 통계 표에 칸이 없음(표 구조 변경은 대표 승인 사항)
+   ===================================================================== */
+var LOWP = false;   // 저전력 (배터리 20% 아래, 충전 중 아님)
+const METER = { s0: null, t0: 0, chg: false, nets: new Set(), v3: 0, v2: 0, res: null, netNow: '', lowSaid: false, poll: 0, hz: { t: 0, n: 0, bad: 0 } };
+const meterNative = () => !!(CAP && CAP.isPluginAvailable && CAP.isPluginAvailable('Meter'));
+const TILE_KB = [[/api\.vworld\.kr/, 25], [/arcgisonline/, 22], [/tile\.openstreetmap/, 15], [/elevation-tiles-prod/, 70], [/openfreemap/, 35]];
+const RT = { bytes: 0, est: 0 };
+try { new PerformanceObserver(l => l.getEntries().forEach(e => {
+  if (e.transferSize > 0) RT.bytes += e.transferSize;
+  else if (!e.decodedBodySize || e.name.indexOf(location.origin) !== 0){ const t = TILE_KB.find(([re]) => re.test(e.name)); if (t) RT.est += t[1] * 1024; }   // 다른 회사 서버는 크기가 0으로 나옴 → 평균 크기로 추정
+})).observe({ type: 'resource', buffered: false }); } catch(e){}
+function webNet(){ const c = navigator.connection; if (!c) return ''; return c.type === 'wifi' || c.type === 'ethernet' ? 'wifi' : c.type === 'cellular' ? 'cell' : ''; }
+async function meterSnap(){
+  if (meterNative()){ try { const r = await CAP.Plugins.Meter.snap(); if (r) return { bytes: r.rx >= 0 ? r.rx + Math.max(0, r.tx) : null, batt: r.batt >= 0 ? r.batt : null, chg: !!r.chg, net: r.net === 'wifi' || r.net === 'cell' ? r.net : '' }; } catch(e){} }
+  let batt = null, chg = false; try { if (navigator.getBattery){ const b = await navigator.getBattery(); batt = Math.round(b.level * 100); chg = !!b.charging; } } catch(e){}
+  return { bytes: null, batt, chg, net: webNet() };
+}
+function meterSeen(sn){
+  if (!sn) return; if (sn.chg) METER.chg = true; if (sn.net) METER.nets.add(sn.net); METER.netNow = sn.net;
+  const low = sn.batt != null && sn.batt < 20 && !sn.chg;
+  if (low && !LOWP && S.running){ LOWP = true; if (!METER.lowSaid){ METER.lowSaid = true; toastMsg('🔋 배터리 20% 아래 — 3D를 끄고 화면을 덜 자주 그려요'); } showViewMode(true); }
+  else if (!low) LOWP = false;
+}
+async function meterStart(){
+  METER.res = null; METER.chg = false; METER.nets.clear(); METER.v3 = METER.v2 = 0; METER.lowSaid = false; METER.hz = { t: 0, n: 0, bad: 0 };
+  METER.t0 = Date.now(); RT.bytes = 0; RT.est = 0;
+  METER.s0 = await meterSnap(); meterSeen(METER.s0);
+  clearInterval(METER.poll); METER.poll = setInterval(() => { if (S.running) meterSnap().then(meterSeen); }, 30000);
+}
+function meterFrame(dt){   // 그림 한 번마다: 3D/평면 시간 · 3D가 계속 느리면(폰이 뜨거움) 평면으로
+  if (S.paused) return;
+  const on = v3dOn(); if (on) METER.v3 += dt; else METER.v2 += dt;
+  const H = METER.hz, now = Date.now();
+  if (!on || document.hidden){ H.t = 0; H.n = 0; H.bad = 0; return; }
+  H.n++; if (!H.t) H.t = now;
+  if (now - H.t >= 1000){ const fps = H.n * 1000 / (now - H.t); H.bad = fps < 15 ? H.bad + 1 : 0; H.n = 0; H.t = now;
+    if (H.bad >= 20 && !V3D.hot){ V3D.hot = true; toastMsg('🌡 화면이 계속 느려서 평면 지도로 바꿨어요 (다음 운동 때 다시 3D)'); showViewMode(true); } }
+}
+async function meterEnd(){
+  clearInterval(METER.poll); if (!METER.s0) return;
+  const s0 = METER.s0, id = S.sessionId, min = Math.round(S.elapsed / 6) / 10, view = METER.v3 > METER.v2 ? '3d' : '2d', zone = DB.zone;
+  const s1 = await meterSnap(); meterSeen(s1);
+  const exact = s0.bytes != null && s1.bytes != null && s1.bytes >= s0.bytes;
+  const mb = Math.round((exact ? s1.bytes - s0.bytes : RT.bytes + RT.est) / 1048576 * 10) / 10;
+  const chg = METER.chg || s0.chg || s1.chg;
+  const batt = chg || s0.batt == null || s1.batt == null ? null : s0.batt - s1.batt;
+  const net = METER.nets.size > 1 ? 'mix' : METER.nets.size ? [...METER.nets][0] : '';
+  METER.res = { mb, est: !exact, net, batt, chg, min, view, zone };
+  const r = DB.records.find(x => x.id === id); if (r){ r.meter = METER.res; saveDB(); }
+  endMeterLine();
+}
+const netName = n => n === 'wifi' ? '와이파이' : n === 'cell' ? '모바일' : n === 'mix' ? '와이파이+모바일' : '';
+function meterText(m){
+  return '데이터 ' + (m.mb < 0.1 ? '0.1MB 미만' : (m.est ? '약 ' : '') + m.mb + 'MB') + (netName(m.net) ? '(' + netName(m.net) + ')' : '') + ' · 배터리 '
+    + (m.chg ? '충전 중이라 측정 안 됨' : m.batt == null ? '측정 안 됨' : (m.batt >= 0 ? '−' + m.batt : '+' + (-m.batt)) + '%') + ' · ' + m.min + '분 · ' + (m.view === '3d' ? '3D' : '평면');
+}
+function endMeterLine(){ const e = $('endMeter'); const m = METER.res; e.classList.toggle('hidden', !(DB.meterShow && m)); if (m) e.textContent = '🔧 이번 운동: ' + meterText(m); }
+function meterBoxFill(){
+  const box = $('meterBox'); box.classList.toggle('hidden', !DB.meterShow); if (!DB.meterShow) return;
+  const rows = ['2d', '3d'].map(v => {
+    const rs = DB.records.filter(r => r.meter && r.meter.view === v && r.meter.min >= 3).sort((a, b) => b.id - a.id).slice(0, 10);
+    if (!rs.length) return '<b>' + (v === '3d' ? '3D' : '평면') + '</b> · 아직 기록 없음';
+    const tm = rs.reduce((a, r) => a + r.meter.min, 0), dm = rs.reduce((a, r) => a + r.meter.mb, 0);
+    const bs = rs.filter(r => r.meter.batt != null && !r.meter.chg), bt = bs.reduce((a, r) => a + r.meter.min, 0), bb = bs.reduce((a, r) => a + r.meter.batt, 0);
+    return '<b>' + (v === '3d' ? '3D' : '평면') + '</b> (' + rs.length + '회) · 30분당 데이터 ' + (rs.some(r => r.meter.est) ? '약 ' : '') + (Math.round(dm / tm * 30 * 10) / 10) + 'MB · 시간당 배터리 ' + (bt >= 3 ? (Math.round(bb / bt * 60 * 10) / 10) + '%' : '측정 안 됨');
+  });
+  box.innerHTML = '🔧 측정 (최근 10회 평균, 이 폰에만 저장)<br>' + rows.join('<br>');
+}
+(() => { let n = 0, t = 0; const h = document.querySelector('#recScreen h1'); if (!h) return;
+  h.addEventListener('click', () => { const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
+    if (n >= 5){ n = 0; DB.meterShow = !DB.meterShow; saveDB(); meterBoxFill(); toastMsg(DB.meterShow ? '🔧 측정 보기 켬 (이 폰만)' : '🔧 측정 보기 끔'); } }); })();
+/* 데이터 절약 모드: 모바일 데이터일 때만 지도를 한 단계 거칠게 */
+const saverZ = () => DB.saver && METER.netNow === 'cell' ? 1 : 0;
+function saverBtn(){ $('bSaver').textContent = '📉 데이터 절약 모드 · ' + (DB.saver ? '켜짐 (모바일 데이터일 때 지도 화질 낮춤)' : '꺼짐'); }
+$('bSaver').onclick = () => { DB.saver = !DB.saver; saveDB(); saverBtn(); toastMsg(DB.saver ? '📉 모바일 데이터일 때 지도를 덜 받아요' : '📉 데이터 절약 모드 끔'); };
+/* 와이파이에서 미리 받기: 저장이 허락된 자료(3D 부품·산 높이 자료)만. 위성 사진은 저장 허락이 없어 운동 때 받음 */
+const PRE = { busy: false };
+function preKey(){ return isClimb() ? 'c:' + DB.climb.sel : 'r:' + COURSE.id; }
+function prePts(){
+  if (isClimb()){ const m = TGT(DB.climb.sel); if (!m || m.kind !== 'mountain') return null; const G = mtnGeo(m); return G ? G.p : null; }
+  if (!SAT_OK) return null; const st = ((walkTotal() % L) + L) % L, out = [];   // 길: 지금 위치부터 앞 20km
+  for (let d = 0; d <= Math.min(L, 20000); d += 200) out.push(geoOf(pointAt((st + d) % L)));
+  return out;
+}
+function preUrls(){
+  const P = prePts(); if (!P || !P.length) return null; const set = new Set();
+  [[14, 1], [12, 1]].forEach(([z, pad]) => { const n = 2 ** z; let last = '';
+    P.forEach(p => { const x = Math.floor((p[1] + 180) / 360 * n), r = p[0] * Math.PI / 180, y = Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n), k = x + ',' + y;
+      if (k === last) return; last = k;
+      for (let dx = -pad; dx <= pad; dx++) for (let dy = -pad; dy <= pad; dy++) set.add('https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + z + '/' + (x + dx) + '/' + (y + dy) + '.png'); }); });
+  return [...set];
+}
+function preBtn(){
+  const b = $('bPre'); if (PRE.busy) return;
+  const ok = 'caches' in window && navigator.serviceWorker && DB.v3d !== false && !DB.pre?.[preKey()] && METER.netNow !== 'cell' && !$('startScreen').classList.contains('hidden');
+  const u = ok ? preUrls() : null;
+  b.classList.toggle('hidden', !u); if (!u) return;
+  PRE.urls = u; b.textContent = '📥 와이파이에서 3D 지도 자료 미리 받기 · 약 ' + Math.max(1, Math.round((u.length * 70 + 950) / 1024)) + 'MB';
+}
+$('bPre').onclick = async () => {
+  if (PRE.busy || !PRE.urls) return; const sn = await meterSnap(); METER.netNow = sn.net;
+  if (sn.net === 'cell'){ toastMsg('📶 모바일 데이터 중이에요 — 와이파이에서 받아 주세요'); preBtn(); return; }
+  PRE.busy = true; const b = $('bPre'), u = PRE.urls.slice(), key = preKey(); let done = 0, got = 0;
+  try { const own = await caches.open('bgr-own-v1'); for (const f of ['lib/maplibre-gl.js', 'lib/maplibre-gl.css']) if (!(await own.match(f))){ const r = await fetch(f); if (r.ok) await own.put(f, r); } } catch(e){}
+  const c = await caches.open('bgr-tiles-v1');
+  const work = async () => { while (u.length){ const x = u.shift();
+    try { if (!(await c.match(x))){ const r = await fetch(x, { mode: 'cors' }); if (r.ok){ await c.put(x, r); got++; } } else got++; } catch(e){}
+    done++; b.textContent = '📥 받는 중 ' + Math.round(done / PRE.urls.length * 100) + '%'; } };
+  await Promise.all([work(), work(), work(), work()]);
+  PRE.busy = false; DB.pre = DB.pre || {}; if (got >= done * 0.8){ DB.pre[key] = Date.now(); saveDB(); toastMsg('✅ 미리 받아 뒀어요 — 이 코스는 3D 데이터를 덜 써요'); }
+  else toastMsg('일부만 받았어요 — 다음에 다시 눌러 주세요');
+  preBtn();
+};
+setTimeout(() => { saverBtn(); meterSnap().then(sn => { METER.netNow = sn.net; preBtn(); }); }, 1200);
+setInterval(() => { if (!S.running) preBtn(); }, 2500);
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+
 function tel(ev, o){
   if (DB.tel === false || /[?&](debug|notel)/.test(location.search) || location.hostname === '127.0.0.1' || location.hostname === 'localhost') return;
   const e = Object.assign({ at: new Date().toISOString(), did: telDid(), ev, plat: CAP ? 'android' : /iPhone|iPad/.test(navigator.userAgent) ? 'ios-web' : /Android/.test(navigator.userAgent) ? 'and-web' : 'pc-web', build: BUILD }, o || {});
@@ -2693,6 +2819,7 @@ $('bTel').onclick = () => { DB.tel = DB.tel === false ? true : false; saveDB(); 
 setTimeout(() => { telBtn(); tel('open', { zone: DB.zone || null }); }, 1500);
 window.addEventListener('online', telFlush);
 function doEnd(){
+  meterEnd();
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
   S.running = false; zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
@@ -3724,7 +3851,7 @@ $('edDel').onclick = () => {
 $('edClose').onclick = () => $('editBox').classList.add('hidden');
 document.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { REC.per = b.dataset.per; refreshRec(); });
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { REC.f = b.dataset.f; refreshRec(); });
-function openRec(){ REC.delId = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); }
+function openRec(){ REC.delId = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); meterBoxFill(); saverBtn(); }
 $('bRec').onclick = () => { REC.fromHome = false; openRec(); };
 $('bRecHome').onclick = () => { REC.fromHome = true; $('homeScreen').classList.add('hidden'); openRec(); };   // 첫 화면에서 바로
 $('recBack').onclick = () => { $('recScreen').classList.add('hidden'); if (REC.fromHome){ showHome(); return; } $('startScreen').classList.remove('hidden'); refreshStart(); drawIdle(); };
@@ -3957,7 +4084,7 @@ function drawRealMap(rt, ring){
   const tk = GPS.track || [], here = GPS.last ? [GPS.last.lat, GPS.last.lon] : tk.length ? tk[tk.length - 1] : rt ? rt.path[0] : null;
   if (!here){ ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.textAlign = 'center'; ctx.font = '700 ' + (16 * DPR) + 'px sans-serif'; ctx.fillText(T.gpsWait, W / 2, bot / 2); ctx.textAlign = 'left'; return; }
   const viewM = 420 * (NAV.zoom || 1), pxPerM = W / viewM, cl = Math.cos(here[0] * Math.PI / 180);
-  const z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * pxPerM) - 0.2))), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;   // k = 화면 px / 타일 px
+  const z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * pxPerM) - 0.2)) - saverZ()), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;   // k = 화면 px / 타일 px
   const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
   const cx = W / 2, cy = bot * 0.55, hx = X(here[1]), hy = Y(here[0]);
   const sx = lo => cx + (X(lo) - hx) * k, sy = la => cy + (Y(la) - hy) * k;
@@ -4447,7 +4574,7 @@ function satTile(z, x, y, load){
 }
 function drawSat(g, tf, c, R, sc){
   const ll = geoOf(c), cl = Math.cos(ll[0] * Math.PI / 180);
-  let z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * sc) - 0.2)));   // 11/16: 내림 → 올림 (더 선명하게)
+  let z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * sc) - 0.2)) - saverZ());   // 11/16: 내림 → 올림 (더 선명하게)
   const dLa = R / ky, dLo = R / kx;
   let n, x0, x1, y0, y1;
   const ty = (la, n) => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
@@ -4568,7 +4695,7 @@ function drawClimbMap(g, vw, vh, st, mini){
   if (!mini){ if (NAV.chd == null || NAV.chm !== m.id) NAV.chd = hd; let dd = hd - NAV.chd; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); NAV.chd += dd * 0.08; NAV.chm = m.id; hd = NAV.chd; }
   else if (NAV.chd != null) hd = NAV.chd;
   const viewM = (mini ? 520 : 640) * (mini ? 1 : (NAV.zoom || 1)), pxPerM = vw / viewM;
-  const z = Math.max(3, Math.min(17, Math.floor(Math.log2(156543.03 * cl * pxPerM)))), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;
+  const z = Math.max(3, Math.min(17, Math.floor(Math.log2(156543.03 * cl * pxPerM))) - saverZ()), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;
   const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
   const ax = vw / 2, ay = vh * 0.62, hx = X(q.lon), hy = Y(q.lat), ch = Math.cos(hd), sh = Math.sin(hd);
   const scr = (la, lo) => { const dx = (X(lo) - hx) * k, dy = (Y(la) - hy) * k; return [ax + dx * ch + dy * sh, ay - dx * sh + dy * ch]; };
@@ -4615,7 +4742,7 @@ function v3dSat(lat, lon){   // 코스 위치에 맞게 위성 사진 출처·�
   V3D.kr = kr; $('v3dCredit').textContent = (kr ? '위성 사진 © 브이월드(국토교통부) · 공공누리 제1유형' : '위성 사진 © Esri · Maxar') + ' · 높이 © AWS Terrain Tiles';
 }
 const V3D = { map: null, ready: false, loading: false, failed: false, key: '', me: null, tags: [], brg: null, last: 0, mc: null, kr: null, bad: 0, ok: 0 };
-const v3dAble = () => S.running && !S.free && !S.gps && !V3D.failed && (isClimb() ? TGT(DB.climb.sel).kind === 'mountain' && !!MTN_GEO[DB.climb.sel] : SAT_OK);
+const v3dAble = () => S.running && !S.free && !S.gps && !V3D.failed && !V3D.hot && !LOWP && (isClimb() ? TGT(DB.climb.sel).kind === 'mountain' && !!MTN_GEO[DB.climb.sel] : SAT_OK);
 const v3dOn = () => DB.v3d !== false && V3D.ready && !NAV.full && v3dAble();
 function v3dLoad(){
   if (V3D.map || V3D.loading || V3D.failed) return; V3D.loading = true;
@@ -4654,7 +4781,7 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
 function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
   V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
-  m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch, zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
+  m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   V3D.me.setLngLat([lon, lat]);
   const now = performance.now();
   if (now - V3D.last > 400){ V3D.last = now; const k = Math.max(0.0001, Math.min(0.9999, prog));
@@ -4684,12 +4811,13 @@ function v3dClimb(st){
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
 function v3dBtn(){   // 3D ↔ 평면 버튼 (3D가 되는 코스에서만 보임). 3D일 때는 위성↔지도 버튼을 숨김(3D는 위성 사진만)
-  const b = $('b3d'), can = v3dAble() && !NAV.full; b.classList.toggle('hidden', !can); b.textContent = DB.v3d !== false ? T.v3dOn : T.v3dOff;
+  const hot = V3D.hot; V3D.hot = false; const can0 = v3dAble(); V3D.hot = hot;   // 과열로 평면이 됐어도 버튼은 남겨 다시 켤 수 있게
+  const b = $('b3d'), can = can0 && !NAV.full; b.classList.toggle('hidden', !can); b.textContent = DB.v3d !== false && !hot ? T.v3dOn : T.v3dOff;
   if (can && DB.v3d !== false){ v3dLoad(); if (V3D.ready) $('bSat').classList.add('hidden'); }
 }
 function voiceBtn(on){ const b = $('bVoice'); b.classList.toggle('hidden', !on); b.textContent = DB.voice === false ? '🔇' : '🔊'; }
 $('bVoice').onclick = () => { DB.voice = DB.voice === false; saveDB(); voiceBtn(true); if (DB.voice !== false) say('음성 안내를 켭니다.'); else { try { if (ttsNative()) CAP.Plugins.Tts.stop(); else window.speechSynthesis && speechSynthesis.cancel(); } catch(e){} } toastMsg(DB.voice === false ? '🔇 음성 안내 끔' : '🔊 음성 안내 켬'); };
-$('b3d').onclick = () => { DB.v3d = DB.v3d === false; saveDB(); showViewMode(true); };
+$('b3d').onclick = () => { if (V3D.hot){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; } else DB.v3d = DB.v3d === false; saveDB(); showViewMode(true); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));
 /* ---- 11/16 빌딩 창밖 = 실제 항공사진 (높이 오를수록 더 멀리·더 넓게) ----
