@@ -438,7 +438,7 @@
   #bStart.need .bsN{display:none}
   #bStart.need .bsG{font-size:0}
   #bStart.need .bsG::after{content:'↑ 코스를 먼저 골라 주세요';font-size:16px;font-weight:800}
-  #startScreen:has(#bStart.need) :is(#actTitle,#actChips,#liveBox){display:none}
+  #startScreen:has(#bStart.need) #liveBox{display:none}   /* 11/17: 운동 칸은 목록 위로 옮겨서 늘 보임 */
   #hudBottom:not(.hidden) ~ #toast{top:auto;bottom:calc(300px + env(safe-area-inset-bottom))}
   .nw{white-space:nowrap}
 </style>
@@ -599,6 +599,11 @@
 
   <div class="muted" id="modeHelp" style="margin:8px 2px 0;line-height:1.5"></div>
 
+  <!-- 11/17 18:35 보스 승인: 운동을 먼저 고르면 아래 코스 목록이 그 운동에 맞게 걸러짐 -->
+  <h2 data-t="act" id="actTitle">운동</h2>
+  <div class="chips" id="actChips"></div>
+  <div class="note hidden" id="actNote" style="font-size:13px;line-height:1.5;margin:6px 2px 0;color:var(--mut)"></div>   <!-- 11/17 길에 맞는 운동 안내 -->
+
   <div id="freeBox" class="hidden">
     <h2 id="freeTitle"></h2>
     <div class="presets" id="freePresets"></div>
@@ -640,9 +645,6 @@
   </div>
   </div>
 
-  <h2 data-t="act" id="actTitle">운동</h2>
-  <div class="chips" id="actChips"></div>
-  <div class="note hidden" id="actNote" style="font-size:13px;line-height:1.5;margin:6px 2px 0;color:var(--mut)"></div>   <!-- 11/17 길에 맞는 운동 안내 -->
 
   <div id="goalBox">
     <h2 data-t="goal">오늘 목표</h2>
@@ -831,7 +833,7 @@
 </div>
 
 <script>
-const BUILD = '202611171830';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171902';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -852,6 +854,7 @@ const WORLD = {
       { id: 'busan-si',  name: { ko: '부산광역시' }, children: [ { id: 'busan',   name: { ko: '부산' } } ] },
       { id: 'jeonnam',   name: { ko: '전라남도' },   children: [ { id: 'gurye', name: { ko: '구례군' } } ] },
       { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'sancheong', name: { ko: '산청군' } }, { id: 'hamyang', name: { ko: '함양군' } } ] },
+      { id: 'gyeonggi-do', name: { ko: '경기도' }, children: [ { id: 'gapyeong', name: { ko: '가평·남양주' } } ] },
       { id: 'jeju-do',   name: { ko: '제주특별자치도' }, children: [ { id: 'jeju', name: { ko: '제주' } } ] } ] },
     { id: 'long', name: { ko: '🧭 장거리 여정' }, children: [ { id: 'long-kr', name: { ko: '국내' }, children: [ { id: 'longwalk', name: { ko: '🚶 걷기 · 둘레길' } }, { id: 'longkr', name: { ko: '🚲 자전거 종주' } } ] }, { id: 'long-world', name: { ko: '해외' }, children: [ { id: 'longworld', name: { ko: '순례길·트레일' } } ] } ] },
     { id: 'm100', name: { ko: '⛰ 산림청 100대명산' }, children: [ { id: 'm100a-p', name: { ko: 'ㄱ (가리산~깃대봉)' }, children: [ { id: 'm100a', name: { ko: 'ㄱ (가리산~깃대봉)' } } ] }, { id: 'm100b-p', name: { ko: 'ㄴ~ㅂ (남산~비슬산)' }, children: [ { id: 'm100b', name: { ko: 'ㄴ~ㅂ (남산~비슬산)' } } ] }, { id: 'm100c-p', name: { ko: 'ㅅ~ㅇ (삼악산~응봉산)' }, children: [ { id: 'm100c', name: { ko: 'ㅅ~ㅇ (삼악산~응봉산)' } } ] }, { id: 'm100d-p', name: { ko: 'ㅈ~ㅎ (장안산~희양산)' }, children: [ { id: 'm100d', name: { ko: 'ㅈ~ㅎ (장안산~희양산)' } } ] } ] },
@@ -1176,6 +1179,8 @@ const WORLD = {
         'greenrail-5k': {"id": "greenrail-5k", "official": "data/route/greenrail-5k.json", "seaSide": 1, "name": {"ko": "해운대 그린레일웨이 (미포→청사포→송정)"}, "short": {"ko": "그린레일웨이"}, "kind": "해안길", "mode": "distance", "lengthM": 4800, "loop": false, "elev": [[0, 8], [800, 15], [2300, 12], [2900, 20], [3400, 12], [4800, 6]], "note": "전체 4.8km와 정거장 위치는 해변열차 안내 기준", "source": "미포~송정 해변열차 옆 데크 산책로 4.8km", "segments": [{"from": 0, "to": 4800, "scene": "coast"}], "landmarks": [{"id": "mipo", "name": {"ko": "미포"}, "at": 300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "해변열차 출발, 와우산 꼬리"}}, {"id": "dalmaji", "name": {"ko": "달맞이터널"}, "at": 800, "side": -1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "cheongsapo", "name": {"ko": "청사포"}, "at": 2300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "빨강·하양 쌍둥이 등대"}, "hub": true}, {"id": "daritdol", "name": {"ko": "다릿돌전망대"}, "at": 2900, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "바다 위로 뻗은 스카이워크"}}, {"id": "gudeokpo", "name": {"ko": "구덕포"}, "at": 3400, "side": 1, "art": "village", "photo": null, "desc": {"ko": "작은 포구"}}, {"id": "songjeong", "name": {"ko": "송정해수욕장"}, "at": 4750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "1.2km 백사장"}, "hub": true}], "path": [[35.1588, 129.17], [35.1597, 129.176], [35.1603, 129.183], [35.161, 129.1905], [35.1622, 129.1955], [35.166, 129.1985], [35.172, 129.1995], [35.178, 129.2]]},
         'moontan-3k': {"id": "moontan-3k", "official": "data/route/moontan-3k.json", "name": {"ko": "달맞이 문탠로드 (한 바퀴)"}, "short": {"ko": "문탠로드"}, "kind": "도보", "mode": "distance", "lengthM": 2500, "loop": true, "elev": [[0, 60], [800, 80], [1500, 70], [2500, 60]], "note": "5개 길 거리 해운대구 안내 기준, 지도는 임시", "source": "꽃잠 0.4 · 가온 0.4 · 바투 0.7 · 함께 0.5 · 만남 0.5km = 2.5km", "segments": [{"from": 0, "to": 2500, "scene": "forest"}], "landmarks": [{"id": "kkotjam", "name": {"ko": "달빛꽃잠길"}, "at": 200, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "gaon", "name": {"ko": "달빛가온길"}, "at": 600, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "batu", "name": {"ko": "달빛바투길"}, "at": 1150, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "바다가 보이는 솔숲"}, "hub": true}, {"id": "hamkke", "name": {"ko": "달빛함께길"}, "at": 1750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "mannam", "name": {"ko": "달빛만남길"}, "at": 2250, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "출발점으로"}, "hub": true}], "path": [[35.1585, 129.1745], [35.1592, 129.1775], [35.1598, 129.181], [35.159, 129.184], [35.1578, 129.1815], [35.1574, 129.178], [35.1585, 129.1745]]},
         'nakdong-bike-18k': {"id": "nakdong-bike-18k", "official": "data/route/nakdong-bike-18k.json", "name": {"ko": "낙동강 자전거길 (하굿둑 → 화명생태공원)"}, "short": {"ko": "낙동강 자전거길"}, "kind": "자전거", "mode": "distance", "lengthM": 18100, "loop": false, "elev": [[0, 5], [18100, 5]], "note": "노선 = 오픈스트리트맵 자전거 길 찾기 (국토종주 낙동강 구간 부산 끝)", "source": "낙동강하굿둑~삼락생태공원~구포~화명생태공원", "segments": [{"from": 0, "to": 18100, "scene": "river"}], "landmarks": [{"id": "nk-dam", "name": {"ko": "낙동강하굿둑 (출발)"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "국토종주 자전거길의 부산 끝 · 시작점"}, "hub": true}, {"id": "nk-samrak", "name": {"ko": "삼락생태공원"}, "at": 8850, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "강변 갈대·습지 공원"}, "hub": true}, {"id": "nk-gupo", "name": {"ko": "구포 강변"}, "at": 15010, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": "구포다리 옛터 부근"}, "hub": true}, {"id": "nk-hwamyeong", "name": {"ko": "화명생태공원 (도착)"}, "at": 18050, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}], "path": [[35.1067, 128.9445], [35.1056, 128.9475], [35.1075, 128.9471], [35.106, 128.9582], [35.1073, 128.9575], [35.1276, 128.9631], [35.1375, 128.9663], [35.1481, 128.9698], [35.1598, 128.9663], [35.18, 128.9745], [35.194, 128.9837], [35.2085, 128.9984], [35.2119, 129.0008], [35.2158, 129.0024], [35.229, 129.0053]]},
+        'suyeong-bike-7k': {"id": "suyeong-bike-7k", "official": "data/route/suyeong-bike-7k.json", "name": {"ko": "수영강 자전거길 (민락 → 원동)"}, "short": {"ko": "수영강 자전거길"}, "kind": "자전거", "mode": "distance", "lengthM": 4900, "loop": false, "elev": [[0, 10], [4900, 10]], "note": "노선 = 오픈스트리트맵 자전거 길 찾기", "source": "민락교 부근~센텀시티 앞~수영강 상류", "segments": [{"from": 0, "to": 4900, "scene": "river"}], "landmarks": [{"id": "sy-start", "name": {"ko": "민락교 부근 (출발)"}, "at": 50, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": "광안리와 센텀시티 사이 강 하구"}, "hub": true}, {"id": "sy-centum", "name": {"ko": "센텀시티 앞 수영강"}, "at": 1740, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "APEC나루공원·영화의전당 쪽"}, "hub": true}, {"id": "sy-end", "name": {"ko": "수영강 상류 원동 (도착)"}, "at": 4850, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}], "path": [[35.16, 129.1235], [35.1608, 129.1209], [35.1632, 129.1201], [35.168, 129.1194], [35.1716, 129.1206], [35.1732, 129.1205], [35.1753, 129.1189], [35.177, 129.1181], [35.1812, 129.1177], [35.1851, 129.1161], [35.1881, 129.1151], [35.1897, 129.1147], [35.1927, 129.1139], [35.1963, 129.1142], [35.199, 129.115], [35.199, 129.115]]},
+        'oncheon-bike-8k': {"id": "oncheon-bike-8k", "official": "data/route/oncheon-bike-8k.json", "name": {"ko": "온천천 자전거길 (수영강 합류 → 온천장)"}, "short": {"ko": "온천천 자전거길"}, "kind": "자전거", "mode": "distance", "lengthM": 6000, "loop": false, "elev": [[0, 10], [6000, 10]], "note": "노선 = 오픈스트리트맵 자전거 길 찾기", "source": "수영강 합류점~연산~동래~온천장", "segments": [{"from": 0, "to": 6000, "scene": "river"}], "landmarks": [{"id": "oc-start", "name": {"ko": "수영강 합류점 (출발)"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "oc-yeonsan", "name": {"ko": "연산 온천천시민공원"}, "at": 1430, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "oc-dongnae", "name": {"ko": "동래 온천천"}, "at": 3830, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "oc-end", "name": {"ko": "온천장 (도착)"}, "at": 5950, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "동래온천"}, "hub": true}], "path": [[35.1905, 129.1129], [35.1908, 129.1082], [35.1909, 129.1067], [35.1912, 129.1032], [35.1921, 129.0996], [35.1932, 129.0951], [35.1943, 129.0885], [35.1982, 129.0856], [35.2019, 129.0835], [35.2039, 129.0792], [35.2091, 129.0788], [35.2117, 129.0787], [35.2157, 129.0795], [35.217, 129.0815], [35.2197, 129.0849], [35.22, 129.0851]]},
         'haeundae-5k': {"id": "haeundae-5k", "official": "data/route/haeundae-5k.json", "name": {"ko": "해운대 해변·동백섬 한 바퀴"}, "short": {"ko": "해운대·동백섬"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 4500, "loop": true, "elev": [[0, 5], [1500, 5], [2200, 15], [2800, 5], [4500, 5]], "note": "백사장 1.5km는 자료 기준, 동백섬 둘레는 추정", "source": "해운대해수욕장 1.5km + 동백섬 순환", "segments": [{"from": 0, "to": 1500, "scene": "beach"}, {"from": 1500, "to": 2900, "scene": "coast"}, {"from": 2900, "to": 4500, "scene": "beach"}], "landmarks": [{"id": "mipo2", "name": {"ko": "미포 끝"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "해수욕장 동쪽 끝"}}, {"id": "beach", "name": {"ko": "해운대해수욕장 중앙"}, "at": 750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "백사장 1.5km"}, "hub": true}, {"id": "westin", "name": {"ko": "동백섬 입구"}, "at": 1500, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "nurimaru", "name": {"ko": "누리마루 APEC하우스"}, "at": 2050, "side": -1, "art": "pavilion", "photo": null, "desc": {"ko": "2005 APEC 정상회의장"}, "hub": true}, {"id": "lighthouse", "name": {"ko": "동백섬 등대"}, "at": 2350, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "mermaid", "name": {"ko": "황옥공주 인어상"}, "at": 2550, "side": -1, "art": "stele", "photo": null, "desc": {"ko": ""}}, {"id": "beach2", "name": {"ko": "해변 돌아오기"}, "at": 3700, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}], "path": [[35.1588, 129.169], [35.159, 129.164], [35.1585, 129.159], [35.1572, 129.154], [35.1555, 129.152], [35.1535, 129.1525], [35.1528, 129.1545], [35.154, 129.1565], [35.157, 129.156], [35.1582, 129.16], [35.1588, 129.169]]},
         'igidae-5k': {"id": "igidae-5k", "official": "data/route/igidae-5k.json", "name": {"ko": "이기대 해안산책로 (동생말→오륙도)"}, "short": {"ko": "이기대"}, "kind": "해안길", "mode": "distance", "lengthM": 4700, "loop": false, "elev": [[0, 20], [1200, 45], [2400, 30], [3500, 50], [4700, 35]], "note": "전체 4.7km는 부산 국가지질공원 안내 기준, 중간 위치는 추정", "source": "오륙도 스카이워크~동생말 4.7km 해안 지질 탐방로", "segments": [{"from": 0, "to": 4700, "scene": "coast"}], "landmarks": [{"id": "dongsaengmal", "name": {"ko": "동생말 전망대"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "광안대교·해운대 야경"}}, {"id": "cloudbridge", "name": {"ko": "구름다리"}, "at": 1100, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": ""}}, {"id": "eoulmadang", "name": {"ko": "어울마당"}, "at": 2300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "너른 바위 마당"}, "hub": true}, {"id": "nongbawi", "name": {"ko": "농바위"}, "at": 3500, "side": -1, "art": "stele", "photo": null, "desc": {"ko": "장롱을 닮은 바위"}}, {"id": "oryukdo", "name": {"ko": "오륙도 스카이워크"}, "at": 4650, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": "바다 위 유리 다리"}, "hub": true}], "path": [[35.1285, 129.1175], [35.124, 129.12], [35.119, 129.124], [35.114, 129.126], [35.108, 129.1265], [35.103, 129.125], [35.1005, 129.124]]},
         'gwangalli-3k': {"id": "gwangalli-3k", "official": "data/route/gwangalli-3k.json", "seaSide": 1, "name": {"ko": "광안리 해변 왕복"}, "short": {"ko": "광안리"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 3000, "loop": true, "elev": [[0, 5], [3000, 5]], "note": "거리·위치 추정 (해변 길이 약 1.4km)", "source": "광안리 해변 끝↔끝 왕복 약 3km (추정)", "segments": [{"from": 0, "to": 3000, "scene": "beach"}], "landmarks": [{"id": "namcheon", "name": {"ko": "해변 남쪽 끝"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "gwangan", "name": {"ko": "광안리해수욕장 중앙"}, "at": 700, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "광안대교 정면"}, "hub": true}, {"id": "millak", "name": {"ko": "민락 끝 (반환)"}, "at": 1500, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "back", "name": {"ko": "해변 돌아오기"}, "at": 2300, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}], "path": [[35.149, 129.116], [35.152, 129.1185], [35.1545, 129.1215], [35.156, 129.125], [35.1548, 129.1222], [35.1525, 129.1192], [35.149, 129.116]]},
@@ -1183,6 +1188,9 @@ const WORLD = {
       { id: 'lct', name: { ko: '엘시티 랜드마크타워' }, short: { ko: '엘시티' }, summit: 411, floors: 101, steps: 2372, photo: null,
         desc: { ko: '1→101층, 2,372계단' } }
     ] } } },
+    gapyeong: { id: 'gapyeong', name: { ko: '가평·남양주' }, country: 'KR', courses: {
+        'gyeongchun-bike-24k': {"id": "gyeongchun-bike-24k", "official": "data/route/gyeongchun-bike-24k.json", "name": {"ko": "경춘선 자전거길 (마석 → 대성리 → 청평 → 가평)"}, "short": {"ko": "경춘선 자전거길"}, "kind": "자전거", "mode": "distance", "lengthM": 29800, "loop": false, "elev": [[0, 60], [29800, 60]], "note": "노선 = 오픈스트리트맵 자전거 길 찾기 (옛 경춘선 철길을 자전거길로)", "source": "마석역~대성리~청평~가평역", "segments": [{"from": 0, "to": 29800, "scene": "river"}], "landmarks": [{"id": "gc-maseok", "name": {"ko": "마석 (출발)"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "옛 경춘선 철길 자전거길"}, "hub": true}, {"id": "gc-daeseong", "name": {"ko": "대성리"}, "at": 8110, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "북한강 강변 유원지"}, "hub": true}, {"id": "gc-cheongpyeong", "name": {"ko": "청평"}, "at": 16160, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "gc-gapyeong", "name": {"ko": "가평 (도착)"}, "at": 29750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "남이섬·자라섬 가는 길"}, "hub": true}], "path": [[37.6512, 127.311], [37.6532, 127.3276], [37.6588, 127.3506], [37.6657, 127.3718], [37.6802, 127.3776], [37.6983, 127.3846], [37.721, 127.4045], [37.7328, 127.4136], [37.7349, 127.4267], [37.7457, 127.4275], [37.7641, 127.4436], [37.7763, 127.4624], [37.793, 127.4677], [37.8067, 127.4962], [37.815, 127.5089], [37.814, 127.5106]]},
+    } },
     jeju: { id: 'jeju', name: { ko: '제주' }, country: 'KR', courses: {
         'olle7-18k': {"id": "olle7-18k", "official": "data/route/olle7-18k.json", "name": {"ko": "제주올레 7코스 (여행자센터→외돌개→월평)"}, "short": {"ko": "올레 7코스"}, "kind": "해안길", "mode": "distance", "lengthM": 17600, "loop": false, "elev": [[0, 40], [600, 30], [3000, 25], [8500, 5], [11100, 10], [15700, 5], [17600, 40]], "note": "경유지 거리 제주올레 안내 기준", "source": "여행자센터~칠십리 0.6 · 외돌개 3.0 · 법환 8.5 · 올레요 11.1 · 월평포구 15.7 · 아왜낭목 17.6km", "segments": [{"from": 0, "to": 600, "scene": "city"}, {"from": 600, "to": 15700, "scene": "coast"}, {"from": 15700, "to": 17600, "scene": "village"}], "landmarks": [{"id": "ollecenter", "name": {"ko": "제주올레 여행자센터"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "출발"}}, {"id": "chilsimni", "name": {"ko": "칠십리 시공원"}, "at": 600, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "oedolgae", "name": {"ko": "외돌개"}, "at": 3000, "side": 1, "art": "stele", "photo": null, "desc": {"ko": "바다에 홀로 선 바위"}, "hub": true}, {"id": "dombe", "name": {"ko": "돔베낭길"}, "at": 4500, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "해안 절벽길"}}, {"id": "beophwan", "name": {"ko": "법환포구"}, "at": 8500, "side": 1, "art": "village", "photo": null, "desc": {"ko": "해녀 마을, 범섬 조망"}, "hub": true}, {"id": "olleyo", "name": {"ko": "올레요 7쉼터"}, "at": 11100, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "wolpyeong", "name": {"ko": "월평포구"}, "at": 15700, "side": 1, "art": "village", "photo": null, "desc": {"ko": "작고 아늑한 포구"}, "hub": true}, {"id": "awaenang", "name": {"ko": "월평마을 아왜낭목"}, "at": 17550, "side": -1, "art": "village", "photo": null, "desc": {"ko": "7코스 끝"}, "hub": true}], "path": [[33.2468, 126.5622], [33.244, 126.558], [33.24, 126.545], [33.2392, 126.535], [33.239, 126.525], [33.236, 126.511], [33.23, 126.49], [33.235, 126.47], [33.241, 126.452], [33.248, 126.444]]},
         'olle1-15k': {"id": "olle1-15k", "official": "data/route/olle1-15k.json", "name": {"ko": "제주올레 1코스 (시흥→말미오름→성산→광치기)"}, "short": {"ko": "올레 1코스"}, "kind": "도보", "mode": "distance", "lengthM": 15100, "loop": false, "elev": [[0, 30], [1800, 140], [2800, 125], [6400, 15], [8100, 5], [11100, 5], [13700, 10], [15100, 5]], "note": "경유지 거리 제주올레 안내 기준", "source": "시흥초~말미오름 1.8 · 알오름 2.8 · 종달리 6.4 · 목화휴게소 8.1 · 성산갑문 11.1 · 수마포 13.7 · 광치기 15.1km", "segments": [{"from": 0, "to": 800, "scene": "village"}, {"from": 800, "to": 3200, "scene": "mtn"}, {"from": 3200, "to": 6600, "scene": "village"}, {"from": 6600, "to": 15100, "scene": "coast"}], "landmarks": [{"id": "siheung", "name": {"ko": "시흥초등학교"}, "at": 50, "side": 1, "art": "village", "photo": null, "desc": {"ko": "제주올레 시작점"}}, {"id": "malmi", "name": {"ko": "말미오름"}, "at": 1800, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "성산일출봉·우도가 한눈에"}, "hub": true}, {"id": "aloreum", "name": {"ko": "알오름 정상"}, "at": 2800, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "jongdal", "name": {"ko": "종달리사무소"}, "at": 6400, "side": -1, "art": "village", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "salt", "name": {"ko": "종달리 옛 소금밭"}, "at": 6500, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "mokhwa", "name": {"ko": "목화휴게소"}, "at": 8100, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "오징어 말리는 풍경"}}, {"id": "seongsan", "name": {"ko": "성산갑문 입구"}, "at": 11100, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "sumapo", "name": {"ko": "수마포"}, "at": 13700, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "성산일출봉 아래"}}, {"id": "gwangchigi", "name": {"ko": "광치기해변"}, "at": 15050, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "1코스 끝"}, "hub": true}], "path": [[33.4785, 126.899], [33.489, 126.8935], [33.4925, 126.8885], [33.495, 126.905], [33.4945, 126.9085], [33.485, 126.924], [33.4745, 126.929], [33.46, 126.939], [33.457, 126.9365], [33.452, 126.926]]},
@@ -2366,19 +2374,26 @@ function cityLists(){
 }
 let listOpen = false;
 function refreshCourses(){
-  const lists = cityLists(), tabs = ['road', 'mountain', 'tower'].filter(k => lists[k].length);
+  const lists = cityLists();
+  if (!isFree()){ const g = actGrp(S.act); if (g === 'up') lists.road = []; else { lists.mountain = []; lists.tower = []; if (g === 'bike') lists.road = lists.road.filter(bikeOK); } }
+  const tabs = ['road', 'mountain', 'tower'].filter(k => lists[k].length);
   if (!tabs.includes(DB.tab)) DB.tab = tabs[0];
+  if (!tabs.length){   // 이 지역에 그 운동 코스가 없음 → 내 주변(지역 구분 없이)으로 안내
+    $('tabSeg').classList.add('hidden'); $('courseToggle').classList.add('hidden'); $('bStart').classList.toggle('need', !isFree());
+    $('courseList').innerHTML = '<div class="muted" style="padding:12px;line-height:1.6">이 지역엔 ' + GRP_NAME[actGrp(S.act)] + ' 코스가 없어요.<br><a href="#" id="goNear" style="color:var(--vt)">📍 내 주변 ' + GRP_NAME[actGrp(S.act)] + ' 코스 보기</a></div>';
+    $('goNear').onclick = e => { e.preventDefault(); DB.browse = 'near'; saveDB(); refreshBrowse(); };
+    return; }
   setTimeout(geoNote, 0);
   // 접힌 상태: 고른 코스 한 줄 + '코스 바꾸기'
   const picked = DB.pick.type === 'road' && ALL_ROADS[DB.pick.id] && WORLD.cities[DB.region.city] && WORLD.cities[DB.region.city].courses[DB.pick.id]
     ? 'road' : (DB.pick.type === 'climb' && inCity(TGT(DB.pick.id), DB.region.city) ? TGT(DB.pick.id).kind : null);
-  const open = listOpen || !picked;
-  $('bStart').classList.toggle('need', !picked && !isFree());
+  const ok = picked && (isFree() || pickOK()), open = listOpen || !ok;
+  $('bStart').classList.toggle('need', !ok && !isFree());
   $('tabSeg').classList.toggle('hidden', !open || tabs.length < 2);
-  $('courseToggle').classList.toggle('hidden', !picked);
+  $('courseToggle').classList.toggle('hidden', !ok);
   $('courseToggle').textContent = open ? T.closeList : T.changeCourse + ' (' + (lists.road.length + lists.mountain.length + lists.tower.length) + ')';
   if (!open){
-    const savedTab = DB.tab; DB.tab = picked === 'road' ? 'road' : picked;
+    const savedTab = DB.tab; DB.tab = picked === 'road' ? 'road' : picked;   // (ok일 때만 접힘)
     renderCourseRows(lists, true); DB.tab = savedTab; return;
   }
   renderCourseRows(lists, false);
@@ -2482,7 +2497,7 @@ function refreshBrowse(){
   $('browseSeg').querySelectorAll('[data-br]').forEach(b => b.classList.toggle('on', b.dataset.br === br));
   $('regionPane').classList.toggle('hidden', br !== 'region'); $('browsePane').classList.toggle('hidden', br === 'region');
   if (br === 'region') return;
-  const items = browseItems(); let rows = '';
+  const items = isFree() ? browseItems() : browseItems().filter(grpOK); let rows = '';
   $('topicChips').classList.toggle('hidden', br !== 'topic'); $('nearNote').classList.toggle('hidden', br !== 'near');
   const mtnTools = br === 'topic' && DB.topic === 'mountain'; $('bZones').classList.toggle('hidden', !mtnTools); $('bFind').classList.toggle('hidden', !mtnTools);
   if (br === 'topic'){
@@ -2530,11 +2545,14 @@ function applyPick(){                                      // 코스 종류에 �
 
 /* ---- 3) 운동 + 4) 방식(지금 운동 | 기록만 입력) ---- */
 const bikeOK = c => /자전거/.test((c && c.kind) || '');
+const actGrp = a => a === 'bike' ? 'bike' : (ACTS[a] && ACTS[a].kind === 'up') ? 'up' : 'foot';   // 걷기·조깅 / 자전거 / 등산·계단
+const GRP_NAME = { foot: '걷기·조깅', bike: '자전거', up: '등산·계단' };
+function grpOK(it){ const g = actGrp(S.act); return g === 'up' ? it.type !== 'road' : it.type === 'road' && (g !== 'bike' || bikeOK(it.c)); }
+function pickOK(){ const g = actGrp(S.act); return g === 'up' ? DB.pick.type === 'climb' : DB.pick.type === 'road' && (g !== 'bike' || bikeOK(ALL_ROADS[DB.pick.id])); }
 function actNote(){   // 11/17 보스 "자전거 코스인데 산길을 알려 줌 — 걷기가 맞는 길": 길 종류와 운동이 안 맞으면 알려 주고 맞는 코스 추천
-  const n = $('actNote'), bad = !isFree() && DB.pick.type === 'road' && S.act === 'bike' && !bikeOK(COURSE);
+  const n = $('actNote'), bad = !isFree() && !pickOK();   // 운동에 맞는 코스를 아직 안 골랐으면
   n.classList.toggle('hidden', !bad); if (!bad) return;
-  n.innerHTML = '⚠️ <b>' + tr(COURSE.short || COURSE.name) + '</b>은 걷기 길이에요 (산책로·계단). 자전거는 <a href="#" id="actBikeGo" style="color:var(--vt)">🚲 자전거 코스 보기</a>';
-  $('actBikeGo').onclick = e => { e.preventDefault(); DB.browse = 'topic'; DB.topic = 'bike'; saveDB(); refreshBrowse(); try { $('browseSeg').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_){} };
+  n.textContent = '👇 아래 목록에서 ' + GRP_NAME[actGrp(S.act)] + ' 코스를 골라 주세요';
 }
 function setAct(a){
   const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
@@ -2543,18 +2561,25 @@ function setAct(a){
     if (out && (a === 'tread' || ACTS[a].kind === 'up')) a = 'walk';
     else if (!out && (a === 'walk' || a === 'jog' || a === 'hike')) a = 'tread';
   }
-  else if (upPick) a = out ? 'hike' : 'stair';                       // 방구석 = 천국의 계단 / 바깥 = 실제 등산·계단
-  else if (out && a === 'tread') a = 'walk';                    // 바깥 걷기·조깅
-  else if (!out && (a === 'walk' || a === 'jog')) a = 'tread';
-  else if (ACTS[a].kind === 'up') a = out ? 'walk' : 'tread';
+  else if (out){ if (a === 'tread') a = 'walk'; else if (a === 'stair') a = 'hike'; }   // 테마: 운동 먼저 (바깥 = 걷기·조깅 / 자전거 / 등산)
+  else { if (a === 'walk' || a === 'jog') a = 'tread'; else if (a === 'hike') a = 'stair'; }   // 방구석 = 러닝머신 / 실내 자전거 / 천국의 계단
   S.act = a; DB.act = a; if (ACTS[a].kind === 'dist') DB.roadAct = a;
+  if (!free){   // 운동 묶음이 바뀌면: 목록을 그 운동에 맞게, 고른 코스도 맞는 쪽으로 (전에 고른 산·길이 있으면 되살림)
+    const g = actGrp(a);
+    if (DB.grp !== g){ DB.grp = g;
+      if (g === 'up'){ DB.tab = DB.tab === 'tower' ? 'tower' : 'mountain';
+        const m = DB.climb.sel && TGT(DB.climb.sel); if (DB.pick.type !== 'climb' && m){ DB.pick = { type: 'climb', id: m.id }; const rg = regionOf(m.cityId); if (rg) DB.region = rg; } }
+      else { DB.tab = 'road'; if (DB.pick.type === 'climb'){ DB.pick = { type: 'road', id: COURSE.id }; const rg = regionOf(ACTIVE.city); if (rg) DB.region = rg; }
+        if (g === 'bike' && !bikeOK(COURSE)) DB.browse = 'near'; }   // 자전거 = 지역 구분 없이 가까운 자전거 길부터
+      listOpen = !pickOK(); saveDB(); setTimeout(() => { refreshStart(); }, 0); }
+  }
   const up = isClimb(), tower = !free && up && TGT(DB.climb.sel).kind === 'tower';
   const list = free ? (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '🪜', T.aStair]])
-             : up ? (out ? [['hike', '🥾', tower ? T.aRealStair : T.aHike]] : [['stair', '🪜', T.aStair]])
-                  : (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike]]);
+             : (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike], ['hike', '⛰', '등산·계단']] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '⛰', '등산·계단']]);
   $('actChips').innerHTML = list.map(([k, ic, nm]) => '<button data-act="' + k + '" class="' + (k === a ? 'on' : '') + '"><b>' + ic + '</b><span>' + nm + '</span></button>').join('');
   $('actChips').querySelectorAll('[data-act]').forEach(b => b.onclick = () => setAct(b.dataset.act));
   $('actChips').classList.toggle('hidden', list.length < 2); $('actTitle').classList.toggle('hidden', list.length < 2);
+  if (!free && !pickOK()) $('bStart').classList.add('need');
   $('goalBox').classList.add('hidden');   // 오늘 목표는 없앰: 다음 거점이 자동 목표
   actNote();
   $('speedTitle').textContent = a === 'stair' ? T.levelTitle : a === 'bike' ? T.speedBike : T.speedKmh;
