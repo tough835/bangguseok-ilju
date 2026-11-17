@@ -61,3 +61,20 @@ jobs:
             폰에서 아래 bangguseok-runner.apk 를 눌러 내려받아 설치하세요.
             커밋: ${{ github.sha }}
           files: bangguseok-runner.apk
+
+      # 플레이스토어(비공개 테스트)에 올릴 파일 = AAB. APK와 같은 열쇠로 서명됨.
+      # 실패해도 위의 APK 올리기에는 영향이 없게 맨 뒤에 따로 둠.
+      - name: AAB 빌드 (플레이스토어 올리기용)
+        id: aab
+        continue-on-error: true
+        working-directory: app/android
+        run: |
+          ./gradlew bundleRelease --no-daemon --stacktrace
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/bangguseok-runner.aab"
+
+      - name: AAB도 같은 Release에 올리기
+        if: steps.aab.outcome == 'success'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-v0.1.${{ github.run_number }}
+          files: bangguseok-runner.aab
