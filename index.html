@@ -817,7 +817,7 @@
 </div>
 
 <script>
-const BUILD = '202611171425';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171452';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3482,12 +3482,15 @@ $('map').onclick = () => {
   let pan = null;
   const fullOn = () => NAV.full && S.running && !isClimb();   // 전체 경로 화면(큰 화면)인지
   const setFz = z => { const was = NAV.fz; NAV.fz = Math.max(1, Math.min(30, z)); if (was <= 1 && NAV.fz > 1){ NAV.fa = Math.round(((totalNow() % L) + L) % L); NAV.fx = NAV.fy = 0; NAV.ipWas = !!DB.ipMini; ipFold(true); } if (NAV.fz <= 1){ NAV.fx = NAV.fy = 0; } zoomTag(); };
-  cv.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
-    else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else NAV.zoom = 1; zoomTag(); } lastTap = n;
+  /* 11/17 보스: 바깥 일반에서 확대 안 됨 → 지도가 화면 위쪽 절반뿐이라 손가락이 아래 숫자 칸·알약 위에 놓이면 안 먹었음.
+     운동 중에는 화면 어디서 두 손가락을 벌려도 확대 (창·입력칸 위 제외). 한 손가락(두 번 톡·끌기)은 지도 위에서만 */
+  const runTouch = e => S.running && e.target.closest && !e.target.closest('.modal,input,select,textarea');
+  document.addEventListener('touchstart', e => { if (!runTouch(e)) return; if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
+    else if (e.touches.length === 1 && e.target === cv){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else NAV.zoom = 1; zoomTag(); } lastTap = n;
       if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; } } }, { passive: false });
-  cv.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
+  document.addEventListener('touchmove', e => { if (!S.running) return; if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
     else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); } }, { passive: false });
-  cv.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) pan = null; });
+  document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) pan = null; });
   cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
 function zoomTag(){ const t = $('zoomTag'); if (!t) return;
@@ -4566,10 +4569,10 @@ const V3D_SAT = { kr: 'https://api.vworld.kr/req/wmts/1.0.0/' + VW_KEY + '/Satel
 const v3dKR = (lat, lon) => lat > 33.0 && lat < 38.7 && lon > 124.5 && lon < 131.0;
 function v3dSat(lat, lon){   // 코스 위치에 맞게 위성 사진 출처·출처 글자를 고름
   const kr = v3dKR(lat, lon), m = V3D.map;
-  if (m && V3D.kr !== kr){ V3D.kr = kr; V3D.bad = 0; try { m.getSource('sat').setTiles([kr ? V3D_SAT.kr : V3D_SAT.en]); } catch(e){} }
+  if (m && V3D.kr !== kr){ V3D.kr = kr; V3D.bad = 0; V3D.ok = 0; try { m.getSource('sat').setTiles([kr ? V3D_SAT.kr : V3D_SAT.en]); } catch(e){} }
   V3D.kr = kr; $('v3dCredit').textContent = (kr ? '위성 사진 © 브이월드(국토교통부) · 공공누리 제1유형' : '위성 사진 © Esri · Maxar') + ' · 높이 © AWS Terrain Tiles';
 }
-const V3D = { map: null, ready: false, loading: false, failed: false, key: '', me: null, tags: [], brg: null, last: 0, mc: null, kr: null, bad: 0 };
+const V3D = { map: null, ready: false, loading: false, failed: false, key: '', me: null, tags: [], brg: null, last: 0, mc: null, kr: null, bad: 0, ok: 0 };
 const v3dAble = () => S.running && !S.free && !S.gps && !V3D.failed && (isClimb() ? TGT(DB.climb.sel).kind === 'mountain' && !!MTN_GEO[DB.climb.sel] : SAT_OK);
 const v3dOn = () => DB.v3d !== false && V3D.ready && !NAV.full && v3dAble();
 function v3dLoad(){
@@ -4583,11 +4586,14 @@ function v3dLoad(){
       style: { version: 8,
         sources: { sat: { type: 'raster', tiles: [v3dKR(lat0, lon0) ? V3D_SAT.kr : V3D_SAT.en], tileSize: 256, maxzoom: 18 },
                    dem: { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 14, encoding: 'terrarium' } },
-        layers: [ { id: 'bg', type: 'background', paint: { 'background-color': '#1b1c1f' } }, { id: 'sat', type: 'raster', source: 'sat' } ],
+        layers: [ { id: 'bg', type: 'background', paint: { 'background-color': '#20323d' } }, { id: 'sat', type: 'raster', source: 'sat' } ],
         sky: { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 } } });
     V3D.kr = v3dKR(lat0, lon0); v3dSat(lat0, lon0);
     V3D.map.on('error', e => {   // 국내 위성 조각이 계속 안 오면(열람 막힘 등) 3D 대신 평면 지도로
-      if (e && e.sourceId === 'sat' && V3D.kr && ++V3D.bad >= 6 && !V3D.failed){ V3D.failed = true; v3dShow(false); showViewMode(true); if (document.body.classList.contains('dbg')) toastMsg('3D: 브이월드 위성 조각을 못 받아 평면으로'); } });
+      /* 11/17 보스 "3D 없는 곳 많음": 바다·사진 없는 칸도 '실패'로 세서 해안 코스 등에서 3D가 꺼졌음 → 한 장도 못 받았을 때만(열람 자체가 막힘) 평면으로 */
+      if (e && e.sourceId === 'sat' && V3D.kr && ++V3D.bad >= 8 && !V3D.chk) V3D.chk = setTimeout(() => { V3D.chk = 0;   // 실패가 먼저 몰려와도 6초 기다려 본 뒤 판단
+        if (!V3D.ok && V3D.kr && !V3D.failed){ V3D.failed = true; v3dShow(false); showViewMode(true); if (document.body.classList.contains('dbg')) toastMsg('3D: 브이월드 위성 조각을 못 받아 평면으로'); } }, 6000); });
+    V3D.map.on('data', e => { if (e && e.sourceId === 'sat' && e.tile) V3D.ok++; });
     V3D.map.on('load', () => { try { V3D.map.setTerrain({ source: 'dem', exaggeration: 1.2 }); } catch(e){} V3D.ready = true; V3D.loading = false; hudTick = 5; });
   } catch(e){ bad(); } };
   document.head.appendChild(sc);
