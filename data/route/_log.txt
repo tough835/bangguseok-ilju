@@ -16,3 +16,5 @@ saryeoni-10k OSRM 15.77km / 공식 10.00km (x1.58) 757점
 centralpark-10k OSRM 11.34km / 공식 9.80km (x1.16) 1051점
 kokyo-5k OSRM 6.82km / 공식 5.00km (x1.36) 362점
 dragonsback-9k OSRM 9.47km / 공식 8.50km (x1.11) 545점
+nakdong-bike-18k OSRM 22.09km / 공식 18.00km (x1.23) 626점
+hangang-bike-11k OSRM 12.28km / 공식 11.00km (x1.12) 483점
