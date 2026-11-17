@@ -473,6 +473,7 @@
   <div class="pill hidden" id="gpsPill"></div>
   <button class="pill satb hidden" id="bSat"></button>
   <button class="pill satb hidden" id="b3d"></button>
+  <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>   <!-- 11/17 음성 안내 켜기·끄기 -->
 </div>
 
 <div id="hudBottom" class="hidden">
@@ -817,7 +818,7 @@
 </div>
 
 <script>
-const BUILD = '202611171452';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171504';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2061,6 +2062,7 @@ function advance(dm){
     if (!p.hub) return;                                  // 지나는 명소: 알림 없음
     const st = stickersBefore(p.lm).map(l => tr(l.name));
     const goalHit = S.running && !S.goalDist && S.goalName === p.name && totalNow() >= S.goalAt;
+    say(p.name + ' ' + T.arrive + '.');
     showPopup((goalHit ? '🎯 ' : '🚩 ') + p.name + ' ' + T.arrive,
       (p.lm.at / 1000).toFixed(1) + 'km' + (p.desc ? ' · ' + p.desc : '') + (st.length ? '\n🔖 ' + T.passedBy + ': ' + st.join(' · ') : ''), p.photo);
   });
@@ -2071,7 +2073,7 @@ function advanceClimb(dm){
   const m = TGT(DB.climb.sel), before = S.startTotal + S.sessionM; S.sessionM += dm;
   if (m.kind === 'tower'){ const fh = m.gain / m.floors, f0 = Math.floor((before % m.gain) / fh) + 1, f1 = Math.floor(((S.startTotal + S.sessionM) % m.gain) / fh) + 1;
     void f0; void f1; }
-  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
+  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); say(p.name.replace('!', '') + (p.photo ? ' 도착했습니다.' : '.')); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
 }
 
 /* ---- 운동 기록 저장 (실시간) ---- */
@@ -2130,7 +2132,7 @@ function loop(now){
       }
     } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
-  v3dShow(v3dOn()); if (hudTick % 6 === 0) v3dBtn();
+  v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2138,10 +2140,50 @@ function loop(now){
 const fmtM = m => m >= 1000 ? (m/1000).toFixed(2) + ' km' : Math.round(m) + ' m';
 /* 거점 접근 안내 (11/16): 500m·100m 전에 진동 + 소리 안내(폰이 지원하면) + 화면 알림. 바깥에서 화면을 안 봐도 알 수 있게 */
 const ANN = new Set();
+/* ---- 음성 안내 (11/17 보스: 삼성헬스처럼 1km마다 + 우리만의 거점·오르막 안내) ----
+   · 앱(APK v0.1.11~) = 폰 기본 음성(TtsPlugin) — 화면이 꺼져도 GPS 신호가 올 때마다 확인해서 말함. 음악은 잠깐 작아짐
+   · 웹·옛 앱 = 브라우저 음성(되는 폰만). 끄기 = 운동 화면 🔊 버튼 (DB.voice) */
+const ttsNative = () => !!(CAP && CAP.isPluginAvailable && CAP.isPluginAvailable('Tts'));
+function say(text){
+  if (DB.voice === false || !text) return;
+  try { if (ttsNative()){ CAP.Plugins.Tts.speak({ text, rate: 1.0 }); return; } } catch(e){}
+  try { if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 1; speechSynthesis.speak(u); } } catch(e){}
+}
 function announce(text){
-  try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch(e){}
-  try { if (window.speechSynthesis && DB.voice !== false){ const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 1; speechSynthesis.cancel(); speechSynthesis.speak(u); } } catch(e){}
+  try { if (!document.hidden) navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch(e){}
+  say(text.replace(/ · /g, ', '));
   toastMsg('🔔 ' + text);
+}
+const VOICE = { km: 0, kmT: 0, up: 0, warn: new Set() };
+const elapsedNow = () => S.elapsed + (S.paused ? 0 : Math.max(0, (Date.now() - S.lastT) / 1000));
+function sayDur(sec){ sec = Math.round(sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + '시간 ' : '') + (m ? m + '분 ' : '') + (h ? '' : s + '초'); }
+function sayM(m){ return m >= 1000 ? (Math.round(m / 100) / 10) + '킬로미터' : (Math.round(m / 10) * 10) + '미터'; }
+function voiceReset(){ VOICE.km = 0; VOICE.kmT = 0; VOICE.up = 0; VOICE.warn.clear(); }
+function voiceTick(){   // 운동 중 수시로 (화면 켜짐 = 그림 돌 때, 화면 꺼짐 = GPS 신호 올 때)
+  if (!S.running || S.paused) return;   // 꺼 둔 동안에도 셈은 계속 (다시 켰을 때 지난 안내가 몰려 나오지 않게, 말하기는 say()가 막음)
+  const up = isClimb(), now = elapsedNow();
+  if (!up){   // 1km마다: 거리 · 시간 · 이번 1km 페이스(자전거 = 평균 속도) · 다음 거점
+    const km = Math.floor(S.sessionM / 1000);
+    if (km > VOICE.km){ VOICE.km = km; const lap = now - VOICE.kmT; VOICE.kmT = now;
+      let t = km + '킬로미터. ' + sayDur(now) + '. ' + (S.act === 'bike' ? '평균 시속 ' + Math.round(S.sessionM / 1000 / Math.max(1, now) * 3600) + '킬로미터.' : '이번 1킬로미터 ' + sayDur(lap) + '.');
+      if (S.free && S.freeGoal && !S.freeHit){ const left = freeGoalM() - S.sessionM; if (left > 0) t += ' 목표까지 ' + sayM(left) + '.'; }
+      else if (!S.free){ const nh = nextSpotFrom(totalNow()); if (nh && nh.lm && nh.d > 150) t += ' 다음 거점 ' + tr(nh.lm.name) + '까지 ' + sayM(nh.d) + '.'; }
+      say(t); }
+    if (!S.free) hubAlerts();
+    if (!S.free && !S.gps){   // 방구석 길: 앞쪽 오르막 미리 알림 (기계 경사를 올릴 때)
+      const pos = ((totalNow() % L) + L) % L, lap = Math.floor(totalNow() / L), B = gradeBands();
+      for (let i = 0; i < B.length; i++){ const b = B[i], upC = c => c === '#f0a03c' || c === '#d9534a';
+        if (!upC(b.col) || (B[i - 1] && upC(B[i - 1].col))) continue;
+        const ahead = b.from - pos; if (ahead <= 0 || ahead > 150) continue;
+        let to = b.to, steep = b.col === '#d9534a'; for (let j = i + 1; j < B.length && upC(B[j].col); j++){ to = B[j].to; steep = steep || B[j].col === '#d9534a'; }
+        const key = lap + ':' + b.from; if (to - b.from < 200 || VOICE.warn.has(key)) continue; VOICE.warn.add(key);
+        say('앞으로 ' + sayM(to - b.from) + ' 오르막' + (steep ? ', 가파른 구간이 있어요.' : '입니다.')); break; }
+    }
+  } else if (!S.free){   // 산·빌딩: 100m 오를 때마다 남은 높이
+    const n = Math.floor(S.sessionM / 100);
+    if (n > VOICE.up){ VOICE.up = n; const st = climbState();
+      say(n * 100 + '미터 올랐습니다. ' + sayDur(now) + '. ' + (st.m.kind === 'tower' ? st.floor + '층, ' : '') + (st.remain > 5 ? (st.m.kind === 'tower' ? '꼭대기' : '정상') + '까지 ' + Math.round(st.remain) + '미터.' : '')); }
+  }
 }
 function hubAlerts(){
   if (!S.running || S.paused) return;
@@ -2152,7 +2194,6 @@ function hubAlerts(){
   });
 }
 function hudWalk(pos){
-  hubAlerts();
   if (S.gps && S.speed > 0 && Date.now() - (GPS.lastMove || 0) > 8000){ S.speed = 0; GPS.spd = 0; refreshSpeedBox(false); }   // 멈춰 서 있으면 0
   if (autoActive()) autoSpeedTick();
   const sp = effSpeed(), nh = nextSpotFrom(totalNow()), gl = Math.max(0, S.goalAt - totalNow());
@@ -2568,7 +2609,7 @@ $('addClose').onclick = () => $('addBox').classList.add('hidden');
 function showRun(on){
   ['map','hudTop','hudBottom'].forEach(id => $(id).classList.toggle('hidden', !on));
   $('altiPill').classList.toggle('hidden', !(on && isClimb() && !S.free));
-  showViewMode(on);
+  showViewMode(on); voiceBtn(on);
   if (on && S.free){ $('map').classList.add('hidden'); $('infoPanel').classList.add('hidden'); $('hudTop').classList.remove('hidden'); $('notePill').classList.add('hidden'); }
   if (!on) $('syncBox').classList.add('hidden');
   $('startScreen').classList.add('hidden');
@@ -2582,7 +2623,7 @@ $('bStart').onclick = () => {
   S.gps = DB.zone === 'out'; GPS.track = [];
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
-  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false;
+  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false; voiceReset();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
@@ -3864,7 +3905,7 @@ function freeCredit(){ const prev = DB.records.find(r => r.id === S.sessionId); 
 function freeGoalM(){ return isClimb() ? S.freeGoal * FLOOR_M : S.freeGoal * 1000; }
 function freeAdvance(dm){
   S.sessionM += dm;
-  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
+  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
 }
 function hudFree(){
   if (S.gps && S.speed > 0 && Date.now() - (GPS.lastMove || 0) > 8000){ S.speed = 0; GPS.spd = 0; refreshSpeedBox(false); }
@@ -4155,6 +4196,7 @@ function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·�
     advance(d); GPS.spd = GPS.spd ? GPS.spd * 0.6 + v * 3.6 * 0.4 : v * 3.6; S.speed = Math.round(GPS.spd * 10) / 10; refreshSpeedBox(false);
     if (Date.now() - (GPS.saved || 0) > 30000){ GPS.saved = Date.now(); autosave(false); }   // 잠금 중에도 30초마다 저장
   }
+  if (document.hidden) voiceTick();   // 화면 꺼짐: 그림이 멈추므로 GPS 신호 때 음성 확인
 }
 function gpsStart(){
   GPS.last = null; GPS.spd = 0;
@@ -4645,6 +4687,8 @@ function v3dBtn(){   // 3D ↔ 평면 버튼 (3D가 되는 코스에서만 보�
   const b = $('b3d'), can = v3dAble() && !NAV.full; b.classList.toggle('hidden', !can); b.textContent = DB.v3d !== false ? T.v3dOn : T.v3dOff;
   if (can && DB.v3d !== false){ v3dLoad(); if (V3D.ready) $('bSat').classList.add('hidden'); }
 }
+function voiceBtn(on){ const b = $('bVoice'); b.classList.toggle('hidden', !on); b.textContent = DB.voice === false ? '🔇' : '🔊'; }
+$('bVoice').onclick = () => { DB.voice = DB.voice === false; saveDB(); voiceBtn(true); if (DB.voice !== false) say('음성 안내를 켭니다.'); else { try { if (ttsNative()) CAP.Plugins.Tts.stop(); else window.speechSynthesis && speechSynthesis.cancel(); } catch(e){} } toastMsg(DB.voice === false ? '🔇 음성 안내 끔' : '🔊 음성 안내 켬'); };
 $('b3d').onclick = () => { DB.v3d = DB.v3d === false; saveDB(); showViewMode(true); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));

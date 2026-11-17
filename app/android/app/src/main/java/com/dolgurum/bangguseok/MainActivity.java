@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(StepsPlugin.class);   // 24시간 걸음 칩
+        registerPlugin(TtsPlugin.class);     // 음성 안내 (화면 꺼져도)
         super.onCreate(savedInstanceState);
         // 안드로이드 13+: 알림 권한이 있어야 '기록 중' 알림이 떠서 잠금 중 GPS가 유지됨
         if (Build.VERSION.SDK_INT >= 33 &&
