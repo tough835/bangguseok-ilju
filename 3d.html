@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <!-- 11/17 보스 요청: 3D 지도를 넣을지 판단하려고 만든 시험판 (앱과 분리 · 앱에서 이 화면으로 가는 버튼 없음).
      길·산·빌딩 1곳씩. 볼 것 = 끊김(초당 그림 수) · 배터리 · 세 번째에도 재미있는가.
-     부품: MapLibre GL JS 5.6.0 (lib/ 폴더, BSD) · 위성 사진 = Esri · 높이 = AWS Terrain Tiles(열쇠 없음) · 주변 건물 = OpenFreeMap(오픈스트리트맵) -->
+     부품: MapLibre GL JS 5.6.0 (lib/ 폴더, BSD) · 위성 사진 = 브이월드(국토교통부, 3곳 모두 국내) · 높이 = AWS Terrain Tiles(열쇠 없음) · 주변 건물 = OpenFreeMap(오픈스트리트맵) -->
 <style>
   :root{--vt:#d7f548;--ch:#1b1c1f;--ch2:#26282c;--ch3:#34373c;--mut:#9a9ca1}
   html,body{margin:0;height:100%;background:var(--ch);color:#fff;overflow:hidden;
@@ -77,7 +77,7 @@
 <script src="lib/maplibre-gl.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const VW = 'https://api.vworld.kr/req/wmts/1.0.0/77F0E859-7013-4326-8DA4-F326BCAB8C0E/Satellite/{z}/{y}/{x}.jpeg';   // 11/17: Esri는 무료 허락이 아님 → 국내 브이월드
 const DEM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 /* 시험할 곳 3곳 — 앱에 이미 있는 실제 노선 자료를 그대로 씀 */
 const C = {
@@ -95,7 +95,7 @@ try {
     center: [127.68, 35.36], zoom: 14, pitch: 60,
     style: { version: 8,
       sources: {
-        sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: '위성 사진 © Esri · Maxar' },
+        sat: { type: 'raster', tiles: [VW], tileSize: 256, maxzoom: 18, attribution: '위성 사진 © 브이월드(국토교통부) · 공공누리 제1유형' },
         dem: { type: 'raster-dem', tiles: [DEM], tileSize: 256, maxzoom: 14, encoding: 'terrarium', attribution: '높이 © AWS Terrain Tiles' } },
       layers: [ { id: 'bg', type: 'background', paint: { 'background-color': '#1b1c1f' } }, { id: 'sat', type: 'raster', source: 'sat' } ],
       sky: { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 } }
