@@ -371,6 +371,55 @@
   .outRow button{background:var(--vt);color:var(--ch)}
   .form input,.form select{background:var(--ch3)!important;color:#fff!important}
   #endScreen .card{background:var(--ch2)}
+
+  /* ── 11/17 검수 (처음 쓰는 사람 눈으로 점검): 누르는 칸 44px · 옛 녹색·점선·흰 칸·금색 정리 · 글씨 겹침 ── */
+  /* 1) 누르는 칸: 얇은 모양은 그대로 두고, 보이지 않는 덧칸으로 누르는 범위만 44px */
+  #startScreen .titlebar button,.homeTop .stepbtn,.titlebar .back,#tabSeg button,.fchips button,.rb button,.sibs button,#lpSty,.frx{position:relative}
+  #startScreen .titlebar button::after,.homeTop .stepbtn::after,.titlebar .back::after,#tabSeg button::after,.fchips button::after,.rb button::after,.sibs button::after,#lpSty::after,.frx::after{content:'';position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+  .frx::after{left:-10px;right:-10px}
+  .seg button,.modeSeg button,#browseSeg button,.presets button,#startScreen .presets button{height:44px}
+  .sel3 select{height:44px;flex:1 1 0;min-width:0;padding:0 6px 0 12px;text-overflow:ellipsis}
+  #startScreen .toggle{height:44px;border:0;background:var(--ch2);color:#c9cbd0}
+  .lchips button{min-height:44px;padding:0 14px}
+  .lpc .row button{min-height:44px}
+  .ctrl button{height:48px}
+  .satb{min-height:44px;padding:0 14px;background:rgba(0,0,0,.6)}
+  .sibs button{padding:9px 12px}
+  #bdClose,#rsCancel{min-height:44px;padding:0 28px;margin-top:4px!important;font-size:15px}
+  .bodyrow input{min-height:44px;box-sizing:border-box}
+  #recScreen a[href="privacy.html"]{padding:13px 0;margin-top:0!important}
+  button:disabled{opacity:.4}
+  /* 2) 색: 차콜 바탕 + 볼트 하나 (옛 녹색·점선·흰 칸·금색 없앰) */
+  .trl{background:var(--ch3);color:#c9cbd0}
+  #applyBox,#trackBox,#myBox{background:var(--ch2);border:1px solid rgba(255,255,255,.08)}
+  #applyBox select{background:var(--ch3);color:#fff;border:0;padding:0 10px}
+  .myname{box-sizing:border-box;background:var(--ch3)}
+  .loopbtn{border:0;background:var(--ch2);color:#fff;font-size:15px}
+  .rb button.ap{background:transparent;border-color:var(--vt);color:var(--vt)}
+  #tabSeg button.on{background:var(--ch3);color:#fff}
+  .gold,.real,.stamp,.cqmc{color:var(--vt)}
+  .promobtn{background:var(--ch2);color:var(--vt)}
+  .hubrow.site{outline-color:var(--vt)}
+  .conq .bar b{background:var(--vt)}
+  #popup,#infoPanel{background:rgba(38,40,44,.97);color:#fff;border:1px solid rgba(255,255,255,.1)}
+  #popup .ph,#spotCard .ph,.ip-ph{border:0;background:var(--ch3);color:var(--mut)}
+  .ip-ph.empty{background:var(--ch3)}
+  #popup .d,#spotCard .d{color:#c9cbd0}
+  #spotCard .sc{background:var(--ch2);color:#fff;border:1px solid rgba(255,255,255,.08)}
+  #spotCard .x{background:var(--ch3)}
+  .ip-note{color:#ff9d6e}.ip-note.ok{color:var(--mut)}
+  #bkBox textarea{background:var(--ch3);color:#fff;border:0}
+  .modal h2{font-size:14px;margin:14px 0 6px;color:var(--mut);font-weight:700}
+  .pill{background:rgba(0,0,0,.6)}
+  /* 3) 글씨 겹침·잘림 */
+  .ip-btns{display:flex;gap:6px;margin-top:6px}
+  .ip-btns:not(:has(.ipv:not(.hidden))),#infoPanel.mini .ip-btns{display:none}
+  .ipv{float:none;flex:1;margin:0;min-height:44px;background:var(--ch3);white-space:nowrap}
+  .rrow{word-break:keep-all}.rrow>div:first-child{min-width:0}
+  #pauseBadge{z-index:25}
+  #map.big ~ #infoPanel{right:156px}
+  #hudBottom:not(.hidden) ~ #toast{top:auto;bottom:calc(300px + env(safe-area-inset-bottom))}
+  .nw{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -384,13 +433,12 @@
   <div class="ip-top">
     <div class="ip-ph" id="ipPhoto"></div>
     <div class="ip-tx">
-      <button class="ipv hidden" id="ipView"></button>
-      <button class="ipv hidden" id="ipShot"></button>
       <div class="ip-nm" id="ipName"></div>
       <div class="ip-gr" id="ipGrade"></div>
       <div class="ip-note" id="ipNote"></div>
     </div>
   </div>
+  <div class="ip-btns"><button class="ipv hidden" id="ipView"></button><button class="ipv hidden" id="ipShot"></button></div>
   <canvas id="ipElev"></canvas>
   <div class="ip-co" id="ipCourse"></div>
   <div class="ip-fold" id="ipFold"></div>
@@ -742,7 +790,7 @@
 </div>
 
 <script>
-const BUILD = '202611171023';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171215';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1163,10 +1211,10 @@ const TEXT = {
     fKm: '거리 (km)', fUp: '오른 높이 (m)', fMin: '시간 (분)', save: '기록 저장', gpsNext: 'GPS 자동 기록: 다음 단계',
     records: '최근 기록', noRecord: '아직 기록 없음', cum: '누적', upTotal: '오른 높이',
     end: '종료', paused: '일시정지', resume: '다시',
-    endTitle: '오늘 운동 끝 👏', passedTitle: '지나온 길', home: '처음으로',
-    fixBtn: '맞추기', fixFloors: '기계에 찍힌 층수', fixKm: '기계에 찍힌 거리 (km)', fixOk: '맞췄습니다', badNum: '숫자를 넣어 주세요',
+    endTitle: '오늘 운동 끝 👏', passedTitle: '지나온 길', home: '코스 화면으로',
+    fixBtn: '맞추기', fixFloors: '기계에 찍힌 층수', fixKm: '기계에 찍힌 거리 (km)', fixGps: '실제 거리로 고치기 (km)', fixOk: '맞췄습니다', badNum: '숫자를 넣어 주세요',
     today: '오늘', todayUp: '오늘 오른 높이', toSummit: '정상까지', toTop: '꼭대기까지',
-    alti: '해발', floorUnit: '층', machineFloors: '🏢 {n}층 높이', summit: '정상!', elevAt: '해발 {e}m',
+    alti: '해발', floorUnit: '층', machineFloors: '🏢 {n}층 높이', machineLv: '기계 {n}층', summit: '정상!', elevAt: '해발 {e}m',
     done: '🎉 {course} 완주!', doneN: '누적 {n}회째', photoSlot: '사진 자리', approx: '약', min: '분', times: '회',
     goal: '오늘 목표', gNext: '다음 거점', gSpot: '거점 고르기', gDist: '거리', toGoal: '🎯', nextHub: '다음 거점',
     goalReach: '🎯 목표 달성!', soClose: '{s}까지 {d} 남았어요', reachBy: '→ {s} 도착',
@@ -1195,7 +1243,7 @@ const TEXT = {
     stInputL: '삼성 헬스 걸음수로 맞추기', stSet: '맞추기', stApply: '🛣 코스에 반영 · +{n}보 ≈ {d}km', stNone: '새로 반영할 걸음이 없어요',
     stClimb: '걸음은 길 코스에만 반영할 수 있어요. 코스를 길로 바꿔 주세요.', stHelp: '운동 밖 걸음만 {c}에 반영됩니다 (운동 걸음은 이미 기록에 들어 있음). 반영한 걸음은 다시 반영되지 않아요.',
     stDone: '✅ 걸음 {n}보 → {c} +{d}km', srcSteps: '👣 걸음 반영', stApplied: '오늘 반영함: {n}보',
-    bkBtn: '💾 기록 옮기기 · 백업', bkTitle: '💾 기록 옮기기 · 백업', bkHelp: '다른 주소(예: Netlify)나 새 폰으로 기록을 옮길 때 씁니다. ① 여기서 코드를 복사 → ② 카톡 나에게 보내기 → ③ 옮길 곳의 "가져오기"에 붙여 넣기.',
+    bkBtn: '💾 기록 옮기기 · 백업', bkTitle: '💾 기록 옮기기 · 백업', bkHelp: '새 폰이나 다른 기기로 기록을 옮길 때 씁니다. ① 여기서 코드를 복사 → ② 카톡 나에게 보내기 → ③ 옮길 곳의 "가져오기"에 붙여 넣기.',
     bkOutT: '① 내보내기 (기록 {n}건)', bkCopy: '📋 코드 복사', bkFile: '💾 파일로 저장', bkInT: '② 가져오기 (합치기)', bkImport: '가져오기', bkLoad: '📂 파일 불러오기',
     bkCopied: '✅ 복사했어요. 카톡 나에게 보내기로 붙여 넣으세요.', bkCopyFail: '자동 복사가 막혔어요. 위 칸을 길게 눌러 전체 선택 → 복사해 주세요.',
     bkBad: '백업 코드가 아니에요. 처음부터 끝까지 빠짐없이 붙여 넣었는지 확인해 주세요.', bkDone: '✅ 가져오기 완료: 새 기록 {a}건 추가 · 이미 있던 {b}건은 그대로', bkFresh: '설정(지역·코스)도 함께 옮겼어요. 화면을 새로 불러옵니다.',
@@ -1219,12 +1267,12 @@ const TEXT = {
     trShort: '코스 길이의 절반이 안 돼요. 쓰면 이 길을 늘려서 코스 전체로 그려요.', trReplace: '전에 저장한 GPS 길을 바꿔요.', trYes: '지도로 쓰기', trDone: '✅ 저장했어요 · 다음에 열 때부터 반영',
     otherTrails: '다른 길:', trailsN: '길 {n}개', peakStamp: '정상 도장',
     homeSub: '오늘은 어디서 운동하세요?', zIn: '방구석', zInSub: '실내 운동', zInEx: '트레드밀 · 천국의 계단<br>실내 자전거', zOut: '바깥', zOutSub: '실외 운동', zOutEx: '걷기·조깅 · 자전거<br>등산 · GPS 기록',
-    zInTitle: '🏠 방구석', zOutTitle: '🌳 바깥', homeToday: '오늘 {d}',
+    zInTitle: '‹ 🏠 방구석', zOutTitle: '‹ 🌳 바깥', homeToday: '오늘 {d}',
     aWalkOut: '걷기·조깅', gpsStart: '▶ GPS로 기록 시작', manualOut: '✍ 다녀온 기록 넣기', hikeOut: '✍ 다녀온 등산 기록 넣기',
     gpsHelpApp: '달린 만큼 고른 코스에서 앞으로 갑니다. 폰을 잠가도 기록돼요 (알림창에 \'기록 중\' 표시).', bgTitle: '방구석러너 기록 중', bgMsg: '잠금 중에도 거리를 기록하고 있어요',
     gpsPerm: '위치 권한이 필요해요. 설정에서 위치를 \'앱 사용 중에만 허용\'으로 바꿔 주세요.',
     gpsHelp: '달린 만큼 고른 코스에서 앞으로 갑니다. 화면을 켜 둔 채로 운동하세요 (화면이 꺼지면 기록이 멈춰요).',
-    gpsNoHere: '이 화면에서는 GPS를 쓸 수 없어요. 외부 주소(Netlify)에서 열면 실시간 기록이 됩니다. 지금은 다녀온 거리를 넣어 주세요.',
+    gpsNoHere: '이 화면에서는 GPS를 쓸 수 없어요. 위치 권한을 켜거나 설치한 앱에서 열면 실시간 기록이 됩니다. 지금은 다녀온 거리를 넣어 주세요.',
     hikeHelp: '산 높이는 GPS로 정확히 재기 어려워서, 다녀온 뒤 오른 높이를 넣습니다.',
     gpsWait: '📡 GPS 찾는 중…', gpsOk: '📡 GPS ±{a}m', gpsWeak: '📡 GPS 약함 ±{a}m', gpsLost: 'GPS를 쓸 수 없어 기록을 멈춥니다', srcGps: '📡 GPS',
     cancel: '취소', edit: '수정', delSure: '지울까요?', addBtn: '＋ 빠진 기록 넣기 (앱 없이 한 운동)', addTitle: '✍ 빠진 기록 넣기',
@@ -1657,7 +1705,12 @@ function fmtKm(m){ return (m/1000).toFixed(2) + ' km'; }
 function fmtTime(sec){ sec = Math.floor(sec); const h = Math.floor(sec/3600), m = Math.floor(sec/60)%60, s = sec%60;
   return (h ? h + ':' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'); }
 
-let popupQueue = [], popupTimer = null;
+let popupQueue = [], popupTimer = null, popupPos = 0;
+function placePopup(){   // 위쪽 칸(작은 지도·알약·정보창) 바로 아래에 놓기
+  const pp = $('popup'); if (pp.classList.contains('hidden')){ clearInterval(popupPos); return; }
+  let pt = 0; ['map', 'hudTop', 'infoPanel'].forEach(id => { const e = $(id); if (e && !e.classList.contains('hidden')) pt = Math.max(pt, e.getBoundingClientRect().bottom); });
+  pp.style.top = pt ? Math.round(pt + 8) + 'px' : '';
+}
 function showPopup(title, desc, photo){
   popupQueue.push({ title, desc, photo });
   if (!popupTimer) nextPopup();
@@ -1668,7 +1721,7 @@ function nextPopup(){
   $('pTitle').textContent = p.title; $('pDesc').textContent = p.desc || '';
   const hasPh = typeof p.photo === 'string';   // 사진이 없으면 빈 '사진 자리' 칸을 띄우지 않음 (11/15 보스)
   $('pPhoto').classList.toggle('hidden', !hasPh); $('pPhoto').innerHTML = hasPh ? photoHtml(p.photo, 10) : '';
-  $('popup').classList.remove('hidden');
+  $('popup').classList.remove('hidden'); placePopup(); clearInterval(popupPos); popupPos = setInterval(placePopup, 300);
   popupTimer = setTimeout(nextPopup, 5500);
 }
 $('popup').onclick = () => { clearTimeout(popupTimer); nextPopup(); };
@@ -1740,7 +1793,7 @@ function photoAlts(src){
 function photoFail(img){
   const alts = JSON.parse(img.dataset.alts || '[]');
   if (alts.length){ img.dataset.alts = JSON.stringify(alts.slice(1)); img.src = alts[0]; return; }
-  toastMsg('🖼 ' + T.photoFail + ' (' + (img.dataset.orig || '').replace(/^https?:\/\//, '').split('/')[0] + ')'); errNote.log && errNote.log('photo ' + img.dataset.orig);
+  if (document.body.classList.contains('dbg')) toastMsg('🖼 ' + T.photoFail + ' (' + (img.dataset.orig || '').replace(/^https?:\/\//, '').split('/')[0] + ')'); errNote.log && errNote.log('photo ' + img.dataset.orig);
   const box = img.parentNode; box.innerHTML = '<span class="noph">🚩</span>'; box.style.display = 'flex'; box.style.alignItems = 'center'; box.style.justifyContent = 'center';
 }
 HUB_PHOTO['choichiwon'] = small('https://portal.nrich.go.kr/file_link/newFolder/584/Image/original/20240828171604_00001.jpg');   // 11/15 20:37 아리 채택 (원본 11331×5898)
@@ -1911,7 +1964,7 @@ function walkPassed(before, after){
 function climbPassed(m, before, after){
   const out = [];
   for (let k = Math.floor(before / m.gain); k <= Math.floor(after / m.gain); k++){
-    (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after){ const wk = WIKI[w.wiki || ('ko:' + tr(w.name).replace(/^\d+층 /, ''))]; out.push({ name: tr(w.name), desc: T.elevAt.replace('{e}', w.elev.toLocaleString()) + (m.kind !== 'tower' ? ' · 🌡 ' + T.tempLow.replace('{t}', Math.round((w.elev - m.base) * 0.006)) : ''), photo: wk && wk.u ? (PHOTO_CREDIT[wk.u] = wk.c, PHOTO_LINK[wk.u] = wk.l, wk.u) : undefined }); } });
+    (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after){ const wk = WIKI[w.wiki || ('ko:' + tr(w.name).replace(/^\d+층 /, ''))]; out.push({ name: tr(w.name), tw: m.kind === 'tower', desc: (m.kind === 'tower' ? '지상 ' + w.elev.toLocaleString() + 'm' : T.elevAt.replace('{e}', w.elev.toLocaleString())) + (m.kind !== 'tower' ? ' · 🌡 ' + T.tempLow.replace('{t}', Math.round((w.elev - m.base) * 0.006)) : ''), photo: wk && wk.u ? (PHOTO_CREDIT[wk.u] = wk.c, PHOTO_LINK[wk.u] = wk.l, wk.u) : undefined }); } });
     const top = (k + 1) * m.gain;
     if (top > before && top <= after) out.push({ name: tr(m.name) + ' ' + T.summit, short: tr(m.name), photo: m.photo || true,
       desc: (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : T.elevAt.replace('{e}', m.summit.toLocaleString())) + ' · ' + tr(m.desc || m.trail) });
@@ -1928,7 +1981,7 @@ function advance(dm){
     const st = stickersBefore(p.lm).map(l => tr(l.name));
     const goalHit = S.running && !S.goalDist && S.goalName === p.name && totalNow() >= S.goalAt;
     showPopup((goalHit ? '🎯 ' : '🚩 ') + p.name + ' ' + T.arrive,
-      (p.lm.at / 1000).toFixed(1) + 'km · ' + p.desc + (st.length ? '\n🔖 ' + T.passedBy + ': ' + st.join(' · ') : ''), p.photo);
+      (p.lm.at / 1000).toFixed(1) + 'km' + (p.desc ? ' · ' + p.desc : '') + (st.length ? '\n🔖 ' + T.passedBy + ': ' + st.join(' · ') : ''), p.photo);
   });
   if (S.running && S.goalAt != null) checkGoal();
 }
@@ -1937,7 +1990,7 @@ function advanceClimb(dm){
   const m = TGT(DB.climb.sel), before = S.startTotal + S.sessionM; S.sessionM += dm;
   if (m.kind === 'tower'){ const fh = m.gain / m.floors, f0 = Math.floor((before % m.gain) / fh) + 1, f1 = Math.floor(((S.startTotal + S.sessionM) % m.gain) / fh) + 1;
     void f0; void f1; }
-  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : '🥾 ') + p.name, p.desc, p.photo); });
+  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
 }
 
 /* ---- 운동 기록 저장 (실시간) ---- */
@@ -2043,7 +2096,7 @@ function hudClimb(st){
   $('sNextName').textContent = (tower ? (st.m.floors - st.floor) + T.floorUnit + ' · ' : '') + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
   $('sTodayLabel').textContent = T.todayUp;
   $('sToday').textContent = Math.round(S.sessionM) + ' m';
-  $('sTime').textContent = fmtTime(S.elapsed) + ' · ' + (autoActive() ? T.stepsN.replace('{n}', SENS.sessSteps) : T.machineFloors.replace('{n}', Math.floor(S.sessionM / FLOOR_M)));
+  $('sTime').textContent = fmtTime(S.elapsed) + ' · ' + (autoActive() ? T.stepsN.replace('{n}', SENS.sessSteps) : (tower ? T.machineLv : T.machineFloors).replace('{n}', Math.floor(S.sessionM / FLOOR_M)));
   $('progBar').style.width = (st.ratio * 100).toFixed(1) + '%';
   const cn = climbNote(st); $('notePill').textContent = cn[0]; $('notePill').classList.toggle('hidden', cn[1]);
 }
@@ -2144,6 +2197,8 @@ function refreshRegion(){
   const R = WORLD.regions, ko = x => tr(x.name).replace(/^[^가-힣A-Za-z]+/, ''), grp = (lbl, list) => list.length ? '<optgroup label="' + lbl + '">' + opt(list, c.id) + '</optgroup>' : '';
   const other = R.filter(x => !['mine', 'kr', 'long'].includes(x.id)).sort((a, b) => ko(a).localeCompare(ko(b), 'ko'));
   $('rCountry').innerHTML = grp('나의 코스', R.filter(x => x.id === 'mine')) + grp('나라 · 지역', R.filter(x => x.id === 'kr').concat(other)) + grp('테마 여정', R.filter(x => x.id === 'long')); $('rProv').innerHTML = opt(c.children, p.id); $('rCity').innerHTML = opt(p.children, ci.id);
+  $('rProv').classList.toggle('hidden', c.children.length < 2); $('rCity').classList.toggle('hidden', p.children.length < 2 && c.children.length > 1);
+  ['rCountry', 'rProv', 'rCity'].forEach(id => { const el = $(id), t = el.selectedOptions[0] ? el.selectedOptions[0].textContent : ''; let n = 2.6; for (const ch of t) n += /[가-힣ㄱ-ㅎ]/.test(ch) ? 1 : ch.charCodeAt(0) > 0x2000 ? 1.6 : 0.5; el.style.flexGrow = n.toFixed(1); });
 }
 $('rCountry').onchange = () => { DB.region = { country: $('rCountry').value }; saveDB(); refreshStart(); };
 $('rProv').onchange = () => { DB.region = { country: DB.region.country, prov: $('rProv').value }; saveDB(); refreshStart(); };
@@ -2343,7 +2398,7 @@ $('bPause').onclick = () => { S.paused = !S.paused; $('bPause').textContent = S.
 let addAct = null;
 function openAdd(){
   const up = DB.pick.type === 'climb', tower = up && TGT(DB.climb.sel).kind === 'tower';
-  const list = up ? [['hike', '🥾', tower ? T.aRealStair : T.aHike], ['stair', '🪜', T.aStair]] : [['walk', '🌳', T.aWalkOut], ['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike]];
+  const list = up ? [['hike', '🥾', tower ? T.aRealStair : T.aHike], ['stair', '🪜', T.aStair]] : [['walk', '🌳', '바깥 걷기·조깅'], ['tread', '🏃', '러닝머신'], ['bike', '🚴', T.aBike]];
   if (!list.some(x => x[0] === addAct)) addAct = list[0][0];
   $('addSub').textContent = up ? (tower ? '🏙 ' : '⛰ ') + tr(TGT(DB.climb.sel).name) : '🛣 ' + tr(COURSE.name);
   $('addActs').innerHTML = list.map(([k, ic, nm]) => '<button data-aa="' + k + '" class="' + (k === addAct ? 'on' : '') + '"><b>' + ic + '</b><span>' + nm + '</span></button>').join('');
@@ -2442,7 +2497,7 @@ function fillEnd(){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
     $('endSummary').innerHTML = T.freeSum.replace('{g}', freeGoalText(S.freeGoal, up)) + '<br>' + a.icon + ' ' + T[a.key] + ' <b>' + amt + '</b> · ' + fmtTime(S.elapsed) +
       (S.freeHit ? '<br>🎉 ' + T.freeDone.replace('🎉 ', '').replace('{g}', freeGoalText(S.freeGoal, up)) : '');
-    $('fixLabel').textContent = up ? T.fixFloors : T.fixKm; $('fixIn').placeholder = up ? T.floorUnit : 'km';
+    $('fixLabel').textContent = up ? T.fixFloors : S.gps ? T.fixGps : T.fixKm; $('fixIn').placeholder = up ? T.floorUnit : 'km';
     fillApply(); return;
   }
   if (isClimb()){
@@ -2454,12 +2509,12 @@ function fillEnd(){
     const pos = totalNow() % L;
     $('endSummary').innerHTML = a.icon + ' ' + T[a.key] + ' <b>' + (S.sessionM / 1000).toFixed(2) + ' km</b> · ' + fmtTime(S.elapsed) +
       '<br>' + tr(COURSE.short || COURSE.name) + ' <b>' + (pos/1000).toFixed(2) + ' / ' + (L/1000) + ' km</b>';
-    $('fixLabel').textContent = T.fixKm; $('fixIn').placeholder = 'km';
+    $('fixLabel').textContent = S.gps ? T.fixGps : T.fixKm; $('fixIn').placeholder = 'km';
   }
   // 지나온 길: 스티커처럼 표시, 누르면 간단한 소개
   $('endLandmarks').innerHTML = S.passed.length ? S.passed.map(n => {
     const lm = isClimb() ? null : LMS.find(l => tr(l.name) === n);
-    return '<span class="chip' + (lm && isHub(lm) ? ' hub' : '') + '"' + (lm ? ' data-lm="' + LMS.indexOf(lm) + '"' : '') + '>' + (isClimb() ? '🥾 ' : lm && isHub(lm) ? '🚩 ' : '🔖 ') + n + '</span>';
+    return '<span class="chip' + (lm && isHub(lm) ? ' hub' : '') + '"' + (lm ? ' data-lm="' + LMS.indexOf(lm) + '"' : '') + '>' + (isClimb() ? (TGT(DB.climb.sel).kind === 'tower' ? '🏢 ' : '🥾 ') : lm && isHub(lm) ? '🚩 ' : '🔖 ') + n + '</span>';
   }).join('') : '-';
   $('endLandmarks').querySelectorAll('[data-lm]').forEach(el => el.onclick = () => openSpot(LMS[+el.dataset.lm]));
 }
@@ -2960,19 +3015,26 @@ function buildMapView(){
   g.lineJoin = 'round'; g.lineCap = 'round';
   const line = (w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let d = 0; d <= L - 1; d += step){ const q = tf(pointAt(d)); d ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.stroke(); };
   line(14 * DPR, '#ffffff'); line(8 * DPR, '#9aa59a');
-  const fs = Math.round(13 * DPR);
+  const fs = Math.round(13 * DPR), boxes = [];
   LMS.forEach(lm => {
     const q = tf(pointAt(lm.at)), hub = isHub(lm);
     g.fillStyle = hub ? '#fff' : '#cfd6cc'; g.strokeStyle = hub ? '#7a5a2e' : '#8f998d'; g.lineWidth = 2 * DPR;
     g.beginPath(); g.arc(q[0], q[1], (hub ? 7 : 4) * DPR, 0, 7); g.fill(); g.stroke();
-    if (hub){
-      g.font = '800 ' + fs + 'px sans-serif'; const tw = g.measureText(tr(lm.name)).width;
-      const lx = Math.min(W - tw - 8 * DPR, Math.max(8 * DPR, q[0] - tw / 2)), ly = q[1] - 14 * DPR;
-      g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(lx - 5 * DPR, ly - fs, tw + 10 * DPR, fs + 8 * DPR);
-      g.fillStyle = '#24332a'; g.fillText(tr(lm.name), lx, ly);
-    }
   });
-  const s0 = tf(pointAt(0)); g.fillStyle = '#16382a'; g.font = '800 ' + fs + 'px sans-serif'; g.fillText('▶ ' + tr(LMS[0] ? LMS[0].name : ''), s0[0] + 10 * DPR, s0[1] + 18 * DPR);
+  g.font = '800 ' + fs + 'px sans-serif';
+  const s0 = tf(pointAt(0)), sName = '▶ ' + tr(LMS[0] ? LMS[0].name : ''), sx = Math.min(W - g.measureText(sName).width - 8 * DPR, s0[0] + 10 * DPR);
+  boxes.push([sx - 4 * DPR, s0[1] + 18 * DPR - fs, g.measureText(sName).width + 8 * DPR, fs + 8 * DPR]);
+  LMS.forEach(lm => {
+    if (!isHub(lm) || tr(lm.name) === tr(LMS[0] ? LMS[0].name : '')) return;
+    const q = tf(pointAt(lm.at)), tw = g.measureText(tr(lm.name)).width;
+    const lx = Math.min(W - tw - 8 * DPR, Math.max(8 * DPR, q[0] - tw / 2)), ly = q[1] - 14 * DPR;
+    const bx = [lx - 5 * DPR, ly - fs, tw + 10 * DPR, fs + 8 * DPR];
+    if (boxes.some(b => bx[0] < b[0] + b[2] && b[0] < bx[0] + bx[2] && bx[1] < b[1] + b[3] && b[1] < bx[1] + bx[3])) return;
+    boxes.push(bx);
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(bx[0], bx[1], bx[2], bx[3]);
+    g.fillStyle = '#24332a'; g.fillText(tr(lm.name), lx, ly);
+  });
+  g.fillStyle = '#16382a'; g.fillText(sName, sx, s0[1] + 18 * DPR);
   g.fillStyle = 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(GEO_NOW && GEO_NOW.src === 'official' ? T.mapOfficial : (SAT_OK ? '' : T.mapNote), 12 * DPR, AREA.bot - 8 * DPR);   // 공식 노선이면 출처 표시
   mv = { base, tf, step, w: W, h: H, top: AREA.top, bot: AREA.bot, key: fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa };
 }
@@ -3001,7 +3063,7 @@ function updateInfoPanel(pos){
   const yy = e => h - 4 * DPR - (e - ELEV_MIN) / rng * (h - 10 * DPR);
   g.clearRect(0, 0, w, h); g.beginPath(); g.moveTo(0, h);
   for (let x = 0; x <= w; x += 2){ g.lineTo(x, yy(elevAt(x / w * (L - 1)))); }
-  g.lineTo(w, h); g.closePath(); g.fillStyle = '#cfe0c9'; g.fill();
+  g.lineTo(w, h); g.closePath(); g.fillStyle = 'rgba(255,255,255,.22)'; g.fill();
   g.beginPath(); g.moveTo(0, h); g.lineTo(0, yy(elevAt(0)));
   for (let x = 0; x <= pos / L * w; x += 2){ g.lineTo(x, yy(elevAt(x / w * (L - 1)))); }
   g.lineTo(pos / L * w, h); g.closePath(); g.fillStyle = '#7fd18a'; g.fill();
@@ -3157,7 +3219,7 @@ $('lpGo').onclick = lpFind;
 $('lpDist').querySelectorAll('button').forEach(b => b.onclick = () => { $('lpDist').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
   const own = b.dataset.km === '0'; $('lpKmRow').classList.toggle('hidden', !own); $('lpKmRow').style.display = own ? 'flex' : 'none';
   if (own){ $('lpKm').value = LP.km || 3; $('lpKm').focus(); } else LP.km = +b.dataset.km; });
-$('lpKm').oninput = () => { const v = parseFloat($('lpKm').value); if (v >= 0.5 && v <= 42) LP.km = Math.round(v * 10) / 10; };   // 11/17 보스: 원하는 거리 직접 입력 (0.5~42km)
+$('lpKm').oninput = () => { const v = parseFloat($('lpKm').value); if (v >= 0.5 && v <= 42){ LP.km = Math.round(v * 10) / 10; $('lpMsg').textContent = ''; } else $('lpMsg').textContent = '거리는 0.5~42km 사이로 넣어 주세요 (지금 ' + LP.km + 'km로 찾아요)'; };   // 11/17 보스: 원하는 거리 직접 입력 (0.5~42km)
 $('lpCond').querySelectorAll('button').forEach(b => b.onclick = () => { const k = b.dataset.c; LP.cond.has(k) ? LP.cond.delete(k) : LP.cond.add(k); b.classList.toggle('on', LP.cond.has(k)); });
 
 /* ---- 위키 사진 받기 ---- */
@@ -3340,7 +3402,7 @@ $('rsCancel').onclick = () => $('resumeBox').classList.add('hidden');
 let resetArm = false;
 function resetLabel(){ resetArm = false; $('bReset').textContent = T.resetBtn.replace('{s}', DB.pick.type === 'climb' ? tr(TGT(DB.climb.sel).short || TGT(DB.climb.sel).name) : tr(COURSE.short || COURSE.name)); }
 $('bReset').onclick = () => {
-  if (!resetArm){ resetArm = true; $('bReset').textContent = T.resetSure; return; }
+  if (!resetArm){ resetArm = true; $('bReset').textContent = T.resetSure; setTimeout(() => { if (resetArm) resetLabel(); }, 4000); return; }
   if (DB.pick.type === 'climb'){ const st = climbState(), key = 'c:' + st.m.id; DB.base[key] = (DB.base[key] || 0) + st.climbed; }
   else DB.base[COURSE.id] = (DB.base[COURSE.id] || 0) + walkTotal() % L;
   saveDB(); resetLabel(); refreshRec(); toastMsg(T.resetDone);
@@ -3443,7 +3505,7 @@ function refreshRec(){
     const a = ACTS[r.act] || ACTS.tread;
     html += '<div class="rrow"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
       (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
-      T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ' · ' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
+      T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ' · <span class="nw">' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + '</span>' + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
       '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
@@ -3590,7 +3652,7 @@ function updateInfoClimb(st){
   $('ipView').classList.add('hidden');
   $('ipName').textContent = (tower ? '🏙 ' : '⛰ ') + tr(m.name);
   const w = ipCv.width = Math.round(ipCv.clientWidth * DPR || 200 * DPR), h = ipCv.height = Math.round(36 * DPR), g = ipCtx;
-  g.clearRect(0, 0, w, h); g.fillStyle = '#cfe0c9'; g.fillRect(0, h * 0.35, w, h * 0.3);
+  g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(0, h * 0.35, w, h * 0.3);
   g.fillStyle = '#7fd18a'; g.fillRect(0, h * 0.35, w * st.ratio, h * 0.3);
   g.fillStyle = '#e8574a'; g.beginPath(); g.arc(w * st.ratio, h / 2, 5 * DPR, 0, 7); g.fill();
   $('ipGrade').textContent = (tower ? st.floor + T.floorUnit + ' · ' + Math.round(st.elev) + 'm' : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + Math.floor(st.ratio * 100) + '%';
@@ -3770,14 +3832,16 @@ function fillApply(){
   const r = DB.records.find(x => x.id === S.sessionId);
   $('apYes').disabled = !r || S.sessionM < 1; $('apNo').disabled = false;
   $('applyBox').querySelector('b').textContent = T.apTitle;
+  apDone(false); if (!r || S.sessionM < 1) $('applyBox').classList.add('hidden');
 }
+function apDone(done){ ['apSub', 'apTarget'].forEach(id => $(id).classList.toggle('hidden', done)); $('applyBox').querySelector('.mbtn').classList.toggle('hidden', done); }
 $('apYes').onclick = () => {
   const r = DB.records.find(x => x.id === S.sessionId); if (!r) return;
   applyTheme(r, isClimb() ? 'climb' : 'walk', $('apTarget').value);
   $('applyBox').querySelector('b').textContent = T.apDone.replace('{c}', $('apTarget').selectedOptions[0].textContent).replace('{a}', '');
-  $('apYes').disabled = true; $('apNo').disabled = true;
+  $('apYes').disabled = true; $('apNo').disabled = true; apDone(true);
 };
-$('apNo').onclick = () => { $('applyBox').querySelector('b').textContent = T.apLater; $('apYes').disabled = true; $('apNo').disabled = true; };
+$('apNo').onclick = () => { $('applyBox').querySelector('b').textContent = T.apLater; $('apYes').disabled = true; $('apNo').disabled = true; apDone(true); };
 
 /* =====================================================================
    기록 옮기기·백업: DB 전체를 'BGSJ1:' + base64 코드로. 가져오기는 합치기 (같은 기록 id는 한 번만)
