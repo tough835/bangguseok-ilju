@@ -10,6 +10,7 @@
     font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
     -webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   input,select{-webkit-user-select:text;user-select:text}
+  body.running #view, body.running #map, body.running #hudTop, body.running #hudBottom, body.running #map3d{touch-action:none}   /* 11/17 보스 "3D 확대 안 됨": 운동 중 화면은 두 손가락 동작을 앱이 직접 받음 */
   #view{position:fixed;inset:0;width:100%;height:100%;display:block}
 
   /* ── 운동 중 화면 ── 중요도: 속도 > 남은 거리·오늘 운동량 > 진행 막대 > 이름·고도 > 작은 지도 */
@@ -540,6 +541,13 @@
     <button id="rsCancel" class="lnk" data-t="cancel" style="display:block;margin:10px auto 0;background:none;border:0;color:inherit;opacity:.6">취소</button>
   </div>
 </div>
+<div id="lapBox" class="modal hidden">   <!-- 11/17 보스 "완주가 끝나도 계속 진행, 어디가 끝인지 모름" -->
+  <div class="sb">
+    <div class="st" id="lapTitle"></div>
+    <div class="rs" id="lapBody"></div>
+    <div class="mbtn"><button id="lapMore">↻ 한 바퀴 더</button><button id="lapEnd" class="go">🏁 여기서 끝내기</button></div>
+  </div>
+</div>
 <div id="toast" class="hidden"></div>
 <div id="syncBox" class="hidden">
   <div class="sb">
@@ -634,6 +642,7 @@
 
   <h2 data-t="act" id="actTitle">운동</h2>
   <div class="chips" id="actChips"></div>
+  <div class="note hidden" id="actNote" style="font-size:13px;line-height:1.5;margin:6px 2px 0;color:var(--mut)"></div>   <!-- 11/17 길에 맞는 운동 안내 -->
 
   <div id="goalBox">
     <h2 data-t="goal">오늘 목표</h2>
@@ -822,7 +831,7 @@
 </div>
 
 <script>
-const BUILD = '202611171535';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171813';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2057,11 +2066,26 @@ function climbPassed(m, before, after){
   }
   return out;
 }
+/* 완주: 창을 띄워 끝낼지·한 바퀴 더 할지 고름. 25초 안에 안 누르면 한 바퀴 더(기계는 계속 돌고 있으니) */
+function lapDone(p){
+  say('완주했습니다. ' + sayM(S.sessionM) + ', ' + sayDur(elapsedNow()) + '.');
+  if (!S.running){ showPopup(p.name, p.desc, false); return; }
+  $('lapTitle').textContent = p.name; $('lapBody').textContent = p.desc + ' · 오늘 ' + (S.sessionM / 1000).toFixed(2) + 'km · ' + fmtTime(S.elapsed);
+  $('lapBox').classList.remove('hidden'); shown();
+  clearTimeout(lapDone.t); lapDone.t = setTimeout(() => { if (!$('lapBox').classList.contains('hidden')) $('lapMore').click(); }, 25000);
+}
+$('lapMore').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
+$('lapEnd').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); doEnd(); };
+/* 다음 목표: 마지막 거점을 지나면 '완주 지점'까지 */
+function nextTarget(total){
+  const n = nextSpotFrom(total), fd = L - (((total % L) + L) % L);
+  return n && n.d <= fd + 1 ? { lm: n.lm, d: n.d, name: tr(n.lm.name) } : { fin: true, d: fd, name: '완주 지점' };
+}
 function advance(dm){
   if (S.free){ freeAdvance(dm); return; }
   const before = totalNow(); S.sessionM += dm;
   walkPassed(before, totalNow()).forEach(p => {
-    if (p.lap){ showPopup(p.name, p.desc, false); return; }
+    if (p.lap){ lapDone(p); return; }
     S.passed.push(p.name);
     if (!p.hub) return;                                  // 지나는 명소: 알림 없음
     const st = stickersBefore(p.lm).map(l => tr(l.name));
@@ -2202,8 +2226,8 @@ function hudWalk(pos){
   if (autoActive()) autoSpeedTick();
   const sp = effSpeed(), nh = nextSpotFrom(totalNow()), gl = Math.max(0, S.goalAt - totalNow());
   $('namePill').textContent = tr(COURSE.short || COURSE.name) + ' · ' + gradeText(pos) + ' · ' + T.alti + ' ' + Math.round(elevAt(pos)) + 'm';
-  const other = S.goalDist || tr(nh.lm.name) !== S.goalName;     // 목표가 '다음 거점'이 아닐 때는 다음 거점도 작게 보여 줌
-  $('sNextLabel').textContent = S.goalDist ? T.toGoal + ' ' + S.goalName : '🚩 ' + S.goalName;
+  const other = !S.goalFin && (S.goalDist || tr(nh.lm.name) !== S.goalName);   // 완주 지점이 목표면 다음 바퀴 거점은 안 보여 줌     // 목표가 '다음 거점'이 아닐 때는 다음 거점도 작게 보여 줌
+  $('sNextLabel').textContent = S.goalDist ? T.toGoal + ' ' + S.goalName : (S.goalFin ? '🏁 ' : '🚩 ') + S.goalName;
   $('sNextDist').textContent = fmtM(gl);
   $('sNextName').textContent = other ? '🚩 ' + tr(nh.lm.name) + ' ' + (nh.d >= 1000 ? (nh.d/1000).toFixed(1) + 'km' : Math.round(nh.d) + 'm')
     : (sp > 0 ? T.approx + ' ' + Math.max(1, Math.round(gl / (sp/3.6) / 60)) + T.min : '');
@@ -2367,7 +2391,7 @@ function renderCourseRows(lists, onlySel){
       const t = posTotal(c), laps = Math.floor(t / c.lengthM), pct = Math.floor((t % c.lengthM) / c.lengthM * 100);
       const hubs = c.landmarks.filter(l => l.hub).length || c.landmarks.length, sel = DB.pick.type === 'road' && c.id === COURSE.id;
       return '<div class="mrow' + (sel ? ' sel' : '') + '" data-road="' + c.id + '"><div><b>' + tr(c.name) + '</b><br><span class="muted"><b class="km">' +
-        (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + T.hubsN.replace('{n}', hubs) + '</span><span class="tag">' + c.kind + '</span></div>' +
+        (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + T.hubsN.replace('{n}', hubs) + '</span><span class="tag">' + (bikeOK(c) ? '🚲 ' : '🚶 ') + c.kind + '</span></div>' +
         '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (laps ? '<br>✅ ' + laps + T.times : '') + '</div></div>';
     }).join('');
     $('courseList').querySelectorAll('[data-road]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; pickRoad(DB.region.city, r.dataset.road); });
@@ -2444,7 +2468,7 @@ function browseRow(it, extra){
   const sel = it.type === 'road' ? DB.pick.type === 'road' && it.id === COURSE.id : DB.pick.type === 'climb' && it.id === DB.pick.id;
   let name, info, pct = 0;
   if (it.type === 'road'){ const c = it.c, t = posTotal(c); pct = Math.floor((t % c.lengthM) / c.lengthM * 100);
-    name = tr(c.name); info = '<b class="km">' + (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (c.long ? T.longTag : regionName(it.cid)); }
+    name = tr(c.name); info = '<b class="km">' + (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (c.long ? T.longTag : regionName(it.cid)) + (S.act === 'bike' && !bikeOK(c) ? ' · 🚶 걷기 길' : bikeOK(c) ? ' · 🚲 자전거 가능' : ''); }
   else { const m = it.m, total = climbTotal(m.id); pct = Math.floor((total % m.gain) / m.gain * 100);
     name = (m.kind === 'tower' ? '🏢 ' : '⛰ ') + tr(m.name) + (m.trailName ? ' · ' + tr(m.trailName) : ''); info = '<b class="km">' + m.summit.toLocaleString() + 'm</b> · ' + (m.area && it.cid.indexOf('m100-') === 0 ? m.area + ' · ' : '') + regionName(it.cid); }
   return '<div class="mrow' + (sel ? ' sel' : '') + '" data-bt="' + it.type + '" data-bid="' + it.id + '" data-bc="' + it.cid + '"><div><b>' + name + '</b><br><span class="muted">' + info + (extra ? ' · ' + extra : '') + '</span></div>' +
@@ -2503,6 +2527,13 @@ function applyPick(){                                      // 코스 종류에 �
 }
 
 /* ---- 3) 운동 + 4) 방식(지금 운동 | 기록만 입력) ---- */
+const bikeOK = c => /자전거/.test((c && c.kind) || '');
+function actNote(){   // 11/17 보스 "자전거 코스인데 산길을 알려 줌 — 걷기가 맞는 길": 길 종류와 운동이 안 맞으면 알려 주고 맞는 코스 추천
+  const n = $('actNote'), bad = !isFree() && DB.pick.type === 'road' && S.act === 'bike' && !bikeOK(COURSE);
+  n.classList.toggle('hidden', !bad); if (!bad) return;
+  n.innerHTML = '⚠️ <b>' + tr(COURSE.short || COURSE.name) + '</b>은 걷기 길이에요 (산책로·계단). 자전거는 <a href="#" id="actBikeGo" style="color:var(--vt)">🚲 자전거 코스 보기</a>';
+  $('actBikeGo').onclick = e => { e.preventDefault(); DB.browse = 'topic'; DB.topic = 'bike'; saveDB(); refreshBrowse(); try { $('browseSeg').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_){} };
+}
 function setAct(a){
   const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
   $('bLoop').classList.toggle('hidden', !out || !free || isClimb()); freeRouteNote();
@@ -2523,6 +2554,7 @@ function setAct(a){
   $('actChips').querySelectorAll('[data-act]').forEach(b => b.onclick = () => setAct(b.dataset.act));
   $('actChips').classList.toggle('hidden', list.length < 2); $('actTitle').classList.toggle('hidden', list.length < 2);
   $('goalBox').classList.add('hidden');   // 오늘 목표는 없앰: 다음 거점이 자동 목표
+  actNote();
   $('speedTitle').textContent = a === 'stair' ? T.levelTitle : a === 'bike' ? T.speedBike : T.speedKmh;
   $('speedUnit').textContent = up ? '' : 'km/h';
   if (up){ makePresets([4, 6, 8, 10]); setSpeed(S.level); }
@@ -2611,6 +2643,7 @@ $('addClose').onclick = () => $('addBox').classList.add('hidden');
 
 /* ---- 출발 / 종료 ---- */
 function showRun(on){
+  document.body.classList.toggle('running', !!on);
   ['map','hudTop','hudBottom'].forEach(id => $(id).classList.toggle('hidden', !on));
   $('altiPill').classList.toggle('hidden', !(on && isClimb() && !S.free));
   showViewMode(on); voiceBtn(on);
@@ -2857,7 +2890,7 @@ $('cfYes').onclick = () => { $('confirmBox').classList.add('hidden'); doEnd(); }
    · 웹: 닫을 것이 있을 때만 방문 기록 한 칸을 쌓아 두고, '뒤로'가 오면 backStep()
    · 설치 앱: MainActivity가 '뒤로' 때 window.bgrBack()을 부름. 닫을 것이 없으면 앱을 끄지 않고 뒤로 보냄 (APK v0.1.9부터) */
 const shown = id => { const e = $(id); return !!e && !e.classList.contains('hidden'); };
-const BACK_BOX = { confirmBox: 'cfNo', resumeBox: 'rsCancel', conqBox: 'cqOk', loopBox: 'lpClose', promoBox: 'prClose', bodyBox: 'bdClose', stepBox: 'stClose', bkBox: 'bkClose', addBox: 'addClose', editBox: 'edClose', spotCard: 'scClose', syncBox: 'bSyncX' };
+const BACK_BOX = { lapBox: 'lapMore', confirmBox: 'cfNo', resumeBox: 'rsCancel', conqBox: 'cqOk', loopBox: 'lpClose', promoBox: 'prClose', bodyBox: 'bdClose', stepBox: 'stClose', bkBox: 'bkClose', addBox: 'addClose', editBox: 'edClose', spotCard: 'scClose', syncBox: 'bSyncX' };
 function backStep(){   // 닫은 것이 있으면 true
   if (shown('gallery')){ $('gallery').classList.add('hidden'); return true; }
   for (const k in BACK_BOX) if (shown(k)){ $(BACK_BOX[k]).click(); return true; }
@@ -3186,13 +3219,15 @@ function openSpot(lm){
 $('scClose').onclick = () => $('spotCard').classList.add('hidden');
 
 /* 운동 중 목표 체크 */
-function startGoal(){ const g = goalFrom(S.startTotal); S.goalAt = g.at; S.goalName = g.name; S.goalStart = S.startTotal; S.goalDist = !!g.dist; }
+function startGoal(){ const g = goalFrom(S.startTotal); S.goalFin = false;
+  if (!g.dist && DB.goal.type !== 'spot'){ const t = nextTarget(S.startTotal); g.at = S.startTotal + t.d; g.name = t.name; S.goalFin = !!t.fin; }
+  S.goalAt = g.at; S.goalName = g.name; S.goalStart = S.startTotal; S.goalDist = !!g.dist; }
 function checkGoal(){
   if (totalNow() < S.goalAt) return;
   const n = nextSpotFrom(totalNow());
   if (S.goalDist) showPopup(T.goalReach + ' ' + S.goalName, n.d <= 1000 ? T.soClose.replace('{s}', tr(n.lm.name)).replace('{d}', fmtM(n.d)) : '', false);
   // 거점 목표는 도착 알림(🎯)이 이미 떴음 → 다음 거점을 새 목표로
-  S.goalStart = totalNow(); S.goalAt = totalNow() + n.d; S.goalName = tr(n.lm.name); S.goalDist = false;
+  const t = nextTarget(totalNow()); S.goalStart = totalNow(); S.goalAt = totalNow() + t.d; S.goalName = t.name; S.goalFin = !!t.fin; S.goalDist = false;
 }
 
 /* =====================================================================
@@ -4656,6 +4691,12 @@ function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
     if (lx + tw + 8 * DPR > vw) lx = q[0] - 15 * DPR - tw; if (lx < 6 * DPR) lx = q[0] + 15 * DPR;
     g.fillStyle = 'rgba(255,255,255,.92)'; g.fillRect(lx - 5 * DPR, q[1] - bh / 2, tw + 10 * DPR, bh); g.fillStyle = '#24332a'; g.fillText(label, lx, q[1] + fs * 0.36);
   });
+  { const fa = Math.floor(pos / L) * L + L - 1;   // 🏁 완주 지점 (한 바퀴 끝)
+    if (fa >= from && fa <= to){ const q = tf(pointAt(fa)), r = (mini ? 6 : 11) * DPR;
+      g.fillStyle = '#111'; g.beginPath(); g.arc(q[0], q[1], r, 0, 7); g.fill(); g.strokeStyle = '#d7f548'; g.lineWidth = 2.5 * DPR; g.stroke();
+      g.font = Math.round(r * 1.2) + 'px sans-serif'; g.textAlign = 'center'; g.fillText('🏁', q[0], q[1] + r * 0.42); g.textAlign = 'left';
+      if (!mini && q[1] > 0 && q[1] < vh){ const fs = 14 * DPR, lb = '완주 지점'; g.font = '800 ' + Math.round(fs) + 'px sans-serif'; const tw = g.measureText(lb).width, lx = q[0] + 16 * DPR;
+        g.fillStyle = 'rgba(17,17,17,.88)'; g.fillRect(lx - 5 * DPR, q[1] - (fs + 9 * DPR) / 2, tw + 10 * DPR, fs + 9 * DPR); g.fillStyle = '#d7f548'; g.fillText(lb, lx, q[1] + fs * 0.36); } } }
   if (!mini) fadeBottom(g, vh);
   const pulse = 1 + 0.25 * Math.sin(performance.now() / 300), a = (mini ? 8 : 15) * DPR;
   g.fillStyle = 'rgba(232,87,74,.22)'; g.beginPath(); g.arc(ax, ay, a * 1.7 * pulse, 0, 7); g.fill();
@@ -4793,7 +4834,7 @@ function v3dRoad(pos){
     /* 지나온 길 색 경계 = 지도 위 길이 비율. 위도에 따라 지도 축척이 달라지므로(긴 남북 코스) 지도 길이로 따로 셈 */
     const mc = [0]; for (let i = 1; i < COURSE.path.length; i++){ const a = COURSE.path[i - 1], b = COURSE.path[i]; mc.push(mc[i - 1] + kmBetween(a, b) / Math.cos((a[0] + b[0]) / 2 * Math.PI / 180)); }
     V3D.mc = mc;
-    v3dRoute('r:' + COURSE.id, COURSE.path.map(q => [q[1], q[0]]), HUBS.slice(0, 24).map(h => { const g = geoOf(pointAt(Math.min(L - 1, h.at))); return [g[1], g[0], '🚩 ' + tr(h.name)]; }));
+    v3dRoute('r:' + COURSE.id, COURSE.path.map(q => [q[1], q[0]]), HUBS.slice(0, 24).map(h => { const g = geoOf(pointAt(Math.min(L - 1, h.at))); return [g[1], g[0], '🚩 ' + tr(h.name)]; }).concat([(g => [g[1], g[0], '🏁 완주 지점'])(geoOf(pointAt(L - 1)))]));
   }
   const d = ((pos % L) + L) % L / pathScale; let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
   const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos));
