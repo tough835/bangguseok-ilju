@@ -26,3 +26,4 @@ oncheon-bike-8k OSRM 5.99km / 공식 8.00km (x0.75) 160점
 uiam-bike-25k OSRM 31.00km / 공식 25.00km (x1.24) 872점
 gyeongchun-bike-24k OSRM 29.77km / 공식 24.00km (x1.24) 638점
 suyeong-bike-7k OSRM 4.86km / 공식 7.00km (x0.69) 114점
+
