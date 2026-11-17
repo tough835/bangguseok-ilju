@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>방구석러너 · 3D 시험판</title>
+<link rel="icon" href="icon-192.png"><meta name="theme-color" content="#1b1c1f">
+<link rel="stylesheet" href="lab/maplibre-gl.css">
+<!-- 11/17 보스 요청: 3D 지도를 넣을지 판단하려고 만든 시험판 (앱과 분리 · 앱에서 이 화면으로 가는 버튼 없음).
+     길·산·빌딩 1곳씩. 볼 것 = 끊김(초당 그림 수) · 배터리 · 세 번째에도 재미있는가.
+     부품: MapLibre GL JS 5.6.0 (lab/ 폴더, BSD) · 위성 사진 = Esri · 높이 = AWS Terrain Tiles(열쇠 없음) · 주변 건물 = OpenFreeMap(오픈스트리트맵) -->
+<style>
+  :root{--vt:#d7f548;--ch:#1b1c1f;--ch2:#26282c;--ch3:#34373c;--mut:#9a9ca1}
+  html,body{margin:0;height:100%;background:var(--ch);color:#fff;overflow:hidden;
+    font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  #map{position:fixed;inset:0}
+  button{font-family:inherit}
+  #top{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px;z-index:5}
+  .seg{display:flex;background:rgba(27,28,31,.88);border-radius:12px;padding:3px}
+  .seg button{flex:1;height:44px;border:0;border-radius:10px;background:transparent;color:var(--mut);font-size:15px;font-weight:700}
+  .seg button.on{background:var(--ch3);color:#fff}
+  .row{display:flex;gap:8px;align-items:flex-start}
+  .pill{background:rgba(0,0,0,.6);padding:7px 12px;border-radius:14px;font-size:14px;line-height:1.35;font-weight:700;min-width:0}
+  .pill small{display:block;font-size:12px;font-weight:600;color:#c9cbd0}
+  #view{margin-left:auto;flex:none;width:150px}
+  #view button{height:38px;font-size:13px}
+  #meter{position:fixed;right:10px;top:calc(168px + env(safe-area-inset-top));z-index:5;background:rgba(0,0,0,.6);border-radius:12px;padding:7px 10px;font-size:12px;line-height:1.6;text-align:right;font-variant-numeric:tabular-nums}
+  #meter b{color:var(--vt)}
+  #hud{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:40px 10px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.74) 28%)}
+  .stats{display:flex;gap:8px}
+  .stat{flex:1;min-width:0;background:rgba(0,0,0,.45);border-radius:16px;padding:8px 12px 9px}
+  .stat span{display:block;font-size:13px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat b{display:block;font-size:30px;font-weight:900;line-height:1.15;letter-spacing:-.5px;white-space:nowrap}
+  .stat small{display:block;font-size:14px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.18);margin:9px 2px 0;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--vt);border-radius:99px}
+  .ctl{display:flex;gap:8px;margin-top:9px;align-items:stretch}
+  .ctl button{height:56px;border:0;border-radius:14px;background:rgba(255,255,255,.2);color:#fff;font-size:16px;font-weight:800}
+  .ctl .pm{width:60px;font-size:30px;background:rgba(255,255,255,.94);color:var(--ch)}
+  .ctl .spd{flex:1;background:rgba(0,0,0,.5);border-radius:14px;display:flex;align-items:baseline;justify-content:center;gap:5px;padding-top:6px;box-sizing:border-box}
+  .ctl .spd b{font-size:36px;font-weight:900;letter-spacing:-1px}
+  .ctl .spd small{font-size:14px;opacity:.85}
+  .ctl .go{width:64px;background:var(--vt);color:var(--ch);font-size:22px}
+  .ctl .fast{width:74px;font-size:14px;line-height:1.25}
+  #note{margin:8px 2px 0;font-size:12px;color:#c9cbd0;line-height:1.5}
+  #fail{position:fixed;inset:0;z-index:20;background:var(--ch);display:none;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:17px;line-height:1.7}
+  .me{width:22px;height:22px;border-radius:50%;background:#e8574a;border:3px solid #fff;box-shadow:0 0 0 8px rgba(232,87,74,.28)}
+  .tag{background:rgba(27,28,31,.9);color:#fff;font-size:13px;font-weight:800;padding:4px 9px;border-radius:9px;white-space:nowrap}
+  .maplibregl-ctrl-bottom-right{bottom:auto;top:calc(128px + env(safe-area-inset-top));right:4px}
+  .maplibregl-ctrl-attrib{font-size:10px}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="top">
+  <div class="seg" id="kind"><button data-k="road">🛣 길</button><button data-k="mtn">⛰ 산</button><button data-k="tower">🏢 빌딩</button></div>
+  <div class="row"><div class="pill" id="name"></div><div class="seg" id="view"><button data-v="a"></button><button data-v="b"></button></div></div>
+</div>
+<div id="meter"></div>
+<div id="hud">
+  <div class="stats">
+    <div class="stat"><span id="l1"></span><b id="v1">-</b><small id="s1"></small></div>
+    <div class="stat"><span id="l2"></span><b id="v2">-</b><small id="s2"></small></div>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="ctl">
+    <button class="pm" id="minus">−</button>
+    <div class="spd"><b id="spd"></b><small id="unit"></small></div>
+    <button class="pm" id="plus">+</button>
+    <button class="fast" id="fast"></button>
+    <button class="go" id="go">⏸</button>
+  </div>
+  <div id="note"></div>
+</div>
+<div id="fail"></div>
+<script src="lab/maplibre-gl.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const DEM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+/* 시험할 곳 3곳 — 앱에 이미 있는 실제 노선 자료를 그대로 씀 */
+const C = {
+  road:  { name: '지리산둘레길 인월→금계', sub: '함양 · 공식 노선 20km', file: 'data/jiri/c3.json', spd: 6, step: 0.5, unit: 'km/h', zoom: 15.1, pitch: 66 },
+  mtn:   { name: '지리산 천왕봉 · 백무동 코스', sub: '함양 · 실제 등산로 7.5km', file: 'data/mtn/cheonwang.json', spd: 3, step: 0.5, unit: 'km/h', zoom: 15.5, pitch: 70 },
+  tower: { name: '롯데월드타워', sub: '서울 · 123층 555m', lat: 37.5125, lon: 127.1025, h: 555, floors: 123, ground: 15, spd: 15, step: 1, unit: 'm/분' }
+};
+const S = { kind: 'mtn', d: 0, play: true, fast: 10, viewB: false, brg: 0, orbit: 30, t0: Date.now() };
+try { const k = new URLSearchParams(location.search).get('k'); if (C[k]) S.kind = k; } catch(e){}
+
+let map;
+try {
+  map = new maplibregl.Map({
+    container: 'map', interactive: false, maxPitch: 85, attributionControl: { compact: true },
+    center: [127.68, 35.36], zoom: 14, pitch: 60,
+    style: { version: 8,
+      sources: {
+        sat: { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: '위성 사진 © Esri · Maxar' },
+        dem: { type: 'raster-dem', tiles: [DEM], tileSize: 256, maxzoom: 14, encoding: 'terrarium', attribution: '높이 © AWS Terrain Tiles' } },
+      layers: [ { id: 'bg', type: 'background', paint: { 'background-color': '#1b1c1f' } }, { id: 'sat', type: 'raster', source: 'sat' } ],
+      sky: { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 } }
+  });
+} catch(e){ fail('이 폰에서는 3D 지도를 그릴 수 없어요.<br><span style="color:#9a9ca1;font-size:14px">(' + (e && e.message || e) + ')</span>'); }
+function fail(h){ const f = $('fail'); f.innerHTML = '<div>' + h + '</div>'; f.style.display = 'flex'; }
+
+/* ---- 길·산: 노선 위 거리 → 위치 ---- */
+const R = Math.PI / 180, hav = (a, b) => { const x = (b[1] - a[1]) * R * Math.cos((a[0] + b[0]) / 2 * R), y = (b[0] - a[0]) * R; return Math.hypot(x, y) * 6371000; };
+let P = null;   // { pts:[[lat,lon,elev?]], cum:[m], len }
+function prep(pts){ const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i])); return { pts, cum, len: cum[cum.length - 1] }; }
+function at(d){
+  d = Math.max(0, Math.min(P.len, d)); let lo = 0, hi = P.cum.length - 1;
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (P.cum[m] <= d) lo = m; else hi = m; }
+  const a = P.pts[lo], b = P.pts[hi], t = (d - P.cum[lo]) / ((P.cum[hi] - P.cum[lo]) || 1);
+  return { lng: a[1] + (b[1] - a[1]) * t, lat: a[0] + (b[0] - a[0]) * t, el: a.length > 2 ? a[2] + (b[2] - a[2]) * t : null };
+}
+const bearing = (a, b) => (Math.atan2((b.lng - a.lng) * Math.cos(a.lat * R), b.lat - a.lat) / R + 360) % 360;
+const turn = (from, to, k) => from + ((((to - from) % 360) + 540) % 360 - 180) * k;
+
+let me = null, tags = [];
+function clearTags(){ tags.forEach(t => t.remove()); tags = []; }
+function tag(lng, lat, text){ const el = document.createElement('div'); el.className = 'tag'; el.textContent = text; tags.push(new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -8] }).setLngLat([lng, lat]).addTo(map)); }
+
+/* ---- 빌딩: 층층이 쌓은 덩어리 (위로 갈수록 좁아짐) ---- */
+const SHAPE = [[0, 1], [0.25, 0.94], [0.55, 0.78], [0.8, 0.55], [0.95, 0.3], [1, 0.16]];
+const widthAt = t => { for (let i = 1; i < SHAPE.length; i++) if (t <= SHAPE[i][0]){ const a = SHAPE[i - 1], b = SHAPE[i]; return a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]); } return 0.16; };
+function towerData(hNow){
+  const T = C.tower, N = 30, f = [], mLat = 1 / 111320, mLon = 1 / (111320 * Math.cos(T.lat * R));
+  const slab = (b, h, col) => { const w = 36 * widthAt((b + h) / 2 / T.h), ring = [];
+    for (let k = 0; k < 5; k++){ const a = (k * 90 + 28) * R; ring.push([T.lon + w * Math.SQRT2 * Math.cos(a) * mLon, T.lat + w * Math.SQRT2 * Math.sin(a) * mLat]); }
+    f.push({ type: 'Feature', properties: { b, h, c: col }, geometry: { type: 'Polygon', coordinates: [ring] } }); };
+  for (let i = 0; i < N; i++){ const b = T.h * i / N, h = T.h * (i + 1) / N;
+    if (hNow >= h) slab(b, h, '#3fae5a'); else if (hNow <= b) slab(b, h, i % 2 ? '#8fb0cc' : '#7ea2c1'); else { slab(b, hNow, '#3fae5a'); slab(hNow, h, '#8fb0cc'); } }
+  slab(Math.max(0, hNow - 2), hNow + 2, '#e8574a');   // 지금 층
+  return { type: 'FeatureCollection', features: f };
+}
+
+/* ---- 화면 바꾸기 ---- */
+async function load(kind){
+  S.kind = kind; S.d = 0; S.viewB = false; S.t0 = Date.now(); FPS.reset(); P = null;
+  const c = C[kind]; S.spd = c.spd;
+  document.querySelectorAll('#kind button').forEach(b => b.classList.toggle('on', b.dataset.k === kind));
+  $('name').innerHTML = c.name + '<small>' + c.sub + '</small>';
+  const vb = $('view').querySelectorAll('button'); vb[0].textContent = kind === 'tower' ? '밖에서' : '3D'; vb[1].textContent = kind === 'tower' ? '창밖' : '평면';
+  ['route', 'route-case', 'tower', 'bld'].forEach(id => { if (map.getLayer(id)) map.removeLayer(id); });
+  ['route', 'tower'].forEach(id => { if (map.getSource(id)) map.removeSource(id); });
+  clearTags(); if (me){ me.remove(); me = null; }
+  if (kind === 'tower'){
+    P = null;
+    map.setCenterClampedToGround(false); map.setTerrain(null);
+    try { if (!map.getSource('ofm')) map.addSource('ofm', { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '건물 © OpenFreeMap · OpenStreetMap' });
+      map.addLayer({ id: 'bld', type: 'fill-extrusion', source: 'ofm', 'source-layer': 'building', minzoom: 13, filter: ['!=', ['get', 'hide_3d'], true],
+        paint: { 'fill-extrusion-color': '#8d939c', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 9], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.9 } }); } catch(e){}
+    map.addSource('tower', { type: 'geojson', data: towerData(0) });
+    map.addLayer({ id: 'tower', type: 'fill-extrusion', source: 'tower', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 0.96 } });
+  } else {
+    let j; try { j = await (await fetch(c.file)).json(); } catch(e){ fail('노선 자료를 못 받았어요. 인터넷을 확인해 주세요.'); return; }
+    if (S.kind !== kind) return;
+    P = prep(j.p);
+    map.setCenterClampedToGround(true); setTerrain();
+    map.addSource('route', { type: 'geojson', lineMetrics: true, data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: P.pts.map(p => [p[1], p[0]]) } } });
+    map.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1b1c1f', 'line-width': 9, 'line-opacity': 0.55 } });
+    map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-width': 5, 'line-gradient': ['step', ['line-progress'], '#3fae5a', 0.0001, '#ffffff'] } });
+    const el = document.createElement('div'); el.className = 'me'; me = new maplibregl.Marker({ element: el }).setLngLat([P.pts[0][1], P.pts[0][0]]).addTo(map);
+    const z = P.pts[P.pts.length - 1]; tag(z[1], z[0], kind === 'mtn' ? '⛰ 천왕봉 1,915m' : '🚩 금계');
+    S.brg = bearing(at(0), at(150));
+  }
+  setView(); hud(true);
+}
+function setTerrain(){ if (S.kind === 'tower') return; map.setTerrain(S.viewB ? null : { source: 'dem', exaggeration: 1.2 }); }
+function setView(){
+  $('view').querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', (i === 1) === S.viewB));
+  if (S.kind === 'tower'){ if (map.getLayer('tower')) map.setLayoutProperty('tower', 'visibility', S.viewB ? 'none' : 'visible'); }
+  else setTerrain();
+  $('note').textContent = S.kind === 'tower'
+    ? (S.viewB ? '창밖 = 지금 층 높이에서 바깥을 내려다보는 화면. 천천히 한 바퀴 돕니다.' : '밖에서 = 빌딩을 돌며 지금 층(빨간 띠)을 따라 올라갑니다.')
+    : (S.viewB ? '평면 = 지금 앱과 같은 방식(위에서 내려다봄). 3D와 번갈아 비교해 보세요.' : '3D = 실제 높낮이 위에 위성 사진을 입힌 화면. 산은 1.2배 높게 보이게 했습니다.');
+}
+
+/* ---- 매 순간 ---- */
+let last = 0, tick = 0;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.25, (now - last) / 1000 || 0); last = now; FPS.add(dt);
+  if (!map || (S.kind !== 'tower' && (!P || !me))) return;
+  const c = C[S.kind];
+  if (S.kind === 'tower'){
+    if (S.play) S.d = Math.min(c.h, S.d + S.spd / 60 * S.fast * dt);
+    S.orbit = (S.orbit + dt * (S.viewB ? 5 : 7)) % 360;
+    const a = S.orbit * R, mLat = 1 / 111320, mLon = 1 / (111320 * Math.cos(c.lat * R)), h = c.ground + S.d;
+    let o;
+    if (S.viewB) o = map.calculateCameraOptionsFromTo([c.lon, c.lat], h + 3, [c.lon + 1800 * Math.sin(a) * mLon, c.lat + 1800 * Math.cos(a) * mLat], c.ground);
+    else o = map.calculateCameraOptionsFromTo([c.lon + 1500 * Math.sin(a) * mLon, c.lat + 1500 * Math.cos(a) * mLat], h * 0.6 + 380, [c.lon, c.lat], h * 0.5 + 150);
+    map.jumpTo(o);
+    if (++tick % 12 === 0){ if (!S.viewB && map.getSource('tower')) map.getSource('tower').setData(towerData(S.d)); hud(); }
+  } else {
+    if (S.play) S.d = Math.min(P.len, S.d + S.spd / 3.6 * S.fast * dt);
+    const p = at(S.d), q = at(Math.min(P.len, S.d + 160));
+    if (S.d < P.len - 5) S.brg = turn(S.brg, bearing(p, q), Math.min(1, dt * 1.6));
+    map.jumpTo({ center: [p.lng, p.lat], bearing: S.brg, pitch: S.viewB ? 0 : c.pitch, zoom: S.viewB ? c.zoom + 0.6 : c.zoom });
+    me.setLngLat([p.lng, p.lat]);
+    if (++tick % 12 === 0){ const k = Math.max(0.0001, Math.min(0.9999, S.d / P.len)); try { map.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3fae5a', k, '#ffffff']); } catch(e){} hud(); }
+  }
+}
+function hud(force){
+  const c = C[S.kind];
+  $('spd').textContent = S.kind === 'tower' ? S.spd : S.spd.toFixed(1); $('unit').textContent = c.unit;
+  $('fast').innerHTML = '빠르게<br>×' + S.fast; $('go').textContent = S.play ? '⏸' : '▶';
+  if (S.kind === 'tower'){
+    const fl = Math.min(c.floors, Math.floor(S.d / c.h * c.floors) + 1), left = c.h - S.d;
+    $('l1').textContent = '꼭대기까지'; $('v1').textContent = Math.round(left) + ' m'; $('s1').textContent = (c.floors - fl) + '층 남음';
+    $('l2').textContent = '지금'; $('v2').textContent = fl + '층'; $('s2').textContent = '지상 ' + Math.round(S.d) + 'm';
+    $('prog').style.width = (S.d / c.h * 100).toFixed(1) + '%';
+  } else if (P){
+    const p = at(S.d), left = P.len - S.d, top = P.pts[P.pts.length - 1][2];
+    $('l1').textContent = S.kind === 'mtn' ? '정상까지' : '도착까지'; $('v1').textContent = left >= 1000 ? (left / 1000).toFixed(2) + ' km' : Math.round(left) + ' m';
+    $('s1').textContent = S.kind === 'mtn' && p.el != null ? '↑ ' + Math.max(0, Math.round(top - p.el)) + 'm 더 오름' : '약 ' + Math.max(1, Math.round(left / 1000 / S.spd * 60)) + '분';
+    $('l2').textContent = '온 거리'; $('v2').textContent = (S.d / 1000).toFixed(2) + ' km'; $('s2').textContent = p.el != null ? '해발 ' + Math.round(p.el).toLocaleString() + 'm' : '';
+    $('prog').style.width = (S.d / P.len * 100).toFixed(1) + '%';
+  }
+  meter();
+}
+
+/* ---- 판단 재료: 초당 그림 수 · 켠 시간 · 배터리 · 못 받은 지도 조각 ---- */
+const FPS = { n: 0, t: 0, cur: 0, sum: 0, cnt: 0, low: 0, reset(){ this.n = this.t = this.cur = this.sum = this.cnt = this.low = 0; },
+  add(dt){ this.n++; this.t += dt; if (this.t >= 1){ this.cur = Math.round(this.n / this.t); this.sum += this.cur; this.cnt++; if (this.cnt > 3 && this.cur < 20) this.low++; this.n = 0; this.t = 0; } } };
+let BAT = null, BAT0 = null, tileErr = 0;
+try { navigator.getBattery && navigator.getBattery().then(b => { BAT = b; BAT0 = b.level; }); } catch(e){}
+function meter(){
+  const sec = Math.floor((Date.now() - S.t0) / 1000), mm = String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  const avg = FPS.cnt ? Math.round(FPS.sum / FPS.cnt) : 0;
+  $('meter').innerHTML = '초당 <b>' + FPS.cur + '</b>장 · 평균 ' + avg + '<br>끊긴 초 ' + FPS.low + ' · 켠 지 ' + mm +
+    (BAT ? '<br>배터리 ' + Math.round(BAT0 * 100) + '→<b>' + Math.round(BAT.level * 100) + '%</b>' + (BAT.charging ? ' ⚡' : '') : '') + (tileErr ? '<br>못 받은 조각 ' + tileErr : '');
+}
+if (map){
+  map.on('error', () => { tileErr++; });
+  map.on('load', () => { load(S.kind); requestAnimationFrame(frame); });
+  document.querySelectorAll('#kind button').forEach(b => b.onclick = () => load(b.dataset.k));
+  $('view').querySelectorAll('button').forEach((b, i) => b.onclick = () => { S.viewB = i === 1; setView(); });
+  $('minus').onclick = () => { S.spd = Math.max(C[S.kind].step, +(S.spd - C[S.kind].step).toFixed(1)); hud(); };
+  $('plus').onclick = () => { S.spd = +(S.spd + C[S.kind].step).toFixed(1); hud(); };
+  $('fast').onclick = () => { S.fast = S.fast === 1 ? 10 : S.fast === 10 ? 30 : 1; hud(); };
+  $('go').onclick = () => { const end = S.kind === 'tower' ? S.d >= C.tower.h : P && S.d >= P.len; if (end) S.d = 0; S.play = end ? true : !S.play; hud(); };
+  (async () => { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e){} })();
+  document.addEventListener('visibilitychange', async () => { try { if (document.visibilityState === 'visible' && 'wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e){} });
+}
+</script>
+</body>
+</html>
