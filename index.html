@@ -189,6 +189,17 @@
   .back{height:42px;padding:0 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:15px;font-weight:700;order:-1}
   #recScreen h1{font-size:21px;flex:1;text-align:right}
   .sum4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  #recCal{margin-top:10px;padding:12px}
+  .calh{display:flex;align-items:center;justify-content:space-between;font-weight:800}
+  .calh button{background:none;border:0;color:#fff;font-size:20px;width:44px;height:36px}
+  .calsum{font-size:13px;color:var(--mut);margin:2px 0 8px;text-align:center}
+  .calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .calg i{font-style:normal;font-size:11px;color:var(--mut)}
+  .calg b{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;font-size:13px;font-weight:600;background:var(--ch3);color:#cfd2d6}
+  .calg b.l1{background:rgba(215,245,72,.35);color:#fff}.calg b.l2{background:rgba(215,245,72,.65);color:#1b1c1f}.calg b.l3{background:var(--vt);color:#1b1c1f}
+  .calg b.td{box-shadow:inset 0 0 0 2px #fff}.calg b.sel{box-shadow:inset 0 0 0 2px var(--vt),0 0 0 2px #fff}.calg b.x{visibility:hidden}
+  .calday{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:8px;color:var(--vt)}
+  .calday button{background:none;border:0;color:var(--mut);font-size:13px;min-height:32px}
   .sum4 div{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px}
   .sum4 .kc{grid-column:span 2}
   .kcday{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;margin:12px 0 4px}.kcday .kt{display:flex;justify-content:space-between;font-weight:800;font-size:17px;margin-bottom:4px}.kcday .kl{display:flex;justify-content:space-between;font-size:14px;opacity:.85;padding:3px 0}.kcday .kl b{font-weight:700}
@@ -693,6 +704,7 @@
     <button data-per="week" data-t="pWeek">이번 주</button><button data-per="month" data-t="pMonth">이번 달</button><button data-per="all" data-t="pAll">전체</button>
   </div>
   <div class="sum4" id="recSum"></div>
+  <div class="card" id="recCal"></div>   <!-- 11/17 습관 달력: 운동한 날 · 날짜를 누르면 그날 기록만 -->
   <div class="card hidden" id="meterBox" style="margin-top:10px;font-size:13px;line-height:1.6"></div>   <!-- 11/17 측정 평균 (측정 보기를 켠 폰만) -->
   <button id="bBody" class="toggle" style="margin-top:8px"></button>
   <div id="stampBox">
@@ -834,7 +846,7 @@
 </div>
 
 <script>
-const BUILD = '202611171915';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171926';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3791,7 +3803,7 @@ $('bReset').onclick = () => {
    내 기록: 기간·운동별 합계 + 날짜별 목록, 눌러서 고치기·지우기
    (고치면 credit도 같이 바뀌어 코스 진행이 자동으로 맞춰짐)
    ===================================================================== */
-const REC = { per: 'week', f: 'all', edit: null, delArm: false };
+const REC = { per: 'week', f: 'all', edit: null, delArm: false, day: '', mon: null };
 /* ---- 칼로리 (11/16) — 운동 강도(MET) × 체중 × 시간
    · 걷기·달리기: 미국스포츠의학회(ACSM) 속도 공식 (분당 100m 미만 = 걷기 / 이상 = 달리기)
    · 자전거: 속도별 MET (운동강도 표 기준) / 계단·등산: 시간 있으면 MET, 없으면 오른 높이로 일량 계산
@@ -3864,10 +3876,13 @@ const actGroup = r => ({ walk: 'foot', tread: 'foot', walk: 'foot', jog: 'foot',
 function refreshRec(){
   try { refreshSteps(); } catch(e){}
   refreshStamps(); $('stampBox').classList.toggle('hidden', DB.pick.type === 'climb');
-  document.querySelectorAll('[data-per]').forEach(b => b.classList.toggle('on', b.dataset.per === REC.per));
+  document.querySelectorAll('[data-per]').forEach(b => b.classList.toggle('on', b.dataset.per === REC.per && !REC.day));
   document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === REC.f));
   const from = periodStart(REC.per);
-  const list = DB.records.filter(r => (REC.per === 'all' || (r.src !== 'legacy' && new Date(r.date).getTime() >= from)) && (REC.f === 'all' || actGroup(r) === REC.f));
+  const fOK = r => REC.f === 'all' || actGroup(r) === REC.f;
+  const list = REC.day ? DB.records.filter(r => r.src !== 'legacy' && calKey(new Date(r.date)) === REC.day && fOK(r))   // 달력에서 고른 날
+    : DB.records.filter(r => (REC.per === 'all' || (r.src !== 'legacy' && new Date(r.date).getTime() >= from)) && fOK(r));
+  calFill(fOK);
   const dist = list.reduce((a, r) => a + (r.distM || 0), 0), up = list.reduce((a, r) => a + (r.upM || 0), 0), sec = list.reduce((a, r) => a + (r.sec || 0), 0);
   const cnt = list.filter(r => r.src !== 'legacy').length;
   $('recSum').innerHTML =
@@ -3901,6 +3916,33 @@ function refreshRec(){
   });
   resetLabel();
 }
+/* ---- 습관 달력 (11/17 보스: 캘린더로 운동한 날·시간·칼로리를 보고 싶음) ----
+   운동한 날 = 직접 한 운동 기록(걸음수 자동 기록은 뺌). 색이 진할수록 오래 운동. 날짜를 누르면 위 합계·아래 목록이 그날만 */
+const calKey = d => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+function calFill(fOK){
+  const now = new Date(); if (!REC.mon) REC.mon = [now.getFullYear(), now.getMonth()];
+  const [y, m] = REC.mon, first = new Date(y, m, 1), days = new Date(y, m + 1, 0).getDate();
+  const recs = DB.records.filter(r => r.src !== 'legacy' && r.src !== 'steps' && fOK(r));
+  const by = {}; recs.forEach(r => { const k = calKey(new Date(r.date)); (by[k] = by[k] || []).push(r); });
+  let cnt = 0, sec = 0, kc = 0, cells = '';
+  for (let i = 0; i < first.getDay(); i++) cells += '<b class="x"></b>';
+  for (let d = 1; d <= days; d++){
+    const k = y + '-' + (m + 1) + '-' + d, rs = by[k] || [], mn = rs.reduce((a, r) => a + (r.sec || 0), 0) / 60;
+    if (rs.length){ cnt++; sec += mn * 60; kc += rs.reduce((a, r) => a + kcalOf(r), 0); }
+    const lv = !rs.length ? '' : mn >= 60 ? 'l3' : mn >= 30 ? 'l2' : 'l1';
+    cells += '<b data-cd="' + k + '" class="' + lv + (k === calKey(now) ? ' td' : '') + (k === REC.day ? ' sel' : '') + '">' + d + '</b>';
+  }
+  let st = 0; for (let t = new Date(now); ; t.setDate(t.getDate() - 1)){ const k = calKey(t); if (by[k]) st++; else if (k !== calKey(now)) break; if (st > 400) break; }   // 연속: 오늘(아직 안 했으면 어제)부터
+  const sel = REC.day ? REC.day.split('-') : null;
+  $('recCal').innerHTML = '<div class="calh"><button id="calPrev" aria-label="이전 달">‹</button><span>' + y + '년 ' + (m + 1) + '월</span><button id="calNext" aria-label="다음 달">›</button></div>' +
+    '<div class="calsum">운동한 날 ' + cnt + '일' + (st >= 2 && y === now.getFullYear() && m === now.getMonth() ? ' · 🔥 ' + st + '일 연속' : '') + (sec ? ' · ' + (sec >= 3600 ? Math.floor(sec / 3600) + '시간 ' + Math.round(sec % 3600 / 60) + '분' : Math.round(sec / 60) + '분') : '') + (kc ? ' · ' + kcalTxt(kc) : '') + '</div>' +
+    '<div class="calg">' + '일월화수목금토'.split('').map(c => '<i>' + c + '</i>').join('') + cells + '</div>' +
+    (sel ? '<div class="calday"><span>' + sel[1] + '월 ' + sel[2] + '일 기록만 보는 중</span><button id="calAll">전체 보기 ✕</button></div>' : '');
+  $('recCal').querySelectorAll('[data-cd]').forEach(b => b.onclick = () => { REC.day = REC.day === b.dataset.cd ? '' : b.dataset.cd; refreshRec(); });
+  $('calPrev').onclick = () => { REC.mon = m ? [y, m - 1] : [y - 1, 11]; refreshRec(); };
+  $('calNext').onclick = () => { REC.mon = m === 11 ? [y + 1, 0] : [y, m + 1]; refreshRec(); };
+  if ($('calAll')) $('calAll').onclick = () => { REC.day = ''; refreshRec(); };
+}
 function openEdit(id){
   const r = DB.records.find(x => x.id === id); if (!r) return;
   const up = (ACTS[r.act] || ACTS.tread).kind === 'up';
@@ -3922,9 +3964,9 @@ $('edDel').onclick = () => {
   DB.records = DB.records.filter(x => x !== REC.edit); saveDB(); $('editBox').classList.add('hidden'); refreshRec();
 };
 $('edClose').onclick = () => $('editBox').classList.add('hidden');
-document.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { REC.per = b.dataset.per; refreshRec(); });
+document.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { REC.per = b.dataset.per; REC.day = ''; refreshRec(); });
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { REC.f = b.dataset.f; refreshRec(); });
-function openRec(){ REC.delId = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); meterBoxFill(); saverBtn(); }
+function openRec(){ REC.delId = null; REC.day = ''; REC.mon = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); meterBoxFill(); saverBtn(); }
 $('bRec').onclick = () => { REC.fromHome = false; openRec(); };
 $('bRecHome').onclick = () => { REC.fromHome = true; $('homeScreen').classList.add('hidden'); openRec(); };   // 첫 화면에서 바로
 $('recBack').onclick = () => { $('recScreen').classList.add('hidden'); if (REC.fromHome){ showHome(); return; } $('startScreen').classList.remove('hidden'); refreshStart(); drawIdle(); };
