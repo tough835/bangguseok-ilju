@@ -418,6 +418,19 @@
   .rrow{word-break:keep-all}.rrow>div:first-child{min-width:0}
   #pauseBadge{z-index:25}
   #map.big ~ #infoPanel{right:156px}
+  /* 11/17 13:43 보스: 길·산 3D 큰 화면 · 산 목록 찾기 */
+  #map3d{position:fixed;inset:0;pointer-events:none;background:var(--ch)}
+  #v3dCredit{position:absolute;left:8px;bottom:300px;z-index:2;font-size:10px;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.7)}
+  .v3me{width:20px;height:20px;border-radius:50%;background:#e8574a;border:3px solid #fff;box-shadow:0 0 0 8px rgba(232,87,74,.28)}
+  .v3tag{background:rgba(27,28,31,.9);color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:8px;white-space:nowrap}
+  .find{width:100%;height:44px;border:0;border-radius:12px;background:var(--ch2);color:#fff;font-size:15px;padding:0 14px;box-sizing:border-box;margin-top:8px}
+  .find::placeholder{color:var(--mut)}
+  .zchips{display:flex;gap:6px;overflow-x:auto;margin-top:2px;padding-bottom:2px;scrollbar-width:none}
+  .zchips::-webkit-scrollbar{display:none}
+  .zchips button{flex:none;height:36px;border:0;border-radius:999px;background:var(--ch2);color:#c9cbd0;font-size:13px;font-weight:700;padding:0 13px;position:relative}
+  .zchips button::after{content:'';position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+  .zchips button.on{background:var(--vt);color:var(--ch)}
+  .morebtn{display:block;width:100%;height:46px;border:0;background:none;color:var(--vt);font-size:14px;font-weight:800}
   /* 11/17 보스 승인분 */
   #homeScreen .homeTop{gap:8px}
   #bStart.need{background:var(--ch3);color:var(--mut);justify-content:center!important;box-shadow:none}
@@ -434,6 +447,7 @@
 <div id="boot" style="position:fixed;inset:0;z-index:100;background:#1b1c1f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .25s"><img src="data:image/png;base64,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" width="120" height="120" alt=""><b style="font-size:22px;letter-spacing:.5px">방구석러너</b></div>
 
 <canvas id="view"></canvas>
+<div id="map3d" class="hidden"><div id="v3dCredit">위성 사진 © Esri · Maxar · 높이 © AWS Terrain Tiles</div></div>   <!-- 11/17 길·산 3D 큰 화면 (눌림은 아래 캔버스로 통과) -->
 <canvas id="map" class="hidden"></canvas>
 <div id="zoomTag" class="hidden"></div>
 <div id="infoPanel" class="hidden">
@@ -458,6 +472,7 @@
   <div class="pill note hidden" id="notePill"></div>
   <div class="pill hidden" id="gpsPill"></div>
   <button class="pill satb hidden" id="bSat"></button>
+  <button class="pill satb hidden" id="b3d"></button>
 </div>
 
 <div id="hudBottom" class="hidden">
@@ -591,6 +606,8 @@
   <style>#topicChips{display:flex;flex-wrap:wrap;gap:8px}#topicChips button{flex:0 0 auto;width:auto;min-width:0;padding:9px 13px;white-space:nowrap;font-size:15px}</style>
   <div id="browsePane" class="hidden">
     <div class="chips" id="topicChips" style="margin:10px 0"></div>
+    <div class="zchips hidden" id="bZones"></div>
+    <input id="bFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
     <div class="muted" id="nearNote" style="margin:10px 0;line-height:1.5"></div>
     <div class="card" id="browseList"></div>
   </div>
@@ -606,6 +623,7 @@
   <div class="seg" id="tabSeg"></div>
   <div id="conqLine" class="conq hidden"></div>
   <div id="passLine" class="sibs hidden" style="margin:0 0 10px"></div>
+  <input id="rFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
   <div class="card" id="courseList"></div>
   <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
   <button id="courseToggle" class="toggle"></button>
@@ -799,7 +817,7 @@
 </div>
 
 <script>
-const BUILD = '202611171303';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611171402';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1263,7 +1281,7 @@ const TEXT = {
     apTitle: '🗺 이 기록을 테마 코스에 반영할까요?', apSub: '{a}만큼 고른 코스에서 앞으로 갑니다. 반영 안 해도 기록은 내 기록에 남아요.', apYes: '반영하기', apNo: '안 함',
     apDone: '✅ {c}에 {a} 반영', apLater: '내 기록에서 나중에 반영할 수도 있어요', apBtn: '테마 반영', apSure: '{c}에 반영?', freeTag: '🎯 일반', appliedTag: '→ {c}',
     photoBig: '📷 거점 사진 {n}', galKm: '{k}km 지점', geoWait: '🛰 위성 지도는 실제 길 모양을 받은 뒤에 켜져요',
-    satOn: '🛰 위성 지도', mapOn: '🗺 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
+    satOn: '🛰 위성 지도', v3dOn: '🏔 3D 지도', v3dOff: '▦ 평면 지도', mapOn: '🗺 지도', satOff: '🗺 그림 지도', satCredit: '위성 사진 © Esri · Maxar',
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
@@ -1419,7 +1437,7 @@ function resize(){
 addEventListener('resize', resize);
 
 /* ===================== 작은 지도 ===================== */
-let mapBase = null, mapTf = null;
+let mapBase = null, mapTf = null, mapBaseT = 0, mapBaseN = 0, mapBaseOn = false;
 function buildMapBase(){
   const xs = P.map(p=>p.x), ys = P.map(p=>p.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -1428,7 +1446,10 @@ function buildMapBase(){
   mapTf = p => [ox + (p.x-minX)*sc, sz - oy - (p.y-minY)*sc];
   mapBase = document.createElement('canvas'); mapBase.width = mapBase.height = sz;
   const g = mapBase.getContext('2d');
+  let onMap = false; try { onMap = !!SAT_OK; if (onMap) drawSat(g, mapTf, { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }, sz / sc * 0.75, sc); } catch(e){ onMap = false; }   // 11/17: 작은 전체 여정도 지도 위에 (처음 열 때는 아직 준비 전이라 건너뜀)
+  mapBaseT = performance.now(); mapBaseN++; mapBaseOn = onMap;
   g.lineJoin = 'round'; g.lineCap = 'round';
+  if (onMap){ g.strokeStyle = '#fff'; g.lineWidth = 7 * DPR; g.beginPath(); for (let d = 0; d <= L - 0.5; d += Math.max(10, L / 400)){ const a = mapTf(pointAt(d)); d ? g.lineTo(a[0], a[1]) : g.moveTo(a[0], a[1]); } g.stroke(); }
   // 구간별 색
   const step = 10;
   for (let d = 0; d < L; d += step){
@@ -1442,6 +1463,7 @@ function buildMapBase(){
   const s0 = mapTf(pointAt(0)); g.fillStyle = '#333'; g.font = (9*DPR)+'px sans-serif'; g.fillText('▶', s0[0]+5*DPR, s0[1]+3*DPR);
 }
 function drawMap(pos){
+  if (mapBaseOn && mapBaseN < 9 && performance.now() - mapBaseT > 900) buildMapBase();   // 지도 조각이 오는 대로 몇 번 다시
   const sz = mapCv.width; mctx.clearRect(0,0,sz,sz); mctx.drawImage(mapBase, 0, 0);
   const q = mapTf(pointAt(pos)), h = headingAt(pos);
   mctx.save(); mctx.translate(q[0], q[1]); mctx.rotate(h);
@@ -2085,7 +2107,7 @@ function loop(now){
     /* 11/16 보스: 실제 등산로가 있는 산은 그림(직선 경사) 불필요 → 실제 지도 ↔ 전체(실제 높이 그래프) 두 화면만 */
     const gOn = !!st.geo;
     if (NAV.full){ drawClimbView(st); if (gOn){ drawClimbMap(mctx, mapCv.width, mapCv.height, st, true); miniTag(T.tagReal); } else { drawClimbNav(mctx, 0, 0, mapCv.width, mapCv.height, st, true); miniTag(T.tagHere); } }
-    else if (gOn){ drawClimbMap(ctx, W, AREA.bot, st, false); drawClimbMini(st); }
+    else if (gOn){ if (v3dOn()) v3dClimb(st); else drawClimbMap(ctx, W, AREA.bot, st, false); drawClimbMini(st); }
     else { drawClimbNav(ctx, 0, 0, W, AREA.bot, st, false); drawClimbMini(st); }
   } else {
     const sp = effSpeed();
@@ -2106,8 +2128,9 @@ function loop(now){
         drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
         miniTag(T.tagTheme, (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km');
       }
-    } else { drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
+    } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
+  v3dShow(v3dOn()); if (hudTick % 6 === 0) v3dBtn();
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2294,6 +2317,7 @@ function renderCourseRows(lists, onlySel){
   $('tabSeg').innerHTML = tabs.map(k => '<button data-tab="' + k + '" class="' + (k === DB.tab ? 'on' : '') + '">' + T['tab_' + k] + ' ' + lists[k].length + '</button>').join('');
   $('tabSeg').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { DB.tab = b.dataset.tab; saveDB(); refreshCourses(); });
   if (DB.tab === 'road'){
+    $('rFind').classList.add('hidden');
     $('courseList').innerHTML = lists.road.filter(c => !onlySel || c.id === COURSE.id).map(c => {
       const t = posTotal(c), laps = Math.floor(t / c.lengthM), pct = Math.floor((t % c.lengthM) / c.lengthM * 100);
       const hubs = c.landmarks.filter(l => l.hub).length || c.landmarks.length, sel = DB.pick.type === 'road' && c.id === COURSE.id;
@@ -2303,7 +2327,12 @@ function renderCourseRows(lists, onlySel){
     }).join('');
     $('courseList').querySelectorAll('[data-road]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; pickRoad(DB.region.city, r.dataset.road); });
   } else {
-    $('courseList').innerHTML = lists[DB.tab].filter(m => !onlySel || m.id === DB.pick.id).map(m => {
+    /* 11/17 보스: 산이 너무 많아 찾기 어렵고 스크롤이 김 → 8곳만 먼저 + '더 보기' + 이름 찾기 */
+    const all = lists[DB.tab].filter(m => !onlySel || m.id === DB.pick.id), big = !onlySel && DB.tab === 'mountain' && all.length > MF_N;
+    if (MF.rKey !== DB.region.city + DB.tab){ MF.rKey = DB.region.city + DB.tab; MF.rq = ''; MF.rMore = false; $('rFind').value = ''; }
+    $('rFind').classList.toggle('hidden', !big);
+    const q = big ? MF.rq.trim() : '', hit = q ? all.filter(m => tr(m.name).includes(q)) : all, shown = big && !q && !MF.rMore ? hit.slice(0, MF_N) : hit;
+    $('courseList').innerHTML = shown.map(m => {
       const total = climbTotal(m.id), done = Math.floor(total / m.gain), pct = Math.floor((total % m.gain) / m.gain * 100), real = realOf(m.id);
       const info = m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : (m.area && DB.region.city.indexOf('m100-') === 0 ? m.area + ' · ' : '') + m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm ? ' · ' + m.distKm + 'km' : '');
       const sel = DB.pick.type === 'climb' && m.id === DB.pick.id, sibs = peakTrails(m).filter(t => t.id !== m.id);
@@ -2311,7 +2340,8 @@ function renderCourseRows(lists, onlySel){
       return '<div class="mrow' + (sel ? ' sel' : '') + '" data-climb="' + m.id + '"><div><b>' + tr(m.name) + '</b>' + (m.trailName ? ' <span class="trl">' + tr(m.trailName) + '</span>' : '') +
         '<br><span class="muted">' + info + (sibs.length && !sel ? ' · ' + T.trailsN.replace('{n}', sibs.length + 1) : '') + '</span>' + others + '</div>' +
         '<div class="r">' + (peakDone(m) ? '<span class="stamp">🏁 ' + T.peakStamp + '</span><br>' : '') + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (done ? '<br>✅ ' + done + T.times : '') + (real ? '<br><span class="real">⛰ ' + real + '</span>' : '') + '</div></div>';
-    }).join('');
+    }).join('') + (shown.length < hit.length ? '<button class="morebtn" id="rMore">더 보기 ▾ (' + (hit.length - shown.length) + '곳 더 · 낮은 산부터)</button>' : '') + (q && !hit.length ? '<div class="muted" style="padding:12px">「' + q.replace(/</g, '') + '」 이름의 산이 여기엔 없어요</div>' : '');
+    if ($('rMore')) $('rMore').onclick = () => { MF.rMore = true; refreshCourses(); };
     $('courseList').querySelectorAll('[data-jump]').forEach(b => b.onclick = e => { e.stopPropagation(); jumpTrail(b.dataset.jump); });
     $('courseList').querySelectorAll('[data-climb]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; DB.pick = { type: 'climb', id: r.dataset.climb }; DB.climb.sel = r.dataset.climb; S.act = 'stair'; applyPick(); askResume(); });
   }
@@ -2320,6 +2350,11 @@ function renderCourseRows(lists, onlySel){
    · 지역별 = 기존 나라 → 시·도 → 시·군
    · 주제별 = 코스 성격(길 풍경·종류)으로 자동 분류 — 코스를 새로 넣어도 따로 손댈 것 없음
    · 내 주변 = 폰 위치에서 가까운 순 (장거리는 길 중 가장 가까운 지점 기준) */
+const MF = { rq: '', bq: '', zone: 'all', rMore: false, bMore: false, rKey: '' }, MF_N = 8;
+const MF_ZONES = [['all', '전체'], ['sudo', '수도권'], ['gangwon', '강원'], ['chung', '충청'], ['jeolla', '전라'], ['gyeong', '경상'], ['jeju', '제주'], ['abroad', '해외']];
+const mtnZone = m => m.cityId.indexOf('m100-') === 0 ? m.cityId.slice(5) : ({ hamyang: 'gyeong', sancheong: 'gyeong', gurye: 'jeolla', jeju: 'jeju' })[m.cityId] || 'abroad';
+$('rFind').oninput = () => { MF.rq = $('rFind').value; refreshCourses(); };
+$('bFind').oninput = () => { MF.bq = $('bFind').value; refreshBrowse(); };
 const TOPICS = [
   { id: 'long', ko: '🧭 장거리 여정' }, { id: 'forest', ko: '🌲 숲·공원길' }, { id: 'water', ko: '🌊 바다·물가' },
   { id: 'city', ko: '🏙 도시 명소' }, { id: 'village', ko: '🏘 마을·역사길' }, { id: 'bike', ko: '🚲 자전거' },
@@ -2378,13 +2413,20 @@ function refreshBrowse(){
   if (br === 'region') return;
   const items = browseItems(); let rows = '';
   $('topicChips').classList.toggle('hidden', br !== 'topic'); $('nearNote').classList.toggle('hidden', br !== 'near');
+  const mtnTools = br === 'topic' && DB.topic === 'mountain'; $('bZones').classList.toggle('hidden', !mtnTools); $('bFind').classList.toggle('hidden', !mtnTools);
   if (br === 'topic'){
     const have = TOPICS.filter(t => items.some(it => it.topics.includes(t.id)));
     if (!have.some(t => t.id === DB.topic)) DB.topic = have[0] ? have[0].id : 'long';
     $('topicChips').innerHTML = have.map(t => '<button data-tp="' + t.id + '" class="' + (t.id === DB.topic ? 'on' : '') + '">' + t.ko + ' ' + items.filter(it => it.topics.includes(t.id)).length + '</button>').join('');
     $('topicChips').querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { DB.topic = b.dataset.tp; saveDB(); refreshBrowse(); });
-    const list = items.filter(it => it.topics.includes(DB.topic)).sort((a, b) => a.type !== b.type ? (a.type === 'road' ? -1 : 1) : (a.type === 'road' ? a.c.lengthM - b.c.lengthM : a.m.gain - b.m.gain));
-    rows = list.map(it => browseRow(it)).join('');
+    let list = items.filter(it => it.topics.includes(DB.topic)).sort((a, b) => a.type !== b.type ? (a.type === 'road' ? -1 : 1) : (a.type === 'road' ? a.c.lengthM - b.c.lengthM : a.m.gain - b.m.gain));
+    if (DB.topic === 'mountain'){   // 산: 권역 알약 + 이름 찾기 + 8곳만 먼저
+      $('bZones').innerHTML = MF_ZONES.map(([z, nm]) => [z, nm, z === 'all' ? list.length : list.filter(it => mtnZone(it.m) === z).length]).filter(x => x[2]).map(([z, nm, n]) => '<button data-z="' + z + '" class="' + (z === MF.zone ? 'on' : '') + '">' + nm + ' ' + n + '</button>').join('');
+      $('bZones').querySelectorAll('[data-z]').forEach(b => b.onclick = () => { MF.zone = b.dataset.z; MF.bMore = false; refreshBrowse(); });
+      const q = MF.bq.trim(); list = list.filter(it => (MF.zone === 'all' || mtnZone(it.m) === MF.zone) && (!q || tr(it.m.name).includes(q)));
+      const shown = !q && !MF.bMore ? list.slice(0, MF_N) : list;
+      rows = shown.map(it => browseRow(it)).join('') + (shown.length < list.length ? '<button class="morebtn" id="bMore">더 보기 ▾ (' + (list.length - shown.length) + '곳 더 · 낮은 산부터)</button>' : '') + (q && !list.length ? '<div class="muted" style="padding:12px">「' + q.replace(/</g, '') + '」 이름의 산이 없어요</div>' : ' ');
+    } else rows = list.map(it => browseRow(it)).join('');
   } else {
     askHere();
     const base = HERE || cityCenter(DB.region.city) || cityCenter('hamyang');
@@ -2394,6 +2436,7 @@ function refreshBrowse(){
     rows = list.map(x => browseRow(x.it, '📍 ' + (x.it.approx ? T.nearApprox + ' ' : '') + (x.d < 10 ? x.d.toFixed(1) : Math.round(x.d).toLocaleString()) + 'km' + (x.it.c && x.it.c.long ? ' ' + T.nearPass : ''))).join('');
   }
   $('browseList').innerHTML = rows || '<div class="muted" style="padding:12px">' + T.noCourse + '</div>';
+  if ($('bMore')) $('bMore').onclick = () => { MF.bMore = true; refreshBrowse(); };
   $('browseList').querySelectorAll('[data-bid]').forEach(r => r.onclick = () => {
     const rg = regionOf(r.dataset.bc); if (rg) DB.region = rg;
     DB.browse = 'region'; listOpen = false;   // 고르면 그 코스의 지역 화면으로 (거점·정복·길 모양 등을 함께 봄)
@@ -3095,9 +3138,12 @@ function buildMapView(){
   const g = base.getContext('2d');
   const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#e9efe2'); bg.addColorStop(1, '#dfe7d6');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  g.strokeStyle = 'rgba(0,0,0,.05)'; g.lineWidth = 1;
-  for (let x = 0; x < W; x += 40 * DPR){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
-  for (let y = 0; y < H; y += 40 * DPR){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  /* 11/17 보스: 전체 여정이 바탕 없이 코스만 나옴 → 실제 길 좌표가 있으면 지도(위성·지도) 위에 코스를 그림. 조각은 늦게 오므로 몇 번 다시 그림 */
+  const onMap = SAT_OK;
+  if (onMap){ try { drawSat(g, tf, { x: minX + (W / 2 - ox) / sc, y: maxY - (H / 2 - oy) / sc }, Math.hypot(W, H) / 2 / sc, sc); } catch(e){} }
+  else { g.strokeStyle = 'rgba(0,0,0,.05)'; g.lineWidth = 1;
+    for (let x = 0; x < W; x += 40 * DPR){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+    for (let y = 0; y < H; y += 40 * DPR){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); } }
   g.lineJoin = 'round'; g.lineCap = 'round';
   const line = (w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let d = 0; d <= L - 1; d += step){ const q = tf(pointAt(d)); d ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.stroke(); };
   line(14 * DPR, '#ffffff'); line(8 * DPR, '#9aa59a');
@@ -3121,11 +3167,14 @@ function buildMapView(){
     g.fillStyle = '#24332a'; g.fillText(tr(lm.name), lx, ly);
   });
   g.fillStyle = '#16382a'; g.fillText(sName, sx, s0[1] + 18 * DPR);
-  g.fillStyle = 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(GEO_NOW && GEO_NOW.src === 'official' ? T.mapOfficial : (SAT_OK ? '' : T.mapNote), 12 * DPR, AREA.bot - 8 * DPR);   // 공식 노선이면 출처 표시
-  mv = { base, tf, step, w: W, h: H, top: AREA.top, bot: AREA.bot, key: fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa };
+  g.fillStyle = onMap ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(onMap ? mapCredit() + (GEO_NOW && GEO_NOW.src === 'official' ? ' · ' + T.mapOfficial : '') : T.mapNote, 12 * DPR, AREA.bot - 8 * DPR);   // 공식 노선이면 출처 표시
+  const key = fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa + '/' + mapSty();
+  mvN = mvKey === key ? mvN + 1 : 0; mvKey = key;
+  mv = { base, tf, step, w: W, h: H, top: AREA.top, bot: AREA.bot, key, onMap, t: performance.now() };
 }
+let mvN = 0, mvKey = '';
 function drawMapView(pos){
-  if (!mv || mv.w !== W || mv.h !== H || mv.top !== AREA.top || mv.bot !== AREA.bot || mv.key !== NAV.fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa) buildMapView();
+  if (!mv || mv.w !== W || mv.h !== H || mv.top !== AREA.top || mv.bot !== AREA.bot || mv.key !== NAV.fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa + '/' + mapSty() || (mv.onMap && mvN < 10 && performance.now() - mv.t > 700)) buildMapView();
   ctx.drawImage(mv.base, 0, 0);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#3f9a52'; ctx.lineWidth = 8 * DPR;
   ctx.beginPath(); for (let d = 0; d <= pos; d += Math.max(5, mv.step)){ const q = mv.tf(pointAt(d)); d ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
@@ -3410,7 +3459,7 @@ function showViewMode(on){
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('infoPanel').classList.toggle('mini', !!DB.ipMini); $('ipFold').textContent = DB.ipMini ? T.ipOpen : T.ipClose;
   $('hudTop').classList.toggle('hidden', !(on && !NAV.full));
-  AREA = null; hudTick = 5;
+  AREA = null; hudTick = 5; v3dBtn(); if (!on) v3dShow(false);
 }
 /* 오른쪽 위 작은 칸을 누르면 큰 화면과 서로 바뀜: 내비(현위치 확대) ↔ 전체 지도 + 사진·코스 정보 */
 /* 11/16 보스: 바깥 테마 = 오른쪽 위를 누르면 큰 화면이 '테마 길 확대 지도'로 (다시 누르면 실제 지도) · 전체 코스 모양은 왼쪽 위 '🗺 전체 코스' 버튼 */
@@ -4507,6 +4556,80 @@ function drawClimbMap(g, vw, vh, st, mini){
   g.beginPath(); g.moveTo(ax, ay - a); g.lineTo(ax + a * 0.75, ay + a * 0.75); g.lineTo(ax, ay + a * 0.35); g.lineTo(ax - a * 0.75, ay + a * 0.75); g.closePath(); g.fill(); g.stroke();
   if (!mini){ fadeBottom(g, vh); g.font = (10 * DPR) + 'px sans-serif'; g.fillStyle = 'rgba(255,255,255,.8)'; g.fillText(mapCredit() + ' · 등산로 산림청 100대명산 GPX', 8 * DPR, vh - 12 * DPR); }
 }
+/* ---- 11/17 13:43 보스: "길·산은 3D가 훨씬 나음" → 운동 화면의 큰 화면 = 3D 지형(위성 사진 + 실제 높낮이). 버튼으로 평면과 오감
+   · 되는 곳: 실제 길 좌표가 있는 길 코스 · 실제 등산로가 있는 산 (방구석 테마). 빌딩·바깥 GPS·일반 운동·그림 지도 코스는 예전 화면 그대로
+   · 부품(MapLibre GL JS 5.6.0, lib/ 폴더 약 1MB)은 3D를 처음 쓸 때만 받음. 못 받거나 폰이 3D를 못 그리면 조용히 평면으로
+   · 확대·축소 = 예전처럼 두 손가락(NAV.zoom, 눌림은 아래 캔버스가 받음) · 오른쪽 위 작은 칸 = 전체 여정, 누르면 전체 + 거점 정보
+   · 위성 사진 = Esri · 높이 = AWS Terrain Tiles (열쇠 없음). 산은 1.2배 높게 */
+const V3D = { map: null, ready: false, loading: false, failed: false, key: '', me: null, tags: [], brg: null, last: 0, mc: null };
+const v3dAble = () => S.running && !S.free && !S.gps && !V3D.failed && (isClimb() ? TGT(DB.climb.sel).kind === 'mountain' && !!MTN_GEO[DB.climb.sel] : SAT_OK);
+const v3dOn = () => DB.v3d !== false && V3D.ready && !NAV.full && v3dAble();
+function v3dLoad(){
+  if (V3D.map || V3D.loading || V3D.failed) return; V3D.loading = true;
+  const bad = () => { V3D.failed = true; V3D.loading = false; };
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'lib/maplibre-gl.css'; document.head.appendChild(css);
+  const sc = document.createElement('script'); sc.src = 'lib/maplibre-gl.js'; sc.onerror = bad;
+  sc.onload = () => { try {
+    V3D.map = new maplibregl.Map({ container: 'map3d', interactive: false, attributionControl: false, maxPitch: 80, fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+      center: [lon0, lat0], zoom: 13, pitch: 60,
+      style: { version: 8,
+        sources: { sat: { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 18 },
+                   dem: { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 14, encoding: 'terrarium' } },
+        layers: [ { id: 'bg', type: 'background', paint: { 'background-color': '#1b1c1f' } }, { id: 'sat', type: 'raster', source: 'sat' } ],
+        sky: { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 } } });
+    V3D.map.on('error', () => {});
+    V3D.map.on('load', () => { try { V3D.map.setTerrain({ source: 'dem', exaggeration: 1.2 }); } catch(e){} V3D.ready = true; V3D.loading = false; hudTick = 5; });
+  } catch(e){ bad(); } };
+  document.head.appendChild(sc);
+}
+function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름표를 새로
+  const m = V3D.map; V3D.key = key; V3D.brg = null;
+  const data = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } };
+  if (m.getSource('route')) m.getSource('route').setData(data);
+  else { m.addSource('route', { type: 'geojson', lineMetrics: true, data });
+    m.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1b1c1f', 'line-width': 9, 'line-opacity': 0.55 } });
+    m.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-width': 5, 'line-gradient': ['step', ['line-progress'], '#3f9a52', 0.0001, '#ffffff'] } }); }
+  V3D.tags.forEach(t => t.remove());
+  V3D.tags = tags.map(([lo, la, txt]) => { const el = document.createElement('div'); el.className = 'v3tag'; el.textContent = txt; return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -8] }).setLngLat([lo, la]).addTo(m); });
+  if (!V3D.me){ const el = document.createElement('div'); el.className = 'v3me'; V3D.me = new maplibregl.Marker({ element: el }).setLngLat(coords[0]).addTo(m); }
+}
+function v3dDraw(lat, lon, hd, prog, zoom, pitch){
+  const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
+  V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
+  m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch, zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
+  V3D.me.setLngLat([lon, lat]);
+  const now = performance.now();
+  if (now - V3D.last > 400){ V3D.last = now; const k = Math.max(0.0001, Math.min(0.9999, prog));
+    try { m.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3f9a52', k, '#ffffff']); } catch(e){}
+    $('v3dCredit').style.bottom = Math.round(innerHeight - bot + 8) + 'px'; }
+}
+function v3dRoad(pos){
+  if (V3D.key !== 'r:' + COURSE.id){
+    /* 지나온 길 색 경계 = 지도 위 길이 비율. 위도에 따라 지도 축척이 달라지므로(긴 남북 코스) 지도 길이로 따로 셈 */
+    const mc = [0]; for (let i = 1; i < COURSE.path.length; i++){ const a = COURSE.path[i - 1], b = COURSE.path[i]; mc.push(mc[i - 1] + kmBetween(a, b) / Math.cos((a[0] + b[0]) / 2 * Math.PI / 180)); }
+    V3D.mc = mc;
+    v3dRoute('r:' + COURSE.id, COURSE.path.map(q => [q[1], q[0]]), HUBS.slice(0, 24).map(h => { const g = geoOf(pointAt(Math.min(L - 1, h.at))); return [g[1], g[0], '🚩 ' + tr(h.name)]; }));
+  }
+  const d = ((pos % L) + L) % L / pathScale; let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos));
+  v3dDraw(g[0], g[1], headingAt(pos) * 180 / Math.PI, (mc[i - 1] + (mc[i] - mc[i - 1]) * t) / (mc[mc.length - 1] || 1), S.act === 'bike' ? 14.4 : 15.1, 66);
+}
+function v3dClimb(st){
+  const G = st.geo, q = st.gp, m = st.m;
+  if (V3D.key !== 'c:' + m.id){
+    const top = G.p[G.p.length - 1], tg = [[top[1], top[0], '⛰ ' + topLabel(m) + ' ' + m.summit.toLocaleString() + 'm']];
+    (m.waypoints || []).forEach(w => { if (w.gi != null && G.p[w.gi]) tg.push([G.p[w.gi][1], G.p[w.gi][0], tr(w.name)]); });
+    v3dRoute('c:' + m.id, G.p.map(x => [x[1], x[0]]), tg);
+  }
+  const b = geoLerp(G, G.d, q.dist - 45), f = geoLerp(G, G.d, q.dist + 45), cl = Math.cos(q.lat * Math.PI / 180);
+  v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 70);
+}
+function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
+function v3dBtn(){   // 3D ↔ 평면 버튼 (3D가 되는 코스에서만 보임). 3D일 때는 위성↔지도 버튼을 숨김(3D는 위성 사진만)
+  const b = $('b3d'), can = v3dAble() && !NAV.full; b.classList.toggle('hidden', !can); b.textContent = DB.v3d !== false ? T.v3dOn : T.v3dOff;
+  if (can && DB.v3d !== false){ v3dLoad(); if (V3D.ready) $('bSat').classList.add('hidden'); }
+}
+$('b3d').onclick = () => { DB.v3d = DB.v3d === false; saveDB(); showViewMode(true); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));
 /* ---- 11/16 빌딩 창밖 = 실제 항공사진 (높이 오를수록 더 멀리·더 넓게) ----

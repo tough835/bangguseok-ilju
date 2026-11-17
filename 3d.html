@@ -6,10 +6,10 @@
 <meta name="robots" content="noindex">
 <title>방구석러너 · 3D 시험판</title>
 <link rel="icon" href="icon-192.png"><meta name="theme-color" content="#1b1c1f">
-<link rel="stylesheet" href="lab/maplibre-gl.css">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
 <!-- 11/17 보스 요청: 3D 지도를 넣을지 판단하려고 만든 시험판 (앱과 분리 · 앱에서 이 화면으로 가는 버튼 없음).
      길·산·빌딩 1곳씩. 볼 것 = 끊김(초당 그림 수) · 배터리 · 세 번째에도 재미있는가.
-     부품: MapLibre GL JS 5.6.0 (lab/ 폴더, BSD) · 위성 사진 = Esri · 높이 = AWS Terrain Tiles(열쇠 없음) · 주변 건물 = OpenFreeMap(오픈스트리트맵) -->
+     부품: MapLibre GL JS 5.6.0 (lib/ 폴더, BSD) · 위성 사진 = Esri · 높이 = AWS Terrain Tiles(열쇠 없음) · 주변 건물 = OpenFreeMap(오픈스트리트맵) -->
 <style>
   :root{--vt:#d7f548;--ch:#1b1c1f;--ch2:#26282c;--ch3:#34373c;--mut:#9a9ca1}
   html,body{margin:0;height:100%;background:var(--ch);color:#fff;overflow:hidden;
@@ -74,7 +74,7 @@
   <div id="note"></div>
 </div>
 <div id="fail"></div>
-<script src="lab/maplibre-gl.js"></script>
+<script src="lib/maplibre-gl.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
@@ -85,7 +85,7 @@ const C = {
   mtn:   { name: '지리산 천왕봉 · 백무동 코스', sub: '함양 · 실제 등산로 7.5km', file: 'data/mtn/cheonwang.json', spd: 3, step: 0.5, unit: 'km/h', zoom: 15.5, pitch: 70 },
   tower: { name: '롯데월드타워', sub: '서울 · 123층 555m', lat: 37.5125, lon: 127.1025, h: 555, floors: 123, ground: 15, spd: 15, step: 1, unit: 'm/분' }
 };
-const S = { kind: 'mtn', d: 0, play: true, fast: 10, viewB: false, brg: 0, orbit: 30, t0: Date.now() };
+const S = { kind: 'mtn', d: 0, play: true, fast: 10, viewB: false, brg: 0, orbit: 30, t0: Date.now(), zf: 1, hold: 0 };   // zf = 두 손가락 확대 배율 · hold = 손으로 돌린 뒤 자동 회전을 잠깐 멈춤
 try { const k = new URLSearchParams(location.search).get('k'); if (C[k]) S.kind = k; } catch(e){}
 
 let map;
@@ -124,19 +124,20 @@ function tag(lng, lat, text){ const el = document.createElement('div'); el.class
 const SHAPE = [[0, 1], [0.25, 0.94], [0.55, 0.78], [0.8, 0.55], [0.95, 0.3], [1, 0.16]];
 const widthAt = t => { for (let i = 1; i < SHAPE.length; i++) if (t <= SHAPE[i][0]){ const a = SHAPE[i - 1], b = SHAPE[i]; return a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]); } return 0.16; };
 function towerData(hNow){
-  const T = C.tower, N = 30, f = [], mLat = 1 / 111320, mLon = 1 / (111320 * Math.cos(T.lat * R));
+  const T = C.tower, N = 56, f = [], mLat = 1 / 111320, mLon = 1 / (111320 * Math.cos(T.lat * R));
   const slab = (b, h, col) => { const w = 36 * widthAt((b + h) / 2 / T.h), ring = [];
-    for (let k = 0; k < 5; k++){ const a = (k * 90 + 28) * R; ring.push([T.lon + w * Math.SQRT2 * Math.cos(a) * mLon, T.lat + w * Math.SQRT2 * Math.sin(a) * mLat]); }
+    for (let k = 0; k < 9; k++){ const a = (k * 45 + 28) * R, rr = w * (k % 2 ? 1.16 : 1.3); ring.push([T.lon + rr * Math.cos(a) * mLon, T.lat + rr * Math.sin(a) * mLat]); }
     f.push({ type: 'Feature', properties: { b, h, c: col }, geometry: { type: 'Polygon', coordinates: [ring] } }); };
   for (let i = 0; i < N; i++){ const b = T.h * i / N, h = T.h * (i + 1) / N;
-    if (hNow >= h) slab(b, h, '#3fae5a'); else if (hNow <= b) slab(b, h, i % 2 ? '#8fb0cc' : '#7ea2c1'); else { slab(b, hNow, '#3fae5a'); slab(hNow, h, '#8fb0cc'); } }
-  slab(Math.max(0, hNow - 2), hNow + 2, '#e8574a');   // 지금 층
+    const glass = 'rgb(' + Math.round(118 + 60 * i / N) + ',' + Math.round(156 + 50 * i / N) + ',' + Math.round(190 + 40 * i / N) + ')';
+    if (hNow >= h) slab(b, h, i % 2 ? '#3fae5a' : '#38a253'); else if (hNow <= b) slab(b, h, glass); else { slab(b, hNow, '#3fae5a'); slab(hNow, h, glass); } }
+  slab(Math.max(0, hNow - 3), hNow + 3, '#d7f548');   // 지금 층 (볼트 띠)
   return { type: 'FeatureCollection', features: f };
 }
 
 /* ---- 화면 바꾸기 ---- */
 async function load(kind){
-  S.kind = kind; S.d = 0; S.viewB = false; S.t0 = Date.now(); FPS.reset(); P = null;
+  S.kind = kind; S.d = 0; S.viewB = false; S.zf = 1; S.t0 = Date.now(); FPS.reset(); P = null;
   const c = C[kind]; S.spd = c.spd;
   document.querySelectorAll('#kind button').forEach(b => b.classList.toggle('on', b.dataset.k === kind));
   $('name').innerHTML = c.name + '<small>' + c.sub + '</small>';
@@ -172,8 +173,8 @@ function setView(){
   if (S.kind === 'tower'){ if (map.getLayer('tower')) map.setLayoutProperty('tower', 'visibility', S.viewB ? 'none' : 'visible'); }
   else setTerrain();
   $('note').textContent = S.kind === 'tower'
-    ? (S.viewB ? '창밖 = 지금 층 높이에서 바깥을 내려다보는 화면. 천천히 한 바퀴 돕니다.' : '밖에서 = 빌딩을 돌며 지금 층(빨간 띠)을 따라 올라갑니다.')
-    : (S.viewB ? '평면 = 지금 앱과 같은 방식(위에서 내려다봄). 3D와 번갈아 비교해 보세요.' : '3D = 실제 높낮이 위에 위성 사진을 입힌 화면. 산은 1.2배 높게 보이게 했습니다.');
+    ? (S.viewB ? '창밖 = 지금 층 높이에서 바깥을 보는 화면. 한 손가락으로 밀면 방향을 바꿉니다.' : '밖에서 = 지금 층(노란 띠)을 따라 올라가며 빌딩을 돕니다. 한 손가락으로 밀면 돌리고, 두 손가락으로 확대합니다.')
+    : (S.viewB ? '평면 = 지금 앱과 같은 방식(위에서 내려다봄). 3D와 번갈아 비교해 보세요.' : '3D = 실제 높낮이 위에 위성 사진을 입힌 화면. 산은 1.2배 높게 보이게 했습니다. 두 손가락으로 확대·축소.');
 }
 
 /* ---- 매 순간 ---- */
@@ -185,18 +186,18 @@ function frame(now){
   const c = C[S.kind];
   if (S.kind === 'tower'){
     if (S.play) S.d = Math.min(c.h, S.d + S.spd / 60 * S.fast * dt);
-    S.orbit = (S.orbit + dt * (S.viewB ? 5 : 7)) % 360;
+    if (performance.now() > S.hold) S.orbit = (S.orbit + dt * (S.viewB ? 3 : 5) + 360) % 360;
     const a = S.orbit * R, mLat = 1 / 111320, mLon = 1 / (111320 * Math.cos(c.lat * R)), h = c.ground + S.d;
     let o;
-    if (S.viewB) o = map.calculateCameraOptionsFromTo([c.lon, c.lat], h + 3, [c.lon + 1800 * Math.sin(a) * mLon, c.lat + 1800 * Math.cos(a) * mLat], c.ground);
-    else o = map.calculateCameraOptionsFromTo([c.lon + 1500 * Math.sin(a) * mLon, c.lat + 1500 * Math.cos(a) * mLat], h * 0.6 + 380, [c.lon, c.lat], h * 0.5 + 150);
+    if (S.viewB) o = map.calculateCameraOptionsFromTo([c.lon, c.lat], h + 3, [c.lon + 4500 / S.zf * Math.sin(a) * mLon, c.lat + 4500 / S.zf * Math.cos(a) * mLat], c.ground);
+    else { const dist = 1150 / S.zf; o = map.calculateCameraOptionsFromTo([c.lon + dist * Math.sin(a) * mLon, c.lat + dist * Math.cos(a) * mLat], h + 190 / S.zf, [c.lon, c.lat], Math.max(c.ground + 60, h - 40)); }
     map.jumpTo(o);
     if (++tick % 12 === 0){ if (!S.viewB && map.getSource('tower')) map.getSource('tower').setData(towerData(S.d)); hud(); }
   } else {
     if (S.play) S.d = Math.min(P.len, S.d + S.spd / 3.6 * S.fast * dt);
     const p = at(S.d), q = at(Math.min(P.len, S.d + 160));
     if (S.d < P.len - 5) S.brg = turn(S.brg, bearing(p, q), Math.min(1, dt * 1.6));
-    map.jumpTo({ center: [p.lng, p.lat], bearing: S.brg, pitch: S.viewB ? 0 : c.pitch, zoom: S.viewB ? c.zoom + 0.6 : c.zoom });
+    map.jumpTo({ center: [p.lng, p.lat], bearing: S.brg, pitch: S.viewB ? 0 : c.pitch, zoom: (S.viewB ? c.zoom + 0.6 : c.zoom) + Math.log2(S.zf) });
     me.setLngLat([p.lng, p.lat]);
     if (++tick % 12 === 0){ const k = Math.max(0.0001, Math.min(0.9999, S.d / P.len)); try { map.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3fae5a', k, '#ffffff']); } catch(e){} hud(); }
   }
@@ -240,6 +241,15 @@ if (map){
   $('plus').onclick = () => { S.spd = +(S.spd + C[S.kind].step).toFixed(1); hud(); };
   $('fast').onclick = () => { S.fast = S.fast === 1 ? 10 : S.fast === 10 ? 30 : 1; hud(); };
   $('go').onclick = () => { const end = S.kind === 'tower' ? S.d >= C.tower.h : P && S.d >= P.len; if (end) S.d = 0; S.play = end ? true : !S.play; hud(); };
+  (() => { const el = $('map'); let d0 = 0, z0 = 1, x0 = null, o0 = 0, lastTap = 0;
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    el.addEventListener('touchstart', e => { if (e.touches.length === 2){ d0 = dist(e.touches); z0 = S.zf; x0 = null; }
+      else if (e.touches.length === 1){ const n = Date.now(); if (n - lastTap < 300) S.zf = 1; lastTap = n; x0 = e.touches[0].clientX; o0 = S.orbit; } e.preventDefault(); }, { passive: false });
+    el.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0) S.zf = Math.max(0.4, Math.min(4, z0 * dist(e.touches) / d0));
+      else if (e.touches.length === 1 && x0 != null && S.kind === 'tower'){ S.orbit = (o0 - (e.touches[0].clientX - x0) * 0.35 + 3600) % 360; S.hold = performance.now() + 4000; } e.preventDefault(); }, { passive: false });
+    el.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) x0 = null; });
+    el.addEventListener('wheel', e => { S.zf = Math.max(0.4, Math.min(4, S.zf * (e.deltaY > 0 ? 0.87 : 1.15))); e.preventDefault(); }, { passive: false });
+  })();
   (async () => { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e){} })();
   document.addEventListener('visibilitychange', async () => { try { if (document.visibilityState === 'visible' && 'wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e){} });
 }
