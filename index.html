@@ -922,7 +922,7 @@
 </div>
 
 <script>
-const BUILD = '202611182335';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182345';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5518,9 +5518,9 @@ function v3dRibbon(pos){   // 앞길 350m를 화면 맨 위에 그림(건물·�
   const pts = []; for (let d = 0; d <= 350; d += 8){ const q = geoOf(pointAt(pos + d)); try { const sp = m.project([q[1], q[0]]); if (isFinite(sp.x) && isFinite(sp.y)) pts.push([sp.x, sp.y, d]); } catch(e){} }
   if (pts.length < 2) return;
   g.lineJoin = 'round'; g.lineCap = 'round';
-  for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], f = 1 - b[2] / 380;
-    g.globalAlpha = 0.25 + 0.55 * f; g.strokeStyle = 'rgba(27,28,31,.75)'; g.lineWidth = 3 + 7 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
-    g.strokeStyle = '#d7f548'; g.lineWidth = 1.5 + 4 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+  [['rgba(27,28,31,.7)', 3, 7], ['#d7f548', 1.5, 4]].forEach(([col, w0, w1]) => {   // 테두리 전체 → 속 전체 (조각이 겹쳐 사슬처럼 보이지 않게)
+    for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], f = 1 - b[2] / 380;
+      g.globalAlpha = 0.3 + 0.6 * f; g.strokeStyle = col; g.lineWidth = w0 + w1 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); } });
   g.globalAlpha = 1;
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
