@@ -20,6 +20,7 @@ with sync_playwright() as p:
         route.fulfill(status=r.status, body=r.body(), headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"})
     ctx.route("**/api.vworld.kr/**", vw)
     page.goto(URL); page.wait_for_timeout(4000)
+    page.evaluate("()=>setInterval(()=>{ V3D.hot=false; try{ METER.hz.bad=0 }catch(e){} }, 300)")   # 시험 기계는 그래픽이 느려 과열 보호가 3D를 끔 → 시험에서만 끔
     page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}"); page.wait_for_timeout(4000)
     page.evaluate("()=>{const z=document.querySelector('[data-zone=in]'); if(z&&z.offsetParent) z.click()}"); page.wait_for_timeout(800)
     page.evaluate("()=>{const r=document.getElementById('resumeBox'); if(r&&!r.classList.contains('hidden')) document.getElementById('rsCancel').click(); setAct('tread')}")
@@ -36,6 +37,6 @@ with sync_playwright() as p:
                 page.wait_for_timeout(1000)
             page.wait_for_timeout(4000)
             page.screenshot(path=f"shots/{course}_{at}m_{sty}.png")
-            print(at, sty, page.evaluate("()=>[V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn()]"))
+            print(at, sty, page.evaluate("()=>[V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
     print("\n".join(l for l in logs if "error" in l.lower())[:3000])
     b.close()
