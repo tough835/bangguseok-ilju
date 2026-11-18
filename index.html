@@ -452,6 +452,23 @@
   #startScreen:has(#bStart.need) #liveBox{display:none}   /* 11/17: 운동 칸은 목록 위로 옮겨서 늘 보임 */
   #hudBottom:not(.hidden) ~ #toast{top:auto;bottom:calc(300px + env(safe-area-inset-bottom))}
   .nw{white-space:nowrap}
+  /* 11/18 담백 검수 2차 A묶음 (보스 승인 12:14) — 빼기·줄이기 */
+  #startScreen .sum{display:none}                                   /* A1 '오늘' 줄: 첫 화면·걸음수와 겹침 */
+  #actTitle{display:none!important}                                 /* A3 '운동' 제목 */
+  #actChips{margin-top:12px}
+  #actChips button{height:56px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;padding:0 4px}
+  #actChips button b{display:inline;font-size:20px}
+  #startScreen #speedTitle,#startScreen #presets{display:none}       /* A5 출발 전 속도 칸: 작은 한 줄 (운동 화면에 큰 ±가 있음) */
+  #startScreen .speedRow{margin-top:14px}
+  #startScreen .speedRow button{width:48px;height:48px;font-size:22px;border-radius:14px}
+  #startScreen .speedRow .val{font-size:28px}
+  #startScreen .speedRow .val::before{content:attr(data-l);font-size:13px;font-weight:600;color:var(--mut);margin-right:8px;vertical-align:3px}
+  #topicChips{margin:10px 0}                                         /* A6 주제 알약 한 줄 */
+  #regionPane.shut #passLine{display:none}                           /* A7 장거리 여정 줄: 목록을 펼쳤을 때만, 목록 아래 */
+  #passLine{margin:10px 0 0!important}
+  #bStart{box-shadow:0 6px 22px rgba(0,0,0,.5),0 26px 0 18px var(--ch)}   /* A12 출발 버튼 밑으로 목록 글자가 비치지 않게 */
+  #bStart.need{box-shadow:0 26px 0 18px var(--ch)}
+  #freePresets button{padding:0}
 </style>
 </head>
 <body>
@@ -629,9 +646,8 @@
   <div class="seg" id="browseSeg" style="margin-top:14px">
     <button data-br="near">📍 내 주변</button><button data-br="topic">🗂 주제별</button><button data-br="region">🗺 지역별</button>
   </div>
-  <style>#topicChips{display:flex;flex-wrap:wrap;gap:8px}#topicChips button{flex:0 0 auto;width:auto;min-width:0;padding:9px 13px;white-space:nowrap;font-size:15px}</style>
   <div id="browsePane" class="hidden">
-    <div class="chips" id="topicChips" style="margin:10px 0"></div>
+    <div class="zchips" id="topicChips"></div>
     <div class="zchips hidden" id="bZones"></div>
     <input id="bFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
     <div class="muted" id="nearNote" style="margin:10px 0;line-height:1.5"></div>
@@ -649,9 +665,9 @@
   <h2 data-t="course">코스</h2>
   <div class="seg" id="tabSeg"></div>
   <div id="conqLine" class="conq hidden"></div>
-  <div id="passLine" class="sibs hidden" style="margin:0 0 10px"></div>
   <input id="rFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
   <div class="card" id="courseList"></div>
+  <div id="passLine" class="sibs hidden"></div>
   <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
   <button id="courseToggle" class="toggle"></button>
   <button id="bSite" class="toggle hidden"></button>
@@ -706,7 +722,6 @@
   <div class="sum4" id="recSum"></div>
   <div class="card" id="recCal"></div>   <!-- 11/17 습관 달력: 운동한 날 · 날짜를 누르면 그날 기록만 -->
   <div class="card hidden" id="meterBox" style="margin-top:10px;font-size:13px;line-height:1.6"></div>   <!-- 11/17 측정 평균 (측정 보기를 켠 폰만) -->
-  <button id="bBody" class="toggle" style="margin-top:8px"></button>
   <div id="stampBox">
     <h2 id="stampTitle"></h2>
     <div class="stamps" id="stampGrid"></div>
@@ -725,9 +740,13 @@
   <div id="recList"></div>
   <div class="muted" data-t="recHelp" style="margin-top:10px"></div>
   <button id="bAdd" class="toggle" data-t="addBtn" style="margin-top:18px"></button>
+  <button id="bSet" class="toggle" style="margin-top:10px">⚙️ 설정 ▾</button>   <!-- 11/18 A13: 한 줄짜리 버튼 4개를 한 곳에 -->
+  <div id="setBox" class="hidden">
+  <button id="bBody" class="toggle" style="margin-top:10px"></button>
   <button id="bBackup" class="toggle" data-t="bkBtn" style="margin-top:10px"></button>
   <button id="bSaver" class="toggle" style="margin-top:10px"></button>
   <button id="bTel" class="toggle" style="margin-top:10px"></button>
+  </div>
   <a href="privacy.html" target="_blank" style="display:block;text-align:center;margin-top:10px;font-size:13px;color:var(--mut)">개인정보처리방침</a>
   <button id="bReset" class="x2 hidden"></button>   <!-- 11/17 보스 승인: 출발 전 '이어서 할까요?' 창의 '처음부터'와 겹쳐서 숨김 -->
 </div>
@@ -846,7 +865,7 @@
 </div>
 
 <script>
-const BUILD = '202611181210';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181240';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2385,8 +2404,10 @@ function cityLists(){
   return { road: city ? Object.values(city.courses).filter(c => c.mode === 'distance').sort((a, b) => a.lengthM - b.lengthM) : [],
            mountain: MOUNTAINS.filter(t => inCity(t, cid)), tower: TOWERS.filter(t => inCity(t, cid)) };
 }
-let listOpen = false;
-function refreshCourses(){
+let listOpen = false, rOpenNow = true, bOpenNow = true;   // 지금 목록이 펼쳐져 있는지 (지역별 / 주제별·내 주변)
+function refreshCourses(){ refreshCourses0(); $('regionPane').classList.toggle('shut', !rOpenNow); distChips(); }
+function refreshCourses0(){
+  rOpenNow = true;
   const lists = cityLists();
   if (!isFree()){ const g = actGrp(S.act); if (g === 'up') lists.road = []; else { lists.mountain = []; lists.tower = []; lists.road = lists.road.filter(g === 'bike' ? bikeList : distOK); } }
   const tabs = ['road', 'mountain', 'tower'].filter(k => lists[k].length);
@@ -2400,7 +2421,7 @@ function refreshCourses(){
   // 접힌 상태: 고른 코스 한 줄 + '코스 바꾸기'
   const picked = DB.pick.type === 'road' && ALL_ROADS[DB.pick.id] && WORLD.cities[DB.region.city] && WORLD.cities[DB.region.city].courses[DB.pick.id]
     ? 'road' : (DB.pick.type === 'climb' && inCity(TGT(DB.pick.id), DB.region.city) ? TGT(DB.pick.id).kind : null);
-  const ok = picked && (isFree() || pickOK()), open = listOpen || !ok;
+  const ok = picked && (isFree() || pickOK()), open = listOpen || !ok; rOpenNow = open;
   $('bStart').classList.toggle('need', !ok && !isFree());
   $('tabSeg').classList.toggle('hidden', !open || tabs.length < 2);
   $('courseToggle').classList.toggle('hidden', !ok);
@@ -2417,13 +2438,8 @@ function renderCourseRows(lists, onlySel){
   $('tabSeg').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { DB.tab = b.dataset.tab; saveDB(); refreshCourses(); });
   if (DB.tab === 'road'){
     $('rFind').classList.add('hidden');
-    $('courseList').innerHTML = lists.road.filter(c => !onlySel || c.id === COURSE.id).slice().sort((x, y) => S.act === 'bike' ? bikeOK(y) - bikeOK(x) : bikeOnly(x) - bikeOnly(y)).map(c => {   // 자전거면 자전거 길 먼저
-      const t = posTotal(c), laps = Math.floor(t / c.lengthM), pct = Math.floor((t % c.lengthM) / c.lengthM * 100);
-      const hubs = c.landmarks.filter(l => l.hub).length || c.landmarks.length, sel = DB.pick.type === 'road' && c.id === COURSE.id;
-      return '<div class="mrow' + (sel ? ' sel' : '') + '" data-road="' + c.id + '"><div><b>' + tr(c.name) + '</b><br><span class="muted"><b class="km">' +
-        (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + T.hubsN.replace('{n}', hubs) + '</span><span class="tag">' + kindIcon(c) + c.kind + '</span></div>' +
-        '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (laps ? '<br>✅ ' + laps + T.times : '') + '</div></div>';
-    }).join('');
+    $('courseList').innerHTML = lists.road.filter(c => !onlySel || c.id === COURSE.id).slice().sort((x, y) => S.act === 'bike' ? bikeOK(y) - bikeOK(x) : bikeOnly(x) - bikeOnly(y))   // 자전거면 자전거 길 먼저
+      .map(c => roadRow(c, { attr: 'data-road="' + c.id + '"', sel: DB.pick.type === 'road' && c.id === COURSE.id })).join('');
     $('courseList').querySelectorAll('[data-road]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; pickRoad(DB.region.city, r.dataset.road); });
   } else {
     /* 11/17 보스: 산이 너무 많아 찾기 어렵고 스크롤이 김 → 8곳만 먼저 + '더 보기' + 이름 찾기 */
@@ -2431,25 +2447,37 @@ function renderCourseRows(lists, onlySel){
     if (MF.rKey !== DB.region.city + DB.tab){ MF.rKey = DB.region.city + DB.tab; MF.rq = ''; MF.rMore = false; $('rFind').value = ''; }
     $('rFind').classList.toggle('hidden', !big);
     const q = big ? MF.rq.trim() : '', hit = q ? all.filter(m => tr(m.name).includes(q)) : all, shown = big && !q && !MF.rMore ? hit.slice(0, MF_N) : hit;
-    $('courseList').innerHTML = shown.map(m => {
-      const total = climbTotal(m.id), done = Math.floor(total / m.gain), pct = Math.floor((total % m.gain) / m.gain * 100), real = realOf(m.id);
-      const info = m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : (m.area && DB.region.city.indexOf('m100-') === 0 ? m.area + ' · ' : '') + m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm ? ' · ' + m.distKm + 'km' : '');
-      const sel = DB.pick.type === 'climb' && m.id === DB.pick.id, sibs = peakTrails(m).filter(t => t.id !== m.id);
-      const others = sel && sibs.length ? '<div class="sibs">' + T.otherTrails + ' ' + sibs.map(t => '<button data-jump="' + t.id + '">🥾 ' + tr(t.trailName) + ' · ' + regionName(t.cityId) + (climbTotal(t.id) >= t.gain ? ' ✅' : '') + '</button>').join('') + '</div>' : '';
-      return '<div class="mrow' + (sel ? ' sel' : '') + '" data-climb="' + m.id + '"><div><b>' + tr(m.name) + '</b>' + (m.trailName ? ' <span class="trl">' + tr(m.trailName) + '</span>' : '') +
-        '<br><span class="muted">' + info + (sibs.length && !sel ? ' · ' + T.trailsN.replace('{n}', sibs.length + 1) : '') + '</span>' + others + '</div>' +
-        '<div class="r">' + (peakDone(m) ? '<span class="stamp">🏁 ' + T.peakStamp + '</span><br>' : '') + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (done ? '<br>✅ ' + done + T.times : '') + (real ? '<br><span class="real">⛰ ' + real + '</span>' : '') + '</div></div>';
-    }).join('') + (shown.length < hit.length ? '<button class="morebtn" id="rMore">더 보기 ▾ (' + (hit.length - shown.length) + '곳 더 · 낮은 산부터)</button>' : '') + (q && !hit.length ? '<div class="muted" style="padding:12px">「' + q.replace(/</g, '') + '」 이름의 산이 여기엔 없어요</div>' : '');
+    $('courseList').innerHTML = shown.map(m => climbRow(m, { attr: 'data-climb="' + m.id + '"', sel: DB.pick.type === 'climb' && m.id === DB.pick.id, open: !onlySel,
+        place: m.area && DB.region.city.indexOf('m100-') === 0 ? m.area : '' })).join('') +
+      (shown.length < hit.length ? '<button class="morebtn" id="rMore">더 보기 ▾ (' + (hit.length - shown.length) + '곳 더 · 낮은 산부터)</button>' : '') + (q && !hit.length ? '<div class="muted" style="padding:12px">「' + q.replace(/</g, '') + '」 이름의 산이 여기엔 없어요</div>' : '');
     if ($('rMore')) $('rMore').onclick = () => { MF.rMore = true; refreshCourses(); };
     $('courseList').querySelectorAll('[data-jump]').forEach(b => b.onclick = e => { e.stopPropagation(); jumpTrail(b.dataset.jump); });
     $('courseList').querySelectorAll('[data-climb]').forEach(r => r.onclick = () => { if (onlySel){ listOpen = true; refreshCourses(); return; } listOpen = false; DB.pick = { type: 'climb', id: r.dataset.climb }; DB.climb.sel = r.dataset.climb; S.act = 'stair'; applyPick(); askResume(); });
   }
 }
+/* 11/18 A11: 코스 한 줄 모양을 세 탭(지역별·주제별·내 주변)이 함께 씀
+   · 길 = 이름 / 거리 · (지역) · 거점 N곳 [종류]   · 산·빌딩 = 이름 [등산로] / (지역) · 높이 · 오를 높이
+   · o = { attr, sel, place(지역 이름 — 지역별 탭에선 뺌), extra(내 주변 거리), open(목록이 펼쳐져 있음 → 고른 산의 '다른 길' 버튼 표시) } */
+function roadRow(c, o){
+  const t = posTotal(c), laps = Math.floor(t / c.lengthM), pct = Math.floor((t % c.lengthM) / c.lengthM * 100), hubs = c.landmarks.filter(l => l.hub).length || c.landmarks.length;
+  return '<div class="mrow' + (o.sel ? ' sel' : '') + '" ' + o.attr + '><div><b>' + tr(c.name) + '</b><br><span class="muted"><b class="km">' +
+    (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (o.place ? o.place + ' · ' : '') + (o.extra ? o.extra : T.hubsN.replace('{n}', hubs)) + '</span><span class="tag">' + kindIcon(c) + c.kind + '</span></div>' +
+    '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (laps ? '<br>✅ ' + laps + T.times : '') + '</div></div>';
+}
+function climbRow(m, o){
+  const total = climbTotal(m.id), done = Math.floor(total / m.gain), pct = Math.floor((total % m.gain) / m.gain * 100), real = realOf(m.id);
+  const info = (o.place ? o.place + ' · ' : '') + (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm && !o.extra ? ' · ' + m.distKm + 'km' : '')) + (o.extra ? ' · ' + o.extra : '');
+  const sibs = peakTrails(m).filter(t => t.id !== m.id), showSibs = o.sel && o.open && sibs.length;   // 11/18 A10: '다른 길' 버튼은 목록을 펼쳤을 때만
+  const others = showSibs ? '<div class="sibs">' + T.otherTrails + ' ' + sibs.map(t => '<button data-jump="' + t.id + '">🥾 ' + tr(t.trailName) + ' · ' + regionName(t.cityId) + (climbTotal(t.id) >= t.gain ? ' ✅' : '') + '</button>').join('') + '</div>' : '';
+  return '<div class="mrow' + (o.sel ? ' sel' : '') + '" ' + o.attr + '><div><b>' + (o.icon ? (m.kind === 'tower' ? '🏢 ' : '⛰ ') : '') + tr(m.name) + '</b>' + (m.trailName ? ' <span class="trl">' + tr(m.trailName) + '</span>' : '') +
+    '<br><span class="muted">' + info + (sibs.length && !showSibs ? ' · ' + T.trailsN.replace('{n}', sibs.length + 1) : '') + '</span>' + others + '</div>' +
+    '<div class="r">' + (peakDone(m) ? '<span class="stamp">🏁 ' + T.peakStamp + '</span><br>' : '') + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (done ? '<br>✅ ' + done + T.times : '') + (real ? '<br><span class="real">⛰ ' + real + '</span>' : '') + '</div></div>';
+}
 /* ---- 코스 찾기 3탭 (11/16 보스 결정): 📍 내 주변 / 🗂 주제별 / 🗺 지역별 ----
    · 지역별 = 기존 나라 → 시·도 → 시·군
    · 주제별 = 코스 성격(길 풍경·종류)으로 자동 분류 — 코스를 새로 넣어도 따로 손댈 것 없음
    · 내 주변 = 폰 위치에서 가까운 순 (장거리는 길 중 가장 가까운 지점 기준) */
-const MF = { rq: '', bq: '', zone: 'all', rMore: false, bMore: false, rKey: '' }, MF_N = 8;
+const MF = { rq: '', bq: '', zone: 'all', rMore: false, bMore: false, nMore: false, rKey: '' }, MF_N = 8;
 const MF_ZONES = [['all', '전체'], ['sudo', '수도권'], ['gangwon', '강원'], ['chung', '충청'], ['jeolla', '전라'], ['gyeong', '경상'], ['jeju', '제주'], ['abroad', '해외']];
 const mtnZone = m => m.cityId.indexOf('m100-') === 0 ? m.cityId.slice(5) : ({ hamyang: 'gyeong', sancheong: 'gyeong', gurye: 'jeolla', jeju: 'jeju' })[m.cityId] || 'abroad';
 $('rFind').oninput = () => { MF.rq = $('rFind').value; refreshCourses(); };
@@ -2494,20 +2522,16 @@ function askHere(){
   navigator.geolocation.getCurrentPosition(p => { HERE = [p.coords.latitude, p.coords.longitude]; try { sessionStorage.setItem('bgsj_here', JSON.stringify(HERE)); } catch(e){} refreshBrowse(); },
     () => { refreshBrowse(); }, { enableHighAccuracy: false, timeout: 9000, maximumAge: 600000 });
 }
-function browseRow(it, extra){
-  const sel = it.type === 'road' ? DB.pick.type === 'road' && it.id === COURSE.id : DB.pick.type === 'climb' && it.id === DB.pick.id;
-  let name, info, pct = 0;
-  if (it.type === 'road'){ const c = it.c, t = posTotal(c); pct = Math.floor((t % c.lengthM) / c.lengthM * 100);
-    name = tr(c.name); info = '<b class="km">' + (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (c.long ? T.longTag : regionName(it.cid)) + ' · ' + kindIcon(c).trim(); }
-  else { const m = it.m, total = climbTotal(m.id); pct = Math.floor((total % m.gain) / m.gain * 100);
-    name = (m.kind === 'tower' ? '🏢 ' : '⛰ ') + tr(m.name) + (m.trailName ? ' · ' + tr(m.trailName) : ''); info = '<b class="km">' + m.summit.toLocaleString() + 'm</b> · ' + (m.area && it.cid.indexOf('m100-') === 0 ? m.area + ' · ' : '') + regionName(it.cid); }
-  return '<div class="mrow' + (sel ? ' sel' : '') + '" data-bt="' + it.type + '" data-bid="' + it.id + '" data-bc="' + it.cid + '"><div><b>' + name + '</b><br><span class="muted">' + info + (extra ? ' · ' + extra : '') + '</span></div>' +
-    '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + '</div></div>';
+function browseRow(it, extra, folded){   // 주제별·내 주변의 한 줄 — 지역별과 같은 모양(roadRow·climbRow)에 지역 이름만 더함
+  const attr = 'data-bt="' + it.type + '" data-bid="' + it.id + '" data-bc="' + it.cid + '"';
+  if (it.type === 'road') return roadRow(it.c, { attr, sel: bSel(it), place: it.c.long ? T.longTag : regionName(it.cid), extra });
+  return climbRow(it.m, { attr, sel: bSel(it), open: !folded, icon: DB.browse === 'near', extra, place: (it.m.area && it.cid.indexOf('m100-') === 0 ? it.m.area + ' · ' : '') + regionName(it.cid) });
 }
 /* 11/18 보스 "주제별에서 골랐는데 지역별로 넘어가면 혼선" → 고른 탭에 그대로 머묾. 지역별처럼 고른 코스 한 줄로 접고 '코스 바꾸기'로 다시 펼침 */
 let bOpen = false;
+function refreshBrowse(){ bOpenNow = true; refreshBrowse0(); distChips(); }
 const bSel = it => it.type === 'road' ? DB.pick.type === 'road' && it.id === COURSE.id : DB.pick.type === 'climb' && it.id === DB.pick.id;
-function refreshBrowse(){
+function refreshBrowse0(){
   if (!['near', 'topic', 'region'].includes(DB.browse)) DB.browse = 'region';
   const br = DB.browse;
   $('browseSeg').querySelectorAll('[data-br]').forEach(b => b.classList.toggle('on', b.dataset.br === br));
@@ -2521,9 +2545,10 @@ function refreshBrowse(){
     if (!have.some(t => t.id === DB.topic)) DB.topic = have[0] ? have[0].id : 'long';
     $('topicChips').innerHTML = have.map(t => '<button data-tp="' + t.id + '" class="' + (t.id === DB.topic ? 'on' : '') + '">' + t.ko + ' ' + items.filter(it => it.topics.includes(t.id)).length + '</button>').join('');
     $('topicChips').querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { DB.topic = b.dataset.tp; bOpen = true; saveDB(); refreshBrowse(); });
+    { const c = $('topicChips'), on = c.querySelector('.on'); if (on){ const a = on.getBoundingClientRect(), b = c.getBoundingClientRect(); if (a.right > b.right || a.left < b.left) c.scrollLeft += a.left - b.left - 12; } }   // 고른 주제가 옆으로 밀려 안 보이면 보이게 (옆으로만)
     let list = items.filter(it => it.topics.includes(DB.topic)).sort((a, b) => a.type !== b.type ? (a.type === 'road' ? -1 : 1) : (a.type === 'road' ? a.c.lengthM - b.c.lengthM : a.m.gain - b.m.gain));
     const selIt = list.find(bSel);
-    if (selIt && !bOpen){ fold(browseRow(selIt), list.length); return; }
+    if (selIt && !bOpen){ fold(browseRow(selIt, '', true), list.length); return; }
     if (DB.topic === 'mountain'){   // 산: 권역 알약 + 이름 찾기 + 8곳만 먼저
       $('bZones').innerHTML = MF_ZONES.map(([z, nm]) => [z, nm, z === 'all' ? list.length : list.filter(it => mtnZone(it.m) === z).length]).filter(x => x[2]).map(([z, nm, n]) => '<button data-z="' + z + '" class="' + (z === MF.zone ? 'on' : '') + '">' + nm + ' ' + n + '</button>').join('');
       $('bZones').querySelectorAll('[data-z]').forEach(b => b.onclick = () => { MF.zone = b.dataset.z; MF.bMore = false; refreshBrowse(); });
@@ -2537,19 +2562,23 @@ function refreshBrowse(){
     $('nearNote').textContent = HERE ? T.nearHere : T.nearFallback.replace('{s}', regionName(DB.region.city) || regionName('hamyang'));
     const list = items.filter(it => it.pts.length && it.cid !== 'mine').map(it => ({ it, d: Math.min(...it.pts.filter((p, i) => it.pts.length < 400 || i % 5 === 0).map(p => kmBetween(base, p))) }))
       .sort((a, b) => a.d - b.d).slice(0, 25);
-    const nrow = x => browseRow(x.it, '📍 ' + (x.it.approx ? T.nearApprox + ' ' : '') + (x.d < 10 ? x.d.toFixed(1) : Math.round(x.d).toLocaleString()) + 'km' + (x.it.c && x.it.c.long ? ' ' + T.nearPass : ''));
+    const nrow = (x, folded) => browseRow(x.it, HERE ? '📍 ' + (x.it.approx ? T.nearApprox + ' ' : '') + (x.d < 10 ? x.d.toFixed(1) : Math.round(x.d).toLocaleString()) + 'km' + (x.it.c && x.it.c.long ? ' ' + T.nearPass : '') : '', folded === true);   // 11/18 A8: 위치를 못 받았으면 거리 숫자를 안 보임(전부 0.0km라 뜻 없음)
     const selX = list.find(x => bSel(x.it));
-    if (selX && !bOpen){ fold(nrow(selX), list.length); return; }
-    rows = list.map(nrow).join('');
+    if (selX && !bOpen){ fold(nrow(selX, true), list.length); return; }
+    const shownN = MF.nMore ? list : list.slice(0, MF_N);   // 8곳만 먼저
+    rows = shownN.map(x => nrow(x)).join('') + (shownN.length < list.length ? '<button class="morebtn" id="nMore">더 보기 ▾ (' + (list.length - shownN.length) + '곳 더 · 가까운 순)</button>' : '');
   }
   const hasSel = br === 'topic' ? items.some(it => it.topics.includes(DB.topic) && bSel(it)) : /class="mrow sel"/.test(rows);
   $('browseList').innerHTML = rows || '<div class="muted" style="padding:12px">' + T.noCourse + '</div>';
   $('bChange').textContent = T.closeList; $('bChange').classList.toggle('hidden', !hasSel);
   $('bChange').onclick = () => { bOpen = false; refreshBrowse(); };
   if ($('bMore')) $('bMore').onclick = () => { MF.bMore = true; refreshBrowse(); };
+  if ($('nMore')) $('nMore').onclick = () => { MF.nMore = true; refreshBrowse(); };
   browsePick();
+  $('browseList').querySelectorAll('[data-jump]').forEach(b => b.onclick = e => { e.stopPropagation(); bOpen = false; jumpTrail(b.dataset.jump); });
 }
 function fold(row, n){   // 고른 코스 한 줄 + '코스 바꾸기 (N)' — 지역별과 같은 모양
+  bOpenNow = false;
   ['topicChips', 'bZones', 'bFind', 'nearNote'].forEach(k => $(k).classList.add('hidden'));
   $('browseList').innerHTML = row;
   $('bChange').textContent = T.changeCourse + ' (' + n + ')'; $('bChange').classList.remove('hidden');
@@ -2565,7 +2594,7 @@ function browsePick(){
     saveDB(); applyPick(); refreshStart(); askResume();
   });
 }
-$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; bOpen = true; saveDB(); refreshBrowse(); });
+$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; bOpen = true; MF.nMore = false; saveDB(); refreshBrowse(); });
 function pickRoad(cid, id){
   DB.pick = { type: 'road', id }; saveDB();
   if (id === COURSE.id && cid === ACTIVE.city){ applyPick(); return; }
@@ -2588,7 +2617,7 @@ const distOK = c => { const d = DB.dist || 'all', L0 = c.lengthM; return d === '
 const bikeOnly = c => bikeOK(c) && !/조깅|도보|걷기/.test(c.kind || '');   // 차와 함께 쓰는 고갯길 등
 const kindIcon = c => mineC(c) ? '⭐ ' : bikeOK(c) ? (bikeOnly(c) ? '🚲 ' : '🏃🚲 ') : '🚶 ';
 function distChips(){
-  const box = $('distChips'), on = !isFree() && actGrp(S.act) === 'foot';
+  const box = $('distChips'), on = !isFree() && actGrp(S.act) === 'foot' && (DB.browse === 'region' ? rOpenNow : bOpenNow);   // 11/18 A4: 목록을 펼쳤을 때만
   box.classList.toggle('hidden', !on); if (!on) return;
   box.innerHTML = DIST.map(([k, nm]) => '<button data-d="' + k + '" class="' + (k === (DB.dist || 'all') ? 'on' : '') + '">' + nm + '</button>').join('');
   box.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { DB.dist = b.dataset.d; saveDB(); distChips(); listOpen = true; bOpen = true; refreshCourses(); refreshBrowse(); });
@@ -2596,9 +2625,7 @@ function distChips(){
 function grpOK(it){ const g = actGrp(S.act); return g === 'up' ? it.type !== 'road' : it.type === 'road' && (g !== 'bike' || bikeList(it.c)) && (g !== 'foot' || distOK(it.c)); }
 function pickOK(){ const g = actGrp(S.act); return g === 'up' ? DB.pick.type === 'climb' : DB.pick.type === 'road' && (g !== 'bike' || bikeList(ALL_ROADS[DB.pick.id])); }
 function actNote(){   // 11/17 보스 "자전거 코스인데 산길을 알려 줌 — 걷기가 맞는 길": 길 종류와 운동이 안 맞으면 알려 주고 맞는 코스 추천
-  const n = $('actNote'), bad = !isFree() && !pickOK();   // 운동에 맞는 코스를 아직 안 골랐으면
-  n.classList.toggle('hidden', !bad); if (!bad) return;
-  n.textContent = '👇 아래 목록에서 ' + GRP_NAME[actGrp(S.act)] + ' 코스를 골라 주세요';
+  $('actNote').classList.add('hidden');   // 11/18 A9: 출발 버튼의 "↑ 코스를 먼저 골라 주세요"와 같은 말이라 뺌
 }
 function setAct(a){
   const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
@@ -2629,6 +2656,7 @@ function setAct(a){
   $('goalBox').classList.add('hidden');   // 오늘 목표는 없앰: 다음 거점이 자동 목표
   actNote(); distChips();
   $('speedTitle').textContent = a === 'stair' ? T.levelTitle : a === 'bike' ? T.speedBike : T.speedKmh;
+  $('speedVal').parentNode.dataset.l = $('speedTitle').textContent;   // 11/18 A5: 제목 줄 대신 숫자 앞 작은 글씨
   $('speedUnit').textContent = up ? '' : 'km/h';
   if (up){ makePresets([4, 6, 8, 10]); setSpeed(S.level); }
   else { makePresets(a === 'bike' ? [15, 20, 25, 30] : [4.5, 6, 8, 10]); setSpeed(S.spd[a] || 6); }
@@ -2747,7 +2775,7 @@ $('bStart').onclick = () => {
 function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted">(' + T['kcalLv' + bodyFix()[2]] + ')</span>' : ''; }
 function fillEnd(){
   const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600); setTimeout(() => { const el = $('endSummary'); if (el && el.innerHTML.indexOf('🔥') < 0) el.innerHTML += endKcal(); }, 0);
-  $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free);
+  $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free || !S.passed.length);   // 11/18 A16: 지나온 곳이 없으면 칸째 숨김
   if (S.free){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
     $('endSummary').innerHTML = T.freeSum.replace('{g}', freeGoalText(S.freeGoal, up)) + '<br>' + a.icon + ' ' + T[a.key] + ' <b>' + amt + '</b> · ' + fmtTime(S.elapsed) +
@@ -3945,6 +3973,7 @@ function refreshRec(){
     '<div><span>' + T.sTime + '</span><b>' + (sec >= 3600 ? (sec / 3600).toFixed(1) + T.hourUnit : Math.round(sec / 60) + T.min) + '</b></div>' +
     '<div class="kc"><span>🔥 ' + T.sKcal + ' · ' + T['kcalLv' + bodyFix()[2]] + '</span><b>' + kcalTxt(list.reduce((a, r) => a + kcalOf(r), 0)) + '</b></div>';
   $('bBody').textContent = T.bodyBtn;
+  { const kc = $('recSum').querySelector('.kc'); if (kc) kc.onclick = () => $('bBody').click(); }   // 칼로리 칸을 누르면 내 몸 정보
   let html = '', day = '';
   list.forEach(r => {
     const d = new Date(r.date), key = r.src === 'legacy' ? T.srcLegacy : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + '일월화수목금토'[d.getDay()] + ')';
@@ -3956,6 +3985,7 @@ function refreshRec(){
       '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
+  document.querySelector('[data-t="recHelp"]').classList.toggle('hidden', !html);   // 11/18 A15
   $('recList').querySelectorAll('[data-ed]').forEach(el => el.onclick = () => openEdit(+el.dataset.ed));
   $('recList').querySelectorAll('[data-ap]').forEach(el => el.onclick = () => {
     const id = +el.dataset.ap; if (REC.apId !== id){ REC.apId = id; refreshRec(); return; }   // 한 번 더 누르면 반영
@@ -3988,7 +4018,7 @@ function calFill(fOK){
   let st = 0; for (let t = new Date(now); ; t.setDate(t.getDate() - 1)){ const k = calKey(t); if (by[k]) st++; else if (k !== calKey(now)) break; if (st > 400) break; }   // 연속: 오늘(아직 안 했으면 어제)부터
   const sel = REC.day ? REC.day.split('-') : null;
   $('recCal').innerHTML = '<div class="calh"><button id="calPrev" aria-label="이전 달">‹</button><span>' + y + '년 ' + (m + 1) + '월</span><button id="calNext" aria-label="다음 달">›</button></div>' +
-    '<div class="calsum">운동한 날 ' + cnt + '일' + (st >= 2 && y === now.getFullYear() && m === now.getMonth() ? ' · 🔥 ' + st + '일 연속' : '') + (sec ? ' · ' + (sec >= 3600 ? Math.floor(sec / 3600) + '시간 ' + Math.round(sec % 3600 / 60) + '분' : Math.round(sec / 60) + '분') : '') + (kc ? ' · ' + kcalTxt(kc) : '') + '</div>' +
+    '<div class="calsum">운동한 날 ' + cnt + '일' + (st >= 2 && y === now.getFullYear() && m === now.getMonth() ? ' · 🔥 ' + st + '일 연속' : '') + '</div>' +   // 11/18 A14: 시간·칼로리는 위 합계 칸에 있어 뺌
     '<div class="calg">' + '일월화수목금토'.split('').map(c => '<i>' + c + '</i>').join('') + cells + '</div>' +
     (sel ? '<div class="calday"><span>' + sel[1] + '월 ' + sel[2] + '일 기록만 보는 중</span><button id="calAll">전체 보기 ✕</button></div>' : '');
   $('recCal').querySelectorAll('[data-cd]').forEach(b => b.onclick = () => { REC.day = REC.day === b.dataset.cd ? '' : b.dataset.cd; refreshRec(); });
@@ -4019,7 +4049,8 @@ $('edDel').onclick = () => {
 $('edClose').onclick = () => $('editBox').classList.add('hidden');
 document.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { REC.per = b.dataset.per; REC.day = ''; refreshRec(); });
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { REC.f = b.dataset.f; refreshRec(); });
-function openRec(){ REC.delId = null; REC.day = ''; REC.mon = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); meterBoxFill(); saverBtn(); }
+$('bSet').onclick = () => { const open = $('setBox').classList.toggle('hidden'); $('bSet').textContent = open ? '⚙️ 설정 ▾' : '⚙️ 설정 ▴'; if (!open) setTimeout(() => $('bTel').scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50); };
+function openRec(){ $('setBox').classList.add('hidden'); $('bSet').textContent = '⚙️ 설정 ▾'; REC.delId = null; REC.day = ''; REC.mon = null; $('startScreen').classList.add('hidden'); $('recScreen').classList.remove('hidden'); $('recScreen').scrollTop = 0; refreshRec(); meterBoxFill(); saverBtn(); }
 $('bRec').onclick = () => { REC.fromHome = false; openRec(); };
 $('bRecHome').onclick = () => { REC.fromHome = true; $('homeScreen').classList.add('hidden'); openRec(); };   // 첫 화면에서 바로
 $('recBack').onclick = () => { $('recScreen').classList.add('hidden'); if (REC.fromHome){ showHome(); return; } $('startScreen').classList.remove('hidden'); refreshStart(); drawIdle(); };
@@ -4182,16 +4213,20 @@ function refreshFree(){
   $('sumPickName').parentElement.classList.toggle('hidden', free);
   freeRouteNote();
   $('modeHelp').textContent = free ? T.freeHelp : T.themeHelp;
+  $('modeHelp').classList.toggle('hidden', DB.records.filter(r => r.src !== 'legacy').length >= 3);   // 11/18 A2: 익숙해지면(운동 3번) 숨김
   if (!free) return;
   $('freeTitle').textContent = up ? T.freeUp : T.freeDist;
   $('freeUnit').textContent = up ? T.floorUnit : 'km';
   const list = up ? [30, 50, 100, 200] : (S.act === 'bike' ? [10, 20, 30, 50] : [3, 5, 10, 21.1]), cur = up ? DB.free.floors : DB.free.km;
-  $('freePresets').innerHTML = list.map(v => '<button data-fg="' + v + '" class="' + (v === cur ? 'on' : '') + '">' + v + (up ? T.floorUnit : 'km') + '</button>').join('');
-  $('freePresets').querySelectorAll('[data-fg]').forEach(b => b.onclick = () => { if (up) DB.free.floors = +b.dataset.fg; else DB.free.km = +b.dataset.fg; saveDB(); refreshFree(); });
+  const custom = !!DB.free.custom || !list.includes(cur);   // 11/18 A17: 큰 입력 칸은 '✏️ 직접'을 골랐을 때만
+  $('freePresets').innerHTML = list.map(v => '<button data-fg="' + v + '" class="' + (!custom && v === cur ? 'on' : '') + '">' + v + (up ? T.floorUnit : 'km') + '</button>').join('') + '<button id="fgCustom" class="' + (custom ? 'on' : '') + '">✏️ 직접</button>';
+  $('freePresets').querySelectorAll('[data-fg]').forEach(b => b.onclick = () => { DB.free.custom = false; if (up) DB.free.floors = +b.dataset.fg; else DB.free.km = +b.dataset.fg; saveDB(); refreshFree(); });
+  $('fgCustom').onclick = () => { DB.free.custom = true; saveDB(); refreshFree(); $('freeGoal').focus(); };
+  document.querySelector('#freeBox .goalRow').classList.toggle('hidden', !custom);
   if (document.activeElement !== $('freeGoal')) $('freeGoal').value = cur || '';
 }
 $('freeGoal').oninput = () => { const v = parseFloat($('freeGoal').value); if (!(v > 0)) return; if (isClimb()) DB.free.floors = Math.round(v); else DB.free.km = v; saveDB();
-  $('freePresets').querySelectorAll('[data-fg]').forEach(b => b.classList.toggle('on', +b.dataset.fg === v)); };
+ };
 document.querySelectorAll('[data-mode2]').forEach(b => b.onclick = () => {
   DB.free = DB.free || { km: 5, floors: 50 }; DB.free.on = b.dataset.mode2 === 'free'; saveDB();
   setAct(DB.free.on ? S.act : (DB.pick.type === 'climb' ? 'stair' : (DB.roadAct || S.act))); refreshStart();
