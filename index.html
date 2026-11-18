@@ -846,7 +846,7 @@
 </div>
 
 <script>
-const BUILD = '202611172340';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181026';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -4275,7 +4275,10 @@ $('apNo').onclick = () => { $('applyBox').querySelector('b').textContent = T.apL
    · 받는 쪽에 실제 기록이 없으면 설정(지역·코스·보폭 등)까지 통째로 옮김
    ===================================================================== */
 const enc64 = t => btoa(unescape(encodeURIComponent(t))), dec64 = t => decodeURIComponent(escape(atob(t)));
-function backupCode(){ let course = ''; try { course = localStorage.getItem('bgsj_course') || ''; } catch(e){} return 'BGSJ1:' + enc64(JSON.stringify({ v: 1, at: new Date().toISOString(), course, db: DB })); }
+function backupCode(){ let course = ''; try { course = localStorage.getItem('bgsj_course') || ''; } catch(e){}
+  // 11/18: 직접 다닌 길(⭐ 내 코스 · '이 코스 지도로 쓰기')도 함께 → 새 폰으로 옮기기 + 아미에게 보내 공식 노선 만들기
+  const gps = {}; Object.entries(RGEO).forEach(([k, v]) => { if (v && v.src === 'gps') gps[k] = v; });
+  return 'BGSJ1:' + enc64(JSON.stringify({ v: 1, at: new Date().toISOString(), course, db: DB, mine: MINE, gps })); }
 function openBackup(){
   const code = backupCode();
   $('bkOut').value = code; $('bkIn').value = ''; $('bkMsg').textContent = '';
@@ -4305,6 +4308,10 @@ function importBackup(){
   const src = pack && (pack.db || pack);
   if (!src || !Array.isArray(src.records)){ $('bkMsg').textContent = T.bkBad; return; }
   const fresh = !DB.records.some(r => r.src !== 'legacy');   // 받는 쪽이 새것이면 설정까지
+  try {   // 직접 다닌 길 합치기 (없는 것만)
+    if (Array.isArray(pack.mine)){ const ids = new Set(MINE.map(m => m.id)); pack.mine.forEach(m => { if (m && m.id && !ids.has(m.id)) MINE.push(m); }); MINE = MINE.slice(0, 30); localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); }
+    if (pack.gps && typeof pack.gps === 'object'){ Object.entries(pack.gps).forEach(([k, v]) => { if (!RGEO[k] || RGEO[k].src !== 'gps') RGEO[k] = v; }); saveGeo(); }
+  } catch(e){}
   const have = new Map(DB.records.map(r => [r.id, r])); let added = 0, kept = 0;
   src.records.forEach(r => { if (!r || r.id == null) return; if (have.has(r.id)) kept++; else { DB.records.push(r); have.set(r.id, r); added++; } });
   DB.records.sort((a, b) => b.id - a.id);
