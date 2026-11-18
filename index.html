@@ -469,6 +469,23 @@
   #bStart{box-shadow:0 6px 22px rgba(0,0,0,.5),0 26px 0 18px var(--ch)}   /* A12 출발 버튼 밑으로 목록 글자가 비치지 않게 */
   #bStart.need{box-shadow:0 26px 0 18px var(--ch)}
   #freePresets button{padding:0}
+  /* 11/18 B묶음 (보스 승인 12:53) */
+  .ctrl #bPause{flex:2}                                              /* B1 일시정지 2 : 종료 1 — 자주 누르는 쪽을 크게 */
+  #recPeriod{display:none}                                           /* B2 기간 고르기 → 달력 하나로 */
+  .recCap{font-size:13px;color:var(--mut);margin:14px 2px 0}
+  #regionPane .rgh,#regionPane .sel3,#regionPane h2[data-t=course]{display:none}   /* B3 드롭다운 3개 → 지역 카드 */
+  .rhead{display:flex;align-items:center;gap:8px;margin:12px 0 8px}
+  .rhead .rback{flex:none;height:44px;border:0;border-radius:12px;background:var(--ch2);color:#fff;font-size:14px;font-weight:700;padding:0 14px}
+  .rhead b{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rhead .promobtn{flex:none}
+  .rcards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .rcgrp{grid-column:1/-1;font-size:12px;color:var(--mut);margin:10px 2px 0}
+  .rcard{position:relative;text-align:left;min-height:76px;border:0;border-radius:14px;background:var(--ch2);color:#fff;padding:10px 12px;font-size:14px;line-height:1.35}
+  .rcard.on{box-shadow:inset 0 0 0 2px var(--vt)}
+  .rcard small{display:block;font-size:12px;color:var(--mut);margin-top:2px}
+  .rcard .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.12);margin-top:8px;overflow:hidden}
+  .rcard .bar i{display:block;height:100%;background:var(--vt)}
+  .rcard .dot{position:absolute;top:8px;right:10px;font-size:12px}
 </style>
 </head>
 <body>
@@ -655,7 +672,7 @@
     <button id="bChange" class="toggle hidden"></button>
   </div>
   <div id="regionPane">
-  <h2 class="rgh"><span data-t="region">지역</span><button id="bPromo" class="promobtn">📣 행사<i id="promoDot" class="hidden"></i></button></h2>
+  <h2 class="rgh"><span data-t="region">지역</span></h2>
   <div class="sel3">
     <select id="rCountry"></select>
     <select id="rProv"></select>
@@ -663,6 +680,9 @@
   </div>
 
   <h2 data-t="course">코스</h2>
+  <div class="rhead" id="rHead"><button class="rback" id="rBack">‹ 지역</button><b id="rName"></b><button id="bPromo" class="promobtn">📣 행사<i id="promoDot" class="hidden"></i></button></div>
+  <div class="rcards hidden" id="rCards"></div>
+  <div id="rCityView">
   <div class="seg" id="tabSeg"></div>
   <div id="conqLine" class="conq hidden"></div>
   <input id="rFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
@@ -671,6 +691,7 @@
   <div class="geonote hidden" id="geoNote" onclick="geoRetry()"></div>
   <button id="courseToggle" class="toggle"></button>
   <button id="bSite" class="toggle hidden"></button>
+  </div>
   </div>
   </div>
 
@@ -719,6 +740,7 @@
   <div class="seg" id="recPeriod" style="margin-top:14px">
     <button data-per="week" data-t="pWeek">이번 주</button><button data-per="month" data-t="pMonth">이번 달</button><button data-per="all" data-t="pAll">전체</button>
   </div>
+  <div class="recCap" id="recCap"></div>
   <div class="sum4" id="recSum"></div>
   <div class="card" id="recCal"></div>   <!-- 11/17 습관 달력: 운동한 날 · 날짜를 누르면 그날 기록만 -->
   <div class="card hidden" id="meterBox" style="margin-top:10px;font-size:13px;line-height:1.6"></div>   <!-- 11/17 측정 평균 (측정 보기를 켠 폰만) -->
@@ -865,7 +887,7 @@
 </div>
 
 <script>
-const BUILD = '202611181240';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181320';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2334,10 +2356,10 @@ function conqList(cid){
   const city = WORLD.cities[cid]; if (!city) return [];
   const out = [];
   Object.values(city.courses).forEach(c => {
-    if (c.mode === 'distance') out.push({ key: 'r:' + c.id, name: tr(c.name), done: posTotal(c) >= c.lengthM });
-    else c.segments.forEach(sg => { const t = TGT(sg.id); out.push({ key: 'c:' + sg.id, name: tr(sg.name) + (sg.trailName ? ' · ' + tr(sg.trailName) : ''), done: climbTotal(sg.id) >= t.gain }); });
+    if (c.mode === 'distance') out.push({ key: 'r:' + c.id, name: tr(c.name), done: posTotal(c) >= c.lengthM, started: posTotal(c) > 0 });
+    else c.segments.forEach(sg => { const t = TGT(sg.id); out.push({ key: 'c:' + sg.id, name: tr(sg.name) + (sg.trailName ? ' · ' + tr(sg.trailName) : ''), done: climbTotal(sg.id) >= t.gain, started: climbTotal(sg.id) > 0 }); });
   });
-  TARGETS.filter(t => (t.also || []).includes(cid)).forEach(t => out.push({ key: 'c:' + t.id, name: tr(t.name) + (t.trailName ? ' · ' + tr(t.trailName) : ''), done: climbTotal(t.id) >= t.gain }));
+  TARGETS.filter(t => (t.also || []).includes(cid)).forEach(t => out.push({ key: 'c:' + t.id, name: tr(t.name) + (t.trailName ? ' · ' + tr(t.trailName) : ''), done: climbTotal(t.id) >= t.gain, started: climbTotal(t.id) > 0 }));
   return out;
 }
 function passLine(){   /* 이 지역을 지나는 장거리 여정 → 누르면 그 코스로 */
@@ -2399,13 +2421,49 @@ $('rProv').onchange = () => { DB.region = { country: DB.region.country, prov: $(
 $('rCity').onchange = () => { DB.region.city = $('rCity').value; saveDB(); refreshStart(); };
 
 /* ---- 2) 코스: 그 지역의 길 · 산 · 빌딩 ---- */
-function cityLists(){
-  const cid = DB.region.city, city = WORLD.cities[cid];
+function cityLists(cid0){
+  const cid = cid0 || DB.region.city, city = WORLD.cities[cid];
   return { road: city ? Object.values(city.courses).filter(c => c.mode === 'distance').sort((a, b) => a.lengthM - b.lengthM) : [],
            mountain: MOUNTAINS.filter(t => inCity(t, cid)), tower: TOWERS.filter(t => inCity(t, cid)) };
 }
 let listOpen = false, rOpenNow = true, bOpenNow = true;   // 지금 목록이 펼쳐져 있는지 (지역별 / 주제별·내 주변)
-function refreshCourses(){ refreshCourses0(); $('regionPane').classList.toggle('shut', !rOpenNow); distChips(); }
+function refreshCourses(){
+  if (rView === 'cards'){ rOpenNow = false; renderRegionCards(); $('regionPane').classList.add('shut'); distChips(); return; }
+  $('rCards').classList.add('hidden'); $('rCityView').classList.remove('hidden'); $('rBack').textContent = '‹ 지역';
+  $('rName').textContent = regionName(DB.region.city);
+  refreshCourses0(); $('regionPane').classList.toggle('shut', !rOpenNow); distChips();
+}
+/* 11/18 B3 (보스 승인): 지역별 = 지역 카드. 카드 한 장 = 지역 이름 · 그 운동 코스 수 · 정복 막대 · 📣 행사 점. 누르면 그 지역 코스 목록
+   · 내가 뛴 지역이 묶음 안에서 위로 · 고른 운동에 맞는 코스가 없는 지역은 안 보임 · 나중에 행사·현장 인증·쿠폰을 카드에 붙임 */
+let rView = 'city';
+function fitCount(cid){
+  const l = cityLists(cid);
+  if (isFree()) return l.road.length + l.mountain.length + l.tower.length;
+  const g = actGrp(S.act); return g === 'up' ? l.mountain.length + l.tower.length : l.road.filter(g === 'bike' ? bikeList : distOK).length;
+}
+function renderRegionCards(){
+  $('rCityView').classList.add('hidden'); $('rCards').classList.remove('hidden');
+  $('rBack').textContent = '✕ 닫기'; $('rName').textContent = '지역 고르기';
+  const grp = [['mine', '나의 코스'], ['kr', '대한민국'], ['abroad', '해외'], ['theme', '테마 여정']], out = {};
+  WORLD.regions.forEach(c => c.children.forEach(p => p.children.forEach(ci => {
+    const n = fitCount(ci.id); if (!n) return;
+    const g = c.id === 'mine' ? 'mine' : c.id === 'kr' ? 'kr' : (c.id === 'long' || c.id === 'm100') ? 'theme' : 'abroad';
+    const l = conqList(ci.id), d = l.filter(x => x.done).length, played = l.some(x => x.started || x.done) || d > 0;
+    (out[g] = out[g] || []).push({ ci, c, p, n, d, all: l.length, played, promo: promoNow(ci.id).length });
+  })));
+  let html = '';
+  grp.forEach(([g, lbl]) => { const list = out[g]; if (!list || !list.length) return;
+    list.sort((a, b) => (b.played - a.played) || (b.d - a.d));
+    html += '<div class="rcgrp">' + lbl + '</div>' + list.map(x => {
+      const sub = (x.c.id === 'kr' ? tr(x.p.name) : (x.c.children.length > 1 ? tr(x.p.name) : tr(x.c.name))).replace(/^[^가-힣A-Za-z]+/, '').replace(/(특별자치도|특별자치시|광역시|특별시)$/, '');   // 짧게: 제주특별자치도 → 제주
+      return '<button class="rcard' + (x.ci.id === DB.region.city ? ' on' : '') + '" data-rc="' + x.c.id + '|' + x.p.id + '|' + x.ci.id + '">' + (x.promo ? '<span class="dot">📣</span>' : '') +
+        '<b>' + tr(x.ci.name) + '</b><small>' + x.n + '코스' + (sub && sub.indexOf(tr(x.ci.name)) !== 0 ? ' · ' + sub : '') + (x.all ? '<span style="float:right">🏴 ' + x.d + '/' + x.all + '</span>' : '') + '</small>' +
+        (x.all ? '<div class="bar"><i style="width:' + Math.round(x.d / x.all * 100) + '%"></i></div>' : '') + '</button>';
+    }).join(''); });
+  $('rCards').innerHTML = html || '<div class="muted" style="padding:12px;grid-column:1/-1">' + T.noCourse + '</div>';
+  $('rCards').querySelectorAll('[data-rc]').forEach(b => b.onclick = () => { const [c, p, ci] = b.dataset.rc.split('|'); DB.region = { country: c, prov: p, city: ci }; rView = 'city'; listOpen = true; saveDB(); refreshStart(); $('rHead').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+}
+$('rBack').onclick = () => { rView = rView === 'cards' ? 'city' : 'cards'; refreshCourses(); };
 function refreshCourses0(){
   rOpenNow = true;
   const lists = cityLists();
@@ -2594,7 +2652,7 @@ function browsePick(){
     saveDB(); applyPick(); refreshStart(); askResume();
   });
 }
-$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; bOpen = true; MF.nMore = false; saveDB(); refreshBrowse(); });
+$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; bOpen = true; MF.nMore = false; rView = 'city'; saveDB(); refreshBrowse(); refreshCourses(); });
 function pickRoad(cid, id){
   DB.pick = { type: 'road', id }; saveDB();
   if (id === COURSE.id && cid === ACTIVE.city){ applyPick(); return; }
@@ -3961,8 +4019,12 @@ function refreshRec(){
   document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === REC.f));
   const from = periodStart(REC.per);
   const fOK = r => REC.f === 'all' || actGroup(r) === REC.f;
+  /* 11/18 B2: 기간 고르기를 없애고 달력 하나로 — 합계·목록 = 달력에 보이는 달 (날짜를 누르면 그날) */
+  const nowD = new Date(); if (!REC.mon) REC.mon = [nowD.getFullYear(), nowD.getMonth()];
+  const inMon = r => { const d = new Date(r.date); return d.getFullYear() === REC.mon[0] && d.getMonth() === REC.mon[1]; };
   const list = REC.day ? DB.records.filter(r => r.src !== 'legacy' && calKey(new Date(r.date)) === REC.day && fOK(r))   // 달력에서 고른 날
-    : DB.records.filter(r => (REC.per === 'all' || (r.src !== 'legacy' && new Date(r.date).getTime() >= from)) && fOK(r));
+    : DB.records.filter(r => r.src !== 'legacy' && inMon(r) && fOK(r));
+  $('recCap').textContent = REC.day ? REC.day.split('-').slice(1).join('월 ') + '일 합계' : (REC.mon[0] !== nowD.getFullYear() ? REC.mon[0] + '년 ' : '') + (REC.mon[1] + 1) + '월 합계';
   calFill(fOK);
   const dist = list.reduce((a, r) => a + (r.distM || 0), 0), up = list.reduce((a, r) => a + (r.upM || 0), 0), sec = list.reduce((a, r) => a + (r.sec || 0), 0);
   const cnt = list.filter(r => r.src !== 'legacy').length;
