@@ -878,7 +878,7 @@
   </div>
   <div id="myBox" class="hidden">
     <b id="myTitle"></b>
-    <div class="muted" style="margin-top:4px;line-height:1.5">⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.</div>
+    <div class="muted" style="margin-top:4px;line-height:1.5"></div>
     <input id="myName" class="myname" maxlength="30">
     <div class="mbtn"><button id="myNo" data-t="apNo"></button><button id="myYes" class="go">⭐ 내 코스로 저장</button></div>
   </div>
@@ -896,7 +896,7 @@
 </div>
 
 <script>
-const BUILD = '202611181350';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181445';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1296,8 +1296,10 @@ const WORLD = {
 let MINE = []; try { MINE = JSON.parse(localStorage.getItem('bgsj_mine')) || []; } catch(e){}
 if (MINE.length){
   WORLD.regions.unshift({ id: 'mine', name: { ko: '⭐ 내 코스' }, children: [ { id: 'mine-p', name: { ko: '내가 만든 코스' }, children: [ { id: 'mine', name: { ko: '내 코스' } } ] } ] });
-  const cs = {};
-  MINE.forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: m.loop !== false, pathReal: true,
+  const cs = {}, mt = MINE.filter(m => m.type === 'mtn');
+  if (mt.length) cs['mine-mtn'] = { id: 'mine-mtn', name: { ko: '⛰ 내 산' }, mode: 'climb', kind: 'mountain', note: '직접 오른 길 (높이 = 지형 자료)',
+    segments: mt.map(m => ({ id: m.id, geo: 'mine', geoP: m.p, name: { ko: m.name }, summit: m.summit, base: m.base, baseName: { ko: '출발' }, trail: { ko: '출발 → 가장 높은 곳 (' + (m.lengthM / 1000).toFixed(1) + 'km)' }, photo: null })) };
+  MINE.filter(m => m.type !== 'mtn').forEach(m => { const L = m.lengthM; cs[m.id] = { id: m.id, name: { ko: m.name }, short: { ko: m.name }, kind: '내 코스', mode: 'distance', lengthM: L, loop: m.loop !== false, pathReal: true,
     elev: [[0, 0], [L, 0]], note: m.note || '', source: '내 주변 순환 코스 추천', segments: [ { from: 0, to: L, scene: m.scene || 'road' } ],
     landmarks: [ { id: m.id + '-s', name: { ko: '출발' }, at: 10, side: 1, art: 'gate', photo: null, desc: { ko: '' } },
                  { id: m.id + '-h', name: { ko: '반환점' }, at: Math.round(L / 2), side: -1, art: 'sign', photo: null, desc: { ko: '절반 왔어요' }, hub: true },
@@ -1372,7 +1374,7 @@ const TEXT = {
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
-    myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myDone: '✅ 「{n}」 저장 · 테마 → ⭐ 내 코스에서 고르세요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
+    myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myBoxSub: '⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.', myDone: '✅ 「{n}」 저장 · 테마 → ⭐ 내 코스에서 고르세요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
     ann500: '{c} · {s}까지 500미터', ann100: '{c} · 곧 {s}, 100미터 남았어요',
     passTitle: '🧭 이 지역을 지나는 장거리 여정:',
     lpErr: '⚠️ 코스를 만들지 못했어요', lpSet: '🔄 일반 목표를 이 코스로: {n}', lpNow: '🔄 따라갈 길: <b>{n}</b>', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
@@ -1387,7 +1389,9 @@ const TEXT = {
     gpsPerm: '위치 권한이 필요해요. 설정에서 위치를 \'앱 사용 중에만 허용\'으로 바꿔 주세요.',
     gpsHelp: '달린 만큼 고른 코스에서 앞으로 갑니다. 화면을 켜 둔 채로 운동하세요 (화면이 꺼지면 기록이 멈춰요).',
     gpsNoHere: '이 화면에서는 GPS를 쓸 수 없어요. 위치 권한을 켜거나 설치한 앱에서 열면 실시간 기록이 됩니다. 지금은 다녀온 거리를 넣어 주세요.',
-    hikeHelp: '산 높이는 GPS로 정확히 재기 어려워서, 다녀온 뒤 오른 높이를 넣습니다.',
+    hikeHelp: '산 높이는 GPS로 정확히 재기 어려워서, 다녀온 뒤 오른 높이를 넣습니다.', hikeGpsHelp: 'GPS로 다닌 길을 기록해요. 오른 높이는 끝난 뒤 지형 자료로 계산해요.',
+    hikeSum: '🥾 등산 <b>{d} km</b> · {t}', hikeCalc: '⛰ 오른 높이 계산 중…', hikeUp: '⛰ 오른 높이 <b>{g} m</b> · 가장 높은 곳 {top} m', hikeNoEle: '⛰ 오른 높이를 못 계산했어요 (인터넷 연결 확인)',
+    myMtnTitle: '⛰ 오늘 오른 길(+{g} m)을 내 산 코스로 남길까요?', myMtnSub: '출발 → 가장 높은 곳까지가 코스가 돼요. 방구석 등산·계단에서 이 길 그대로 올라요.', myMtnName: '내 산 ({md})',
     gpsWait: '📡 GPS 찾는 중…', gpsOk: '📡 GPS ±{a}m', gpsWeak: '📡 GPS 약함 ±{a}m', gpsLost: 'GPS를 쓸 수 없어 기록을 멈춥니다', srcGps: '📡 GPS',
     cancel: '취소', edit: '수정', delSure: '지울까요?', addBtn: '＋ 빠진 기록 넣기 (앱 없이 한 운동)', addTitle: '✍ 빠진 기록 넣기',
     resetBtn: '↺ {s} 처음부터 다시', resetSure: '한 번 더 누르면 진행 위치가 0으로 (기록은 남음)', resetDone: '처음부터 다시 시작합니다',
@@ -2015,6 +2019,7 @@ const tempDrop = st => Math.round(Math.max(0, st.elev - st.m.base) * 0.006);
    · 높이는 출발·정상이 공식 숫자와 맞게 비례 보정 */
 const MTN_GEO = {}, MTN_LOADING = {};
 function mtnGeo(m){
+  if (m && m.geoP && !MTN_GEO[m.id]) MTN_GEO[m.id] = mtnPrep(m, { p: m.geoP, src: '내가 다녀온 길' });
   if (!m || !m.geo || m.kind !== 'mountain') return null;
   if (MTN_GEO[m.id]) return MTN_GEO[m.id];
   if (!MTN_LOADING[m.id]){ MTN_LOADING[m.id] = 1;
@@ -2698,7 +2703,7 @@ function setAct(a){
   const out = DB.zone === 'out', free = isFree(), upPick = !free && DB.pick.type === 'climb';
   $('bLoop').classList.toggle('hidden', !out || !free || isClimb()); freeRouteNote();
   if (free){   // 일반: 방구석 = 러닝머신·자전거·천국의 계단 / 바깥 = 걷기·조깅·자전거
-    if (out && (a === 'tread' || ACTS[a].kind === 'up')) a = 'walk';
+    if (out && (a === 'tread' || a === 'stair')) a = a === 'stair' ? 'hike' : 'walk';   // 11/18: 바깥 일반에도 등산
     else if (!out && (a === 'walk' || a === 'jog' || a === 'hike')) a = 'tread';
   }
   else if (out){ if (a === 'tread') a = 'walk'; else if (a === 'stair') a = 'hike'; }   // 테마: 운동 먼저 (바깥 = 걷기·조깅 / 자전거 / 등산)
@@ -2714,7 +2719,7 @@ function setAct(a){
       listOpen = !pickOK(); saveDB(); setTimeout(() => { refreshStart(); }, 0); }
   }
   const up = isClimb(), tower = !free && up && TGT(DB.climb.sel).kind === 'tower';
-  const list = free ? (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '🪜', T.aStair]])
+  const list = free ? (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike], ['hike', '⛰', T.aHike]] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '🪜', T.aStair]])
              : (out ? [['walk', '🏃', T.aWalkOut], ['bike', '🚴', T.aBike], ['hike', '⛰', '등산·계단']] : [['tread', '🏃', T.aFoot], ['bike', '🚴', T.aBike], ['stair', '⛰', '등산·계단']]);
   $('actChips').innerHTML = list.map(([k, ic, nm]) => '<button data-act="' + k + '" class="' + (k === a ? 'on' : '') + '"><b>' + ic + '</b><span>' + nm + '</span></button>').join('');
   $('actChips').querySelectorAll('[data-act]').forEach(b => b.onclick = () => setAct(b.dataset.act));
@@ -2729,11 +2734,11 @@ function setAct(a){
   else { makePresets(a === 'bike' ? [15, 20, 25, 30] : [4.5, 6, 8, 10]); setSpeed(S.spd[a] || 6); }
   // 바깥: 속도 고르기 없음. 길 = GPS 실시간 (못 쓰면 다녀온 기록 넣기), 산·빌딩 = 다녀온 기록 넣기
   $('speedArea').classList.toggle('hidden', out); updateAutoUI();
-  const gpsOK = out && !up && gpsUsable();
-  $('bStart').dataset.lbl = !out ? T.start : up ? T.hikeOut : gpsOK ? T.gpsStart : T.manualOut; startLabel();
+  const hg = hikeGpsOK(), gpsOK = out && (!up || hg) && gpsUsable();
+  $('bStart').dataset.lbl = !out ? T.start : up && !hg ? T.hikeOut : gpsOK ? T.gpsStart : T.manualOut; startLabel();
   refreshFree();
   $('gpsNote').classList.toggle('hidden', !out);
-  $('gpsNote').textContent = up ? T.hikeHelp : gpsOK ? (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? T.gpsHelpApp : T.gpsHelp) : T.gpsNoHere;
+  $('gpsNote').textContent = hg ? T.hikeGpsHelp : up ? T.hikeHelp : gpsOK ? (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? T.gpsHelpApp : T.gpsHelp) : T.gpsNoHere;
   $('bZone').textContent = out ? T.zOutTitle : T.zInTitle;
   saveDB(); refreshStart(); drawIdle();
 }
@@ -2824,11 +2829,13 @@ $('bStart').onclick = () => {
   if ($('bStart').classList.contains('need') && !isFree()){ toastMsg('목록에서 코스를 먼저 골라 주세요'); $('startScreen').scrollTop = 0; return; }
   if (!rsPass && askResume()) return;   // 완주 안 한 코스 → 이어서 / 처음부터 먼저 고르기
   rsPass = false;
-  if (DB.zone === 'out' && (isClimb() || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
+  const hikeGps = hikeGpsOK();   // 11/18 보스: 일반 등산도 GPS로 기록 → 내 산 코스
+  if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
+  S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
   S.gps = DB.zone === 'out'; GPS.track = [];
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = [];
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
-  S.free = isFree(); S.freeGoal = S.free ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
+  S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
@@ -2841,6 +2848,9 @@ $('bStart').onclick = () => {
 };
 function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted">(' + T['kcalLv' + bodyFix()[2]] + ')</span>' : ''; }
 function fillEnd(){
+  if (S.hikeGps) return fillHike();
+  $('fixLabel').classList.remove('hidden'); $('fixIn').parentElement.classList.remove('hidden');
+  $('myBox').querySelector('.muted').textContent = T.myBoxSub; $('myYes').textContent = '⭐ 내 코스로 저장';
   const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600); setTimeout(() => { const el = $('endSummary'); if (el && el.innerHTML.indexOf('🔥') < 0) el.innerHTML += endKcal(); }, 0);
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free || !S.passed.length);   // 11/18 A16: 지나온 곳이 없으면 칸째 숨김
   if (S.free){
@@ -4307,6 +4317,10 @@ function refreshFree(){
   $('modeHelp').textContent = free ? T.freeHelp : T.themeHelp;
   $('modeHelp').classList.toggle('hidden', DB.records.filter(r => r.src !== 'legacy').length >= 3);   // 11/18 A2: 익숙해지면(운동 3번) 숨김
   if (!free) return;
+  const hg = DB.zone === 'out' && S.act === 'hike';   // 바깥 등산(일반) = 목표 칸 없음 (GPS 기록)
+  ['freeTitle', 'freePresets'].forEach(id => $(id).classList.toggle('hidden', hg));
+  if (hg){ document.querySelector('#freeBox .goalRow').classList.add('hidden'); $('bLoop').classList.add('hidden'); return; }
+  $('bLoop').classList.toggle('hidden', DB.zone !== 'out' || up);   // 등산에서 걷기로 돌아와도 순환 코스 버튼이 다시 보이게
   $('freeTitle').textContent = up ? T.freeUp : T.freeDist;
   $('freeUnit').textContent = up ? T.floorUnit : 'km';
   const list = up ? [30, 50, 100, 200] : (S.act === 'bike' ? [10, 20, 30, 50] : [3, 5, 10, 21.1]), cur = up ? DB.free.floors : DB.free.km;
@@ -4809,14 +4823,67 @@ function trackOnCourse(t){
 }
 function trackLen(t){ let d = 0; for (let i = 1; i < t.length; i++) d += gpsDist({ lat: t[i-1][0], lon: t[i-1][1] }, { lat: t[i][0], lon: t[i][1] }); return d; }
 /* 11/16: 일반 + 바깥으로 아무 데나 뛴 길 → ⭐ 내 코스(테마)로 저장 */
+const MINE_MIN_M = 1000;   // 11/18 보스: 300m → 1km (단지 한 바퀴로 코스가 쌓이지 않게)
+/* ---- 11/18 보스 "등산도 내 코스로": 바깥 → 일반 → 등산 = GPS로 다닌 길 기록 → 끝나면 지형 자료(AWS 높이)로 오른 높이 계산
+   · 내 산 코스 기준 = 출발 → 가장 높은 곳까지 오른 높이 100m 이상 (거리는 산마다 달라 기준으로 안 씀. 100m ≈ 30층·동네 뒷산)
+   · 저장 = 출발 → 가장 높은 곳까지만 (내려온 길은 뺌 — 앱의 산 코스는 정상까지 오르는 모양) */
+const MINE_MIN_UP = 100;
+const hikeGpsOK = () => DB.zone === 'out' && isFree() && S.act === 'hike' && gpsUsable();
+function demEle(pts){   // [[위도, 경도]] → 높이(m) 배열. 3D와 같은 AWS 지형 조각(terrarium), 조각 40장 넘으면 한 단계 거칠게
+  const go = z => {
+    const n = 2 ** z, tiles = new Map();
+    const pos = pts.map(([la, lo]) => { const x = (lo + 180) / 360 * n, r = la * Math.PI / 180, y = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n;
+      const k = Math.floor(x) + '/' + Math.floor(y); tiles.set(k, null); return { k, px: Math.min(255, Math.floor((x % 1) * 256)), py: Math.min(255, Math.floor((y % 1) * 256)) }; });
+    if (tiles.size > 40 && z > 10) return go(z - 1);
+    return Promise.all([...tiles.keys()].map(k => new Promise((res, rej) => {
+      const im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.drawImage(im, 0, 0); tiles.set(k, g.getImageData(0, 0, 256, 256).data); res(); } catch(e){ rej(e); } };
+      im.onerror = rej; const [x, y] = k.split('/'); im.src = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + z + '/' + x + '/' + y + '.png';
+    }))).then(() => pos.map(q => { const d = tiles.get(q.k), i = (q.py * 256 + q.px) * 4; return Math.round(d[i] * 256 + d[i + 1] + d[i + 2] / 256 - 32768); }));
+  };
+  return go(13);
+}
+function upGain(e){ let g = 0, ref = e[0]; for (const v of e){ if (v - ref >= 3){ g += v - ref; ref = v; } else if (v < ref) ref = v; } return Math.round(g); }   // 3m 넘게 오를 때만 셈(흔들림 무시)
+function fillHike(){
+  S.act = 'hike'; S.hikeP = null;
+  const t = GPS.track || [], r = DB.records.find(x => x.id === S.sessionId), sec = Math.round(S.elapsed);
+  ['applyBox', 'passedWrap', 'trackBox', 'myBox', 'fixLabel'].forEach(id => $(id).classList.add('hidden')); $('fixIn').parentElement.classList.add('hidden');
+  const head = T.hikeSum.replace('{d}', (S.sessionM / 1000).toFixed(2)).replace('{t}', fmtTime(S.elapsed));
+  $('endSummary').innerHTML = head + '<br>' + T.hikeCalc;
+  if (t.length < 2){ $('endSummary').innerHTML = head; return; }
+  const pts = thinPath(t, 600);
+  demEle(pts).then(e => {
+    const sm = e.map((v, i) => Math.round((e[Math.max(0, i - 1)] + v + e[Math.min(e.length - 1, i + 1)]) / 3));   // 앞뒤 평균으로 고르게
+    const gain = upGain(sm), top = Math.max(...sm), im = sm.indexOf(top), net = top - sm[0];
+    if (r){ r.act = 'hike'; r.upM = gain; r.distM = Math.round(S.sessionM); saveDB(); }
+    const kc = kcalOf({ act: 'hike', sec, distM: 0, upM: gain });
+    $('endSummary').innerHTML = head + '<br>' + T.hikeUp.replace('{g}', gain).replace('{top}', top) + (kc ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(kc) + '</b>' : '');
+    if (net >= MINE_MIN_UP && t.length > 10){
+      const up = pts.slice(0, im + 1).map((q, i) => [q[0], q[1], sm[i]]);
+      S.hikeP = { p: thinPath(up, 400), top, base: sm[0], len: Math.round(trackLen(up)) };
+      const dt = new Date(); $('myBox').classList.remove('hidden');
+      $('myTitle').textContent = T.myMtnTitle.replace('{g}', net); $('myBox').querySelector('.muted').textContent = T.myMtnSub;
+      $('myName').value = T.myMtnName.replace('{top}', top).replace('{md}', (dt.getMonth() + 1) + '/' + dt.getDate());
+      $('myYes').textContent = '⛰ 내 산 코스로 저장'; $('myYes').disabled = false; $('myNo').disabled = false;
+    }
+  }).catch(() => { $('endSummary').innerHTML = head + '<br>' + T.hikeNoEle; });
+}
+function saveMyMtn(){
+  const h = S.hikeP, id = 'my-' + Date.now().toString(36), name = ($('myName').value || '').trim() || T.myMtnName.replace('{top}', h.top).replace('{md}', '');
+  MINE = [{ id, type: 'mtn', name, p: h.p, summit: h.top, base: h.base, lengthM: h.len, note: '직접 오른 길 ' + new Date().toLocaleDateString('ko-KR') }].concat(MINE).slice(0, 30);
+  try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
+  window.MINE_NEW = true; S.hikeP = null;
+  $('myTitle').textContent = T.myDone.replace('{n}', name); $('myYes').disabled = true; $('myNo').disabled = true;
+}
 function fillMine(){
-  const t = GPS.track || [], d = trackLen(t), show = S.gps && S.free && !isClimb() && t.length > 10 && d > 300;
+  const t = GPS.track || [], d = trackLen(t), show = S.gps && S.free && !isClimb() && t.length > 10 && d >= MINE_MIN_M;
   $('myBox').classList.toggle('hidden', !show); if (!show) return;
   const dt = new Date(); $('myTitle').textContent = T.myTitle.replace('{a}', (d / 1000).toFixed(2));
   $('myName').value = '내 길 ' + (d / 1000).toFixed(1) + 'km (' + (dt.getMonth() + 1) + '/' + dt.getDate() + ')';
   $('myYes').disabled = false; $('myNo').disabled = false;
 }
 $('myYes').onclick = () => {
+  if (S.hikeP) return saveMyMtn();
   const t = GPS.track || []; if (t.length < 2) return;
   const d = Math.round(trackLen(t)), id = 'my-' + Date.now().toString(36), loop = dM(t[0], t[t.length - 1]) < 150;
   const name = ($('myName').value || '').trim() || ('내 길 ' + (d / 1000).toFixed(1) + 'km');
