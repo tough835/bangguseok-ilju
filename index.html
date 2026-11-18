@@ -454,6 +454,15 @@
   #v3dCredit{position:absolute;left:8px;bottom:300px;z-index:2;font-size:10px;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.7)}
   .v3me{width:44px;height:44px;border-radius:50%;background:rgba(232,87,74,.28);display:flex;align-items:center;justify-content:center}   /* 11/18 보스 "3D 화살표 없음" → 2D와 같은 화살표 */
   .v3me svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+  .v3p{--sc:1;transform-origin:50% 100%;pointer-events:none;text-align:center;white-space:nowrap}
+  .v3p>*{display:block;transform:scale(var(--sc));transform-origin:50% 100%}
+  .v3p.crowd{display:flex;flex-direction:column;align-items:center}
+  .v3p.crowd b{font-size:22px;letter-spacing:-3px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+  .v3p.crowd i{font-style:normal;font-size:12px;font-weight:800;color:#1b1c1f;background:#fff;border-radius:10px;padding:2px 8px;margin-bottom:2px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .v3p.ad{background:var(--vt);color:#1b1c1f;border-radius:6px;padding:5px 10px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  .v3p.ad b{font-size:14px}.v3p.ad small{font-size:10px;font-weight:700}
+  .v3p.arch{background:linear-gradient(#e8574a,#c9423a);color:#fff;border-radius:14px 14px 4px 4px;padding:6px 26px 10px;border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+  .v3p.arch b{font-size:18px;letter-spacing:1px}.v3p.arch small{font-size:11px;font-weight:700}
   .v3tag{background:rgba(27,28,31,.9);color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:8px;white-space:nowrap}
   .find{width:100%;height:44px;border:0;border-radius:12px;background:var(--ch2);color:#fff;font-size:15px;padding:0 14px;box-sizing:border-box;margin-top:8px}
   .find::placeholder{color:var(--mut)}
@@ -911,7 +920,7 @@
 </div>
 
 <script>
-const BUILD = '202611182100';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182140';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5291,7 +5300,7 @@ function v3dLoad(){
   const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'lib/maplibre-gl.css'; document.head.appendChild(css);
   const sc = document.createElement('script'); sc.src = 'lib/maplibre-gl.js'; sc.onerror = bad;
   sc.onload = () => { try {
-    V3D.map = new maplibregl.Map({ container: 'map3d', interactive: false, attributionControl: false, maxPitch: 80, fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+    V3D.map = new maplibregl.Map({ container: 'map3d', interactive: false, attributionControl: false, maxPitch: 80, centerClampedToGround: false,   // 11/18 보스 "갑자기 경사로 올라가듯 버벅" — 높이 조각이 바뀔 때 카메라가 튀던 것 → 높이는 v3dDraw가 부드럽게 fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
       center: [lon0, lat0], zoom: 13, pitch: 60,
       style: { version: 8,
         sources: { sat: { type: 'raster', tiles: [v3dKR(lat0, lon0) ? V3D_SAT.kr : V3D_SAT.en], tileSize: 256, maxzoom: 18 },
@@ -5343,6 +5352,65 @@ function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
   } catch(e){}
   if (toon) $('v3dCredit').textContent = '지도 © OpenFreeMap · OpenStreetMap 기여자 · 높이 © AWS Terrain Tiles'; else v3dSat(m.getCenter().lat, m.getCenter().lng);
 }
+/* ---- 11/18 보스 "다음 단계": 길 위 소품 (3D·그림 3D 모두, 방구석 길 코스) ----
+   · 📣 응원 인파: 거점 앞 · 1km마다 · 결승 앞 — 가까워질수록 커지고(400m 앞부터) 지나면 사라짐, 말풍선 응원 문구
+   · 광고 자리(예시): 두 번째 거점 앞 길가 현수막 1개 — 실제 가게·지자체가 정해지면 내용만 바꿈
+   · 🏁 결승 아치: 완주 지점
+   · 🌳 나무(그림 3D만): 지금 보이는 숲·공원 안에 나무를 심음(지도 자료의 숲 모양 안에서만) */
+const CHEER = ['힘내세요!', '파이팅!', '잘하고 있어요!', '거의 다 왔어요!', '멋져요!'];
+function v3dPropsBuild(key){
+  (V3D.props || []).forEach(p => p.mk.remove()); V3D.props = [];
+  if (!key.startsWith('r:') || !COURSE) return;
+  const add = (at, cls, html, side) => { const g = geoOf(pointAt(Math.max(0, Math.min(L - 1, at)))); const el = document.createElement('div'); el.className = 'v3p ' + cls; el.innerHTML = html;
+    V3D.props.push({ at, side, el, mk: new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [side * 46, 0], opacity: '1', opacityWhenCovered: '1' }).setLngLat([g[1], g[0]]).addTo(V3D.map) }); };
+  const hubs = HUBS.filter(h => h.at > 120 && h.at < L - 150);
+  let k = 0; const crowdAt = new Set();
+  hubs.forEach(h => crowdAt.add(Math.round(h.at - 40)));
+  for (let d = 1000; d < L - 300; d += 1000) if (![...crowdAt].some(a => Math.abs(a - d) < 250)) crowdAt.add(d);
+  crowdAt.add(Math.round(L - 120));
+  [...crowdAt].sort((a, b) => a - b).forEach(a => { const side = k++ % 2 ? 1 : -1;
+    add(a, 'crowd', '<i>' + CHEER[k % CHEER.length] + '</i><b>🙋‍♀️📣🙌🧑‍🦱🎉</b>', side); });
+  if (hubs[1]) add(hubs[1].at - 120, 'ad', '<b>📣 광고 자리</b><small>이 길의 가게·축제를 소개해요 (예시)</small>', 1);
+  add(L - 4, 'arch', '<b>🏁 FINISH</b><small>완주 지점</small>', 0);
+}
+function v3dProps(){
+  if (!V3D.props || !V3D.props.length) return;
+  const here = ((totalNow() % L) + L) % L;
+  V3D.props.forEach(p => { const ahead = p.at - here, show = ahead > -15 && ahead < 420;
+    if (p.vis !== show){ p.vis = show; p.el.style.display = show ? '' : 'none'; }
+    if (show){ const sc = Math.max(0.45, Math.min(1.25, 1.3 - ahead / 360)); const k = Math.round(sc * 20) / 20; if (p.sc !== k){ p.sc = k; p.el.style.setProperty('--sc', k); } } });
+}
+function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나무(줄기 + 둥근 잎) — 1.5초마다, 많이 움직였을 때만 다시
+  const m = V3D.map; if (!m || V3D.sty !== 'toon' || !m.getSource('ofm')) return;
+  const c = m.getCenter(), now = performance.now();
+  if (V3D.treeAt && now - V3D.treeT < 1500) return; V3D.treeT = now;
+  if (V3D.treeAt && Math.abs(V3D.treeAt[0] - c.lat) < 0.002 && Math.abs(V3D.treeAt[1] - c.lng) < 0.002) return;
+  V3D.treeAt = [c.lat, c.lng];
+  let polys = [];
+  try { polys = m.querySourceFeatures('ofm', { sourceLayer: 'landcover', filter: ['in', ['get', 'class'], ['literal', ['wood', 'grass']]] })
+    .concat(m.querySourceFeatures('ofm', { sourceLayer: 'park' })); } catch(e){ return; }
+  const cl = Math.cos(c.lat * Math.PI / 180), mPerDeg = 111320, R = 700, out = [], trunk = [];
+  const inRing = (x, y, ring) => { let ins = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++){ const [xi, yi] = ring[i], [xj, yj] = ring[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins; } return ins; };
+  const oct = (lon, lat, r) => { const pts = []; for (let i = 0; i <= 8; i++){ const a = i / 8 * Math.PI * 2; pts.push([lon + Math.cos(a) * r / (mPerDeg * cl), lat + Math.sin(a) * r / mPerDeg]); } return [pts]; };
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const step = 14 / mPerDeg;   // 14m 격자 + 흔들기
+  for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 1400; la += step)
+    for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 1400; lo += step / cl){
+      const x = lo + (rnd() - 0.5) * step / cl, y = la + (rnd() - 0.5) * step, wood = rnd();
+      const hit = polys.find(f => { const g = f.geometry; const rs = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []; return rs.some(r => r[0] && inRing(x, y, r[0])); });
+      if (!hit || (hit.properties.class === 'grass' && wood > 0.25)) continue;   // 풀밭은 듬성듬성
+      const h = 7 + rnd() * 6, r = 2.6 + rnd() * 1.6;
+      out.push({ type: 'Feature', properties: { h, b: 2.2, c: rnd() > 0.5 ? '#5f9f4c' : '#6fae57' }, geometry: { type: 'Polygon', coordinates: oct(x, y, r) } });
+      trunk.push({ type: 'Feature', properties: { h: 2.4 }, geometry: { type: 'Polygon', coordinates: oct(x, y, 0.45) } });
+    }
+  const fc = { type: 'FeatureCollection', features: out }, tc = { type: 'FeatureCollection', features: trunk };
+  if (m.getSource('trees')){ m.getSource('trees').setData(fc); m.getSource('trunks').setData(tc); return; }
+  const before = m.getLayer('route-case') ? 'route-case' : undefined;
+  m.addSource('trunks', { type: 'geojson', data: tc }); m.addSource('trees', { type: 'geojson', data: fc });
+  m.addLayer({ id: 't-trunk', type: 'fill-extrusion', source: 'trunks', paint: { 'fill-extrusion-color': '#8a6a4a', 'fill-extrusion-height': ['get', 'h'] } }, before);
+  m.addLayer({ id: 't-tree', type: 'fill-extrusion', source: 'trees', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-vertical-gradient': true } }, before);
+  TOON_L.push('t-trunk', 't-tree');
+}
 function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름표를 새로
   const m = V3D.map; V3D.key = key; V3D.brg = null; v3dSat(coords[0][1], coords[0][0]);
   const data = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } };
@@ -5350,7 +5418,7 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
   else { m.addSource('route', { type: 'geojson', lineMetrics: true, data });
     m.addLayer({ id: 'route-case', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1b1c1f', 'line-width': 8, 'line-opacity': 0.45, 'line-blur': 1 } });
     m.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-width': 4.5, 'line-blur': 0.6, 'line-opacity': 0.9, 'line-gradient': ['step', ['line-progress'], '#3f9a52', 0.0001, '#f1f1ec'] } }); }   // 11/18 보스 "코스 테두리가 번들거림"
-  V3D.tags.forEach(t => t.remove());
+  V3D.tags.forEach(t => t.remove()); V3D.el = null; v3dPropsBuild(key);
   V3D.tags = tags.map(([lo, la, txt]) => { const el = document.createElement('div'); el.className = 'v3tag'; el.textContent = txt; return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -8], opacity: '1', opacityWhenCovered: '1' }).setLngLat([lo, la]).addTo(m); });   // 11/18: 지형 뒤라고 흐려지던 것 막음
   if (!V3D.me){ const el = document.createElement('div'); el.className = 'v3me'; el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2 L20 21 L12 16.5 L4 21 Z" fill="#e8574a" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>';
     V3D.me = new maplibregl.Marker({ element: el, opacity: '1', opacityWhenCovered: '1' }).setLngLat(coords[0]).addTo(m); }
@@ -5360,9 +5428,10 @@ function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
   if (V3D.sty === 'toon'){ zoom += 1.4; pitch = Math.min(74, pitch + 8); }   // 눈높이에 가깝게, 단 고층 건물에 길이 가리지 않을 만큼   // 그림 3D = 눈높이에 가깝게
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
-  V3D.me.setLngLat([lon, lat]);
+  try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
+  V3D.me.setLngLat([lon, lat]); v3dProps();
   const now = performance.now();
-  if (now - V3D.last > 400){ V3D.last = now; const k = Math.max(0.0001, Math.min(0.9999, prog));
+  if (now - V3D.last > 400){ V3D.last = now; v3dTrees(); const k = Math.max(0.0001, Math.min(0.9999, prog));
     try { m.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3f9a52', k, '#ffffff']); } catch(e){}
     $('v3dCredit').style.bottom = Math.round(innerHeight - bot + 8) + 'px'; }
 }

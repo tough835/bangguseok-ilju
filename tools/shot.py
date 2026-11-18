@@ -27,9 +27,9 @@ with sync_playwright() as p:
     page.evaluate("()=>document.getElementById('bStart').click()"); page.wait_for_timeout(1500)
     page.evaluate("()=>{const r=document.getElementById('rsRestart'); if(r&&r.offsetParent) r.click()}")
     page.wait_for_timeout(3000)
-    for at in (300, 1500):
+    for at, sty in ((640, "toon"), (640, "3d"), (1760, "toon"), (4330, "toon")):
         page.evaluate(f"()=>advance({at} - (totalNow() % L))"); page.wait_for_timeout(500)
-        for sty in ("3d", "toon"):
+        if True:
             page.evaluate(f"()=>{{DB.v3d=true; DB.v3dSty='{'toon' if sty == 'toon' else 'sat'}'; saveDB(); v3dBtn(); if(V3D.ready) v3dStyle('{sty}')}}")
             t0 = time.time()
             while time.time() - t0 < 60:
@@ -37,6 +37,6 @@ with sync_playwright() as p:
                 page.wait_for_timeout(1000)
             page.wait_for_timeout(4000)
             page.screenshot(path=f"shots/{course}_{at}m_{sty}.png", timeout=180000, animations="disabled")
-            print(at, sty, page.evaluate("()=>[V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
+            print(at, sty, page.evaluate("()=>(V3D.props||[]).filter(p=>p.vis).map(p=>p.el.className+'@'+Math.round(p.at)).join(' ')"), page.evaluate("()=>[V3D.el, V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
     print("\n".join(l for l in logs if "error" in l.lower())[:3000])
     b.close()
