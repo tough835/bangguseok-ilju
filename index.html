@@ -911,7 +911,7 @@
 </div>
 
 <script>
-const BUILD = '202611181950';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182030';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5280,7 +5280,7 @@ const v3dKR = (lat, lon) => lat > 33.0 && lat < 38.7 && lon > 124.5 && lon < 131
 function v3dSat(lat, lon){   // 코스 위치에 맞게 위성 사진 출처·출처 글자를 고름
   const kr = v3dKR(lat, lon), m = V3D.map;
   if (m && V3D.kr !== kr){ V3D.kr = kr; V3D.bad = 0; V3D.ok = 0; try { m.getSource('sat').setTiles([kr ? V3D_SAT.kr : V3D_SAT.en]); } catch(e){} }
-  V3D.kr = kr; $('v3dCredit').textContent = (kr ? '위성 사진 © 브이월드(국토교통부) · 공공누리 제1유형' : '위성 사진 © Esri · Maxar') + ' · 높이 © AWS Terrain Tiles';
+  V3D.kr = kr; if (V3D.sty === 'toon') return; $('v3dCredit').textContent = (kr ? '위성 사진 © 브이월드(국토교통부) · 공공누리 제1유형' : '위성 사진 © Esri · Maxar') + ' · 높이 © AWS Terrain Tiles';
 }
 const V3D = { map: null, ready: false, loading: false, failed: false, key: '', me: null, tags: [], brg: null, last: 0, mc: null, kr: null, bad: 0, ok: 0 };
 const v3dAble = () => S.running && !S.free && !S.gps && !V3D.failed && !V3D.hot && !LOWP && (isClimb() ? TGT(DB.climb.sel).kind === 'mountain' && !!MTN_GEO[DB.climb.sel] : SAT_OK);
@@ -5308,6 +5308,40 @@ function v3dLoad(){
   } catch(e){ bad(); } };
   document.head.appendChild(sc);
 }
+/* ---- 11/18 보스 "그림체지만 실제 건물 모양·지형" → 🎨 그림 3D ----
+   · 지도 자료(OpenFreeMap = 오픈스트리트맵) 건물 바닥 모양·높이로 세우고, 길·물·숲·공원은 색으로, 산은 높이 자료로 음영
+   · 위성 사진 대신 그림이라 눈높이로 내려와도 뭉개지지 않음 · 길이가 늘어도 우리 저장소는 그대로(빌려 그림)
+   · 한계: 건물 겉모습(간판·창문)은 없음 · 시골은 지도에 건물이 적음 → 나중에 국토부 건물 자료로 보강 */
+const TOON_L = ['t-bg', 't-landuse', 't-landcover', 't-park', 't-hill', 't-water', 't-waterway', 't-road-case', 't-road', 't-bld'];
+function v3dToonAdd(){
+  const m = V3D.map; if (m.getSource('ofm')) return;
+  m.addSource('ofm', { type: 'vector', url: 'https://tiles.openfreemap.org/planet' });
+  m.addSource('dem2', { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 14, encoding: 'terrarium' });
+  const before = m.getLayer('route-case') ? 'route-case' : undefined, noRail = ['!', ['in', ['get', 'class'], ['literal', ['rail', 'transit', 'ferry', 'aerialway']]]];
+  const rw = k => ['interpolate', ['exponential', 1.6], ['zoom'], 13, 1.2 * k, 18, ['*', k, ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], 24, ['secondary', 'tertiary'], 18, ['path', 'track'], 5, 11]]];
+  [ { id: 't-bg', type: 'background', paint: { 'background-color': '#ece6d6' } },
+    { id: 't-landuse', type: 'fill', source: 'ofm', 'source-layer': 'landuse', paint: { 'fill-color': ['match', ['get', 'class'], ['commercial', 'retail'], '#ecdccb', 'industrial', '#e1dcd3', 'cemetery', '#cfe0bf', ['school', 'university', 'hospital'], '#efe2d6', '#e8e1d0'] } },
+    { id: 't-landcover', type: 'fill', source: 'ofm', 'source-layer': 'landcover', paint: { 'fill-color': ['match', ['get', 'class'], 'wood', '#7fb46a', 'grass', '#a9d18e', 'farmland', '#d9e0a8', 'sand', '#f1e2b0', 'wetland', '#9fd0b6', 'ice', '#ffffff', '#b9d79e'] } },
+    { id: 't-park', type: 'fill', source: 'ofm', 'source-layer': 'park', paint: { 'fill-color': '#9fcf86', 'fill-opacity': 0.85 } },
+    { id: 't-hill', type: 'hillshade', source: 'dem2', paint: { 'hillshade-shadow-color': '#5d6a52', 'hillshade-highlight-color': '#fffbe8', 'hillshade-exaggeration': 0.35 } },
+    { id: 't-water', type: 'fill', source: 'ofm', 'source-layer': 'water', paint: { 'fill-color': '#78bfe6' } },
+    { id: 't-waterway', type: 'line', source: 'ofm', 'source-layer': 'waterway', paint: { 'line-color': '#78bfe6', 'line-width': 2 } },
+    { id: 't-road-case', type: 'line', source: 'ofm', 'source-layer': 'transportation', filter: noRail, layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#cdc4b0', 'line-width': rw(1) } },
+    { id: 't-road', type: 'line', source: 'ofm', 'source-layer': 'transportation', filter: noRail, layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': ['match', ['get', 'class'], ['path', 'track'], '#f4ebd3', '#ffffff'], 'line-width': rw(0.78) } },
+    { id: 't-bld', type: 'fill-extrusion', source: 'ofm', 'source-layer': 'building', minzoom: 13, filter: ['!=', ['get', 'hide_3d'], true],
+      paint: { 'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8], 0, '#f6f0e4', 20, '#efe5d2', 60, '#dfe6ee', 150, '#c6d4e6'],
+               'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.96, 'fill-extrusion-vertical-gradient': true } }
+  ].forEach(l => { l.layout = Object.assign({ visibility: 'none' }, l.layout || {}); try { m.addLayer(l, before); } catch(e){} });
+}
+function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
+  const m = V3D.map; if (!m) return; const toon = c === 'toon'; V3D.sty = c;
+  try { if (toon) v3dToonAdd(); m.setLayoutProperty('sat', 'visibility', toon ? 'none' : 'visible');
+    TOON_L.forEach(id => { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', toon ? 'visible' : 'none'); });
+    m.setSky(toon ? { 'sky-color': '#8cc8f0', 'horizon-color': '#f4efe2', 'fog-color': '#efe8d8', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.8, 'fog-ground-blend': 0.65, 'atmosphere-blend': 0.5 }
+                  : { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 });
+  } catch(e){}
+  if (toon) $('v3dCredit').textContent = '지도 © OpenFreeMap · OpenStreetMap 기여자 · 높이 © AWS Terrain Tiles'; else v3dSat(m.getCenter().lat, m.getCenter().lng);
+}
 function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름표를 새로
   const m = V3D.map; V3D.key = key; V3D.brg = null; v3dSat(coords[0][1], coords[0][0]);
   const data = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } };
@@ -5323,6 +5357,7 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
 function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
   V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
+  if (V3D.sty === 'toon'){ zoom += 1.8; pitch = Math.min(78, pitch + 12); }   // 그림 3D = 눈높이에 가깝게
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   V3D.me.setLngLat([lon, lat]);
   const now = performance.now();
@@ -5354,23 +5389,23 @@ function v3dClimb(st){
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
 /* 11/18 18:32 보스 "지도 탭이 헷갈림 → 한 버튼, 누를 때마다 바뀜": 예전 🏔3D↔▦평면 + 🛰위성↔🗺지도 두 버튼 → 한 버튼 순환
    길(방구석) = 🏔 3D → 🛰 위성 → 🗺 지도 / 산 = 🏔 3D → ▦ 평면 / 바깥 = 🛰 위성 → 🗺 지도. 버튼 글자 = 지금 보이는 지도 + ↻ */
-const MAPL = { '3d': '🏔 3D', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
+const MAPL = { '3d': '🏔 3D', toon: '🎨 그림 3D', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
 function mapModes(){
   const hot = V3D.hot; V3D.hot = false; const c3 = v3dAble() && !NAV.full; V3D.hot = hot;   // 과열로 평면이 됐어도 3D를 다시 고를 수 있게
-  const m = c3 ? ['3d'] : [];
+  const m = c3 ? ['3d', 'toon'] : [];   // 11/18 보스: 그림체 3D(실제 건물 모양·높이·지형, 눈높이)를 지도 선택지 하나로
   if (!isClimb() && (S.gps || SAT_OK) && !NAV.full) m.push('sat', 'map'); else if (c3) m.push('flat');
   return m;
 }
-const mapCur = m => m.includes('3d') && DB.v3d !== false && !V3D.hot ? '3d' : m.includes('sat') ? mapSty() : 'flat';
+const mapCur = m => m.includes('3d') && DB.v3d !== false && !V3D.hot ? (DB.v3dSty === 'toon' ? 'toon' : '3d') : m.includes('sat') ? mapSty() : 'flat';
 function v3dBtn(){
   const m = mapModes(), b = $('b3d'); $('bSat').classList.add('hidden');
   b.classList.toggle('hidden', m.length < 2); if (m.length < 2) return;
-  const c = mapCur(m); b.textContent = MAPL[c] + ' ↻'; if (c === '3d') v3dLoad();
+  const c = mapCur(m); b.textContent = MAPL[c] + ' ↻'; if (c === '3d' || c === 'toon'){ v3dLoad(); if (V3D.ready && V3D.sty !== c) v3dStyle(c); }
 }
 function voiceBtn(on){ const b = $('bVoice'); b.classList.toggle('hidden', !on); b.textContent = DB.voice === false ? '🔇' : '🔊'; }
 $('bVoice').onclick = () => { DB.voice = DB.voice === false; saveDB(); voiceBtn(true); if (DB.voice !== false) say('음성 안내를 켭니다.'); else { try { if (ttsNative()) CAP.Plugins.Tts.stop(); else window.speechSynthesis && speechSynthesis.cancel(); } catch(e){} } toastMsg(DB.voice === false ? '🔇 음성 안내 끔' : '🔊 음성 안내 켬'); };
 $('b3d').onclick = e => { e.stopPropagation(); const m = mapModes(); if (m.length < 2) return; const n = m[(m.indexOf(mapCur(m)) + 1) % m.length];
-  if (n === '3d'){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; } else { DB.v3d = false; if (n !== 'flat'){ DB.sat = true; DB.mapSty = n; } }
+  if (n === '3d' || n === 'toon'){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; DB.v3dSty = n === 'toon' ? 'toon' : 'sat'; if (V3D.ready) v3dStyle(n); } else { DB.v3d = false; if (n !== 'flat'){ DB.sat = true; DB.mapSty = n; } }
   saveDB(); showViewMode(true); toastMsg(MAPL[n] + ' 지도'); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));
