@@ -454,6 +454,7 @@
   #v3dCredit{position:absolute;left:8px;bottom:300px;z-index:2;font-size:10px;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.7)}
   .v3me{width:44px;height:44px;border-radius:50%;background:rgba(232,87,74,.28);display:flex;align-items:center;justify-content:center}   /* 11/18 보스 "3D 화살표 없음" → 2D와 같은 화살표 */
   .v3me svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+  body.toon3d .v3p.crowd b, body.toon3d .v3me{display:none}
   .v3p{--sc:1;transform-origin:50% 100%;pointer-events:none;text-align:center;white-space:nowrap}
   .v3p>*{display:block;transform:scale(var(--sc));transform-origin:50% 100%}
   .v3p.crowd{display:flex;flex-direction:column;align-items:center}
@@ -920,7 +921,7 @@
 </div>
 
 <script>
-const BUILD = '202611182200';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182230';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5300,7 +5301,7 @@ function v3dLoad(){
   const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'lib/maplibre-gl.css'; document.head.appendChild(css);
   const sc = document.createElement('script'); sc.src = 'lib/maplibre-gl.js'; sc.onerror = bad;
   sc.onload = () => { try {
-    V3D.map = new maplibregl.Map({ container: 'map3d', interactive: false, attributionControl: false, maxPitch: 80, centerClampedToGround: false,   // 11/18 보스 "갑자기 경사로 올라가듯 버벅" — 높이 조각이 바뀔 때 카메라가 튀던 것 → 높이는 v3dDraw가 부드럽게 fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+    V3D.map = new maplibregl.Map({ container: 'map3d', interactive: false, attributionControl: false, maxPitch: 89, maxZoom: 24, centerClampedToGround: false,   // 11/18 보스 "갑자기 경사로 올라가듯 버벅" — 높이 조각이 바뀔 때 카메라가 튀던 것 → 높이는 v3dDraw가 부드럽게 fadeDuration: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
       center: [lon0, lat0], zoom: 13, pitch: 60,
       style: { version: 8,
         sources: { sat: { type: 'raster', tiles: [v3dKR(lat0, lon0) ? V3D_SAT.kr : V3D_SAT.en], tileSize: 256, maxzoom: 18 },
@@ -5343,7 +5344,8 @@ function v3dToonAdd(){
   ].forEach(l => { l.layout = Object.assign({ visibility: 'none' }, l.layout || {}); try { m.addLayer(l, before); } catch(e){} });
 }
 function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
-  const m = V3D.map; if (!m) return; const toon = c === 'toon'; V3D.sty = c;
+  const m = V3D.map; if (!m) return; const toon = c === 'toon'; V3D.sty = c; document.body.classList.toggle('toon3d', toon); V3D.el = null;
+  try { m.setTerrain({ source: 'dem', exaggeration: toon ? 1 : 1.2 }); } catch(e){}
   try { if (toon) v3dToonAdd(); m.setLayoutProperty('sat', 'visibility', toon ? 'none' : 'visible');
     m.setLight(toon ? { anchor: 'viewport', color: '#ffffff', intensity: 0.45, position: [1.15, 210, 30] } : { anchor: 'viewport', color: '#ffffff', intensity: 0.5 });   // 그림 3D 건물이 회색으로 무겁지 않게
     TOON_L.forEach(id => { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', toon ? 'visible' : 'none'); });
@@ -5372,6 +5374,35 @@ function v3dPropsBuild(key){
     add(a, 'crowd', '<i>' + CHEER[k % CHEER.length] + '</i><b>🙋‍♀️📣🙌🧑‍🦱🎉</b>', side); });
   if (hubs[1]) add(hubs[1].at - 120, 'ad', '<b>📣 광고 자리</b><small>이 길의 가게·축제를 소개해요 (예시)</small>', 1.8);
   add(L - 4, 'arch', '<b>🏁 FINISH</b>', 0);
+  try { v3dCrowd3d(); } catch(e){}
+}
+function v3dCrowd3d(){   // 길 양옆에 도열한 사람들(몸·머리·일부 깃발) + 결승 아치 — 그림 3D(1인칭)에서 보임
+  const m = V3D.map; if (!m || !V3D.props) return;
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const shirt = ['#e8574a', '#3f7fd9', '#f2b33d', '#4fae6a', '#9b5bd4', '#ffffff', '#ff8fb1', '#1b1c1f', '#d7f548'], skin = ['#f1c9a5', '#e0ac85', '#c98f68'];
+  const body = [], flag = [];
+  const oct = (lat, lon, r, h, base, c) => { const pts = []; for (let i = 0; i <= 8; i++){ const a = i / 8 * Math.PI * 2; const q = offM(lat, lon, a * 180 / Math.PI, r); pts.push([q[1], q[0]]); } return { type: 'Feature', properties: { h, b: base, c }, geometry: { type: 'Polygon', coordinates: [pts] } }; };
+  const box = (lat, lon, brg, w, d, h, base, c) => { const p = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2], [-w / 2, -d / 2]].map(([x, y]) => { const a = offM(lat, lon, brg + 90, x), q = offM(a[0], a[1], brg, y); return [q[1], q[0]]; }); return { type: 'Feature', properties: { h, b: base, c }, geometry: { type: 'Polygon', coordinates: [p] } }; };
+  V3D.props.filter(p => p.el.classList.contains('crowd')).forEach(p => {
+    for (let d = p.at - 35; d < p.at + 35; d += 0.85){
+      const c = geoOf(pointAt(Math.max(0, Math.min(L - 1, d)))), n = geoOf(pointAt(Math.max(0, Math.min(L - 1, d + 2))));
+      const brg = Math.atan2((n[1] - c[1]) * Math.cos(c[0] * Math.PI / 180), n[0] - c[0]) * 180 / Math.PI;
+      [-1, 1].forEach(side => [3.4, 4.3].forEach(off => { if (rnd() < 0.18) return;
+        const q = offM(c[0], c[1], brg + 90 * side, off + (rnd() - 0.5) * 0.4), q2 = offM(q[0], q[1], brg, (rnd() - 0.5) * 0.4), h = 1.25 + rnd() * 0.4;
+        body.push(oct(q2[0], q2[1], 0.23, h, 0, shirt[Math.floor(rnd() * shirt.length)]));
+        body.push(oct(q2[0], q2[1], 0.13, h + 0.26, h + 0.02, skin[Math.floor(rnd() * skin.length)]));
+        if (rnd() < 0.18){ body.push(oct(q2[0], q2[1], 0.025, h + 0.75, h - 0.3, '#ddd')); flag.push(box(q2[0], q2[1], brg, 0.05, 0.6, h + 0.75, h + 0.35, shirt[Math.floor(rnd() * shirt.length)])); }
+      })); }
+  });
+  const arch = V3D.props.find(p => p.el.classList.contains('arch'));
+  if (arch){ const c = geoOf(pointAt(Math.max(0, L - 6))), n = geoOf(pointAt(L - 2)), brg = Math.atan2((n[1] - c[1]) * Math.cos(c[0] * Math.PI / 180), n[0] - c[0]) * 180 / Math.PI;
+    [-1, 1].forEach(sd => { const q = offM(c[0], c[1], brg + 90 * sd, 4.5); body.push(box(q[0], q[1], brg, 0.8, 0.8, 5, 0, '#e8574a')); });
+    body.push(box(c[0], c[1], brg, 9.8, 0.8, 5.6, 4.3, '#c9423a')); }
+  const fc = { type: 'FeatureCollection', features: body.concat(flag) };
+  if (m.getSource('crowd3d')) m.getSource('crowd3d').setData(fc);
+  else { m.addSource('crowd3d', { type: 'geojson', data: fc });
+    m.addLayer({ id: 't-crowd', type: 'fill-extrusion', source: 'crowd3d', layout: { visibility: V3D.sty === 'toon' ? 'visible' : 'none' }, paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'] } });
+    TOON_L.push('t-crowd'); }
 }
 function v3dProps(){
   if (!V3D.props || !V3D.props.length) return;
@@ -5424,10 +5455,22 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
   if (!V3D.me){ const el = document.createElement('div'); el.className = 'v3me'; el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2 L20 21 L12 16.5 L4 21 Z" fill="#e8574a" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>';
     V3D.me = new maplibregl.Marker({ element: el, opacity: '1', opacityWhenCovered: '1' }).setLngLat(coords[0]).addTo(m); }
 }
+/* 🎨 그림 3D = 1인칭: 땅 위 1.7m에서 앞 45m를 봄. 땅 높이는 지형 자료를 천천히 따라감(버벅임 없게) */
+const offM = (lat, lon, brg, d) => { const r = brg * Math.PI / 180; return [lat + Math.cos(r) * d / 111320, lon + Math.sin(r) * d / (111320 * Math.cos(lat * Math.PI / 180))]; };
+function v3dEye(lat, lon){
+  const m = V3D.map, b = V3D.brg, back = offM(lat, lon, b, -2), ahead = offM(lat, lon, b, 45);
+  let g = null, ga = null; try { g = m.queryTerrainElevation([back[1], back[0]]); ga = m.queryTerrainElevation([ahead[1], ahead[0]]); } catch(e){}
+  if (g != null && isFinite(g)){ const t = Math.max(g, ga != null && isFinite(ga) ? ga - 3 : g); V3D.el = V3D.el == null || Math.abs(t - V3D.el) > 300 ? t : V3D.el + (t - V3D.el) * 0.05; }
+  const e0 = V3D.el || 0, ea = (ga != null && isFinite(ga)) ? Math.max(ga, e0 - 6) : e0;
+  try { const o = m.calculateCameraOptionsFromTo(new maplibregl.LngLat(back[1], back[0]), e0 + 1.7, new maplibregl.LngLat(ahead[1], ahead[0]), ea + 0.9);
+    o.zoom = o.zoom - Math.log2(NAV.zoom || 1) * 0.5; o.padding = { top: 0, bottom: 0, left: 0, right: 0 }; m.jumpTo(o); } catch(e){}
+  V3D.me.setLngLat([lon, lat]); v3dProps();
+  const now = performance.now(); if (now - V3D.last > 400){ V3D.last = now; v3dTrees(); $('v3dCredit').style.bottom = Math.round(innerHeight - (AREA ? AREA.bot / DPR : innerHeight * 0.62) + 8) + 'px'; }
+}
 function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
-  V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
-  if (V3D.sty === 'toon'){ zoom += 1.1; pitch = Math.min(72, pitch + 6); }   // 눈높이에 가깝게, 단 고층 건물에 길이 가리지 않을 만큼   // 그림 3D = 눈높이에 가깝게
+  V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * (V3D.sty === 'toon' ? 0.05 : 0.08);
+  if (V3D.sty === 'toon') return v3dEye(lat, lon);   // 11/18 21:46 보스 "사용자 눈높이에서 보는 풍경" → 1인칭
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
   V3D.me.setLngLat([lon, lat]); v3dProps();
@@ -5460,7 +5503,7 @@ function v3dClimb(st){
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
 /* 11/18 18:32 보스 "지도 탭이 헷갈림 → 한 버튼, 누를 때마다 바뀜": 예전 🏔3D↔▦평면 + 🛰위성↔🗺지도 두 버튼 → 한 버튼 순환
    길(방구석) = 🏔 3D → 🛰 위성 → 🗺 지도 / 산 = 🏔 3D → ▦ 평면 / 바깥 = 🛰 위성 → 🗺 지도. 버튼 글자 = 지금 보이는 지도 + ↻ */
-const MAPL = { '3d': '🏔 3D', toon: '🎨 그림 3D', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
+const MAPL = { '3d': '🏔 3D', toon: '🏃 1인칭', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
 function mapModes(){
   const hot = V3D.hot; V3D.hot = false; const c3 = v3dAble() && !NAV.full; V3D.hot = hot;   // 과열로 평면이 됐어도 3D를 다시 고를 수 있게
   const m = c3 ? ['3d', 'toon'] : [];   // 11/18 보스: 그림체 3D(실제 건물 모양·높이·지형, 눈높이)를 지도 선택지 하나로
