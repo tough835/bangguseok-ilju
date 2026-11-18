@@ -896,7 +896,7 @@
 </div>
 
 <script>
-const BUILD = '202611181345';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181350';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1334,7 +1334,7 @@ const TEXT = {
     goalReach: '🎯 목표 달성!', soClose: '{s}까지 {d} 남았어요', reachBy: '→ {s} 도착',
     arrive: '도착', passedBy: '지나온 곳', trail: '지나온 길', trailPre: '이 코스 거점 (앞으로 지날 곳)', trailNone: '아직 이 코스에서 지나온 곳이 없어요. 흐린 칸은 앞으로 지날 거점이에요.',
     stampSum: '거점 {a}/{b} · 지나온 명소 {c}/{d}', visits: '도착 {n}회 · 처음 {d}', notYet: '아직 도착 전', aheadOf: '여기서 {d}', atKm: '{k}km 지점',
-    autoBtn: '📱 자동', autoNote: '폰을 몸에 지니면 걸음으로 거리·속도를 재요', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
+    autoBtn: '📱 자동', autoNote: '걸음으로 거리·속도 측정', autoNoteUp: '걸음으로 층 측정', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
     stepsN: '걸음 {n}', calibrated: '보폭을 맞췄습니다 (다음부터 더 정확)', spmUnit2: '칸/분',
     syncBtn: '📏 거리 맞추기', syncTitle: '자전거에 보이는 거리 (km)', close: '닫기',
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
@@ -3523,7 +3523,7 @@ function updateAutoUI(){
   ['bDown', 'bUp'].forEach(id => $(id).classList.toggle('dim', autoActive()));
   const autoUse = !!DB.autoSensor && autoCapable() && !S.gps && DB.zone !== 'out';
   if (!S.running) $('speedArea').classList.toggle('hidden', autoUse || DB.zone === 'out');
-  $('autoNote').textContent = T.autoNote; $('autoNote').classList.toggle('hidden', !autoUse || S.running);   // 자동이면 출발 전 속도 칸은 숨김 (걸음으로 잼)
+  $('autoNote').textContent = S.act === 'stair' ? T.autoNoteUp : T.autoNote; $('autoNote').classList.toggle('hidden', !autoUse || S.running);   // 자동이면 출발 전 속도 칸은 숨김 (걸음으로 잼)
 }
 $('bAuto').onclick = () => { DB.autoSensor = !DB.autoSensor; saveDB(); updateAutoUI(); if (S.running){ if (DB.autoSensor) sensorStart(); else { sensorStop(); refreshSpeedBox(false); } } };
 
