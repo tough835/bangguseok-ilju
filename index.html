@@ -24,7 +24,10 @@
   #hudBottom{position:fixed;left:0;right:0;bottom:0;padding:44px 10px calc(10px + env(safe-area-inset-bottom));
     background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.72) 30%)}
   .stats{display:flex;gap:8px}
-  .stat{flex:1;background:rgba(0,0,0,.4);border-radius:16px;padding:8px 12px 9px;min-width:0}
+  .stat{flex:1;background:rgba(0,0,0,.4);border-radius:16px;padding:8px 12px 9px;min-width:0;position:relative}
+  #sCourseLeft{position:absolute;top:8px;right:12px;font-size:13px;font-style:normal;font-weight:800;color:var(--vt)}   /* 11/18 보스: 코스 전체 남은 거리도 줄어들게 */
+  #sCourseLeft:not(.hidden) ~ b{margin-top:0}
+  .stat.hasLeft span{padding-right:70px}
   .stat span{display:block;font-size:13px;opacity:.75}
   .stat b{display:block;font-size:34px;font-weight:900;line-height:1.15;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stat small{display:block;font-size:15px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -535,7 +538,7 @@
 
 <div id="hudBottom" class="hidden">
   <div class="stats">
-    <div class="stat"><span id="sNextLabel"></span><b id="sNextDist">-</b><small id="sNextName">-</small></div>
+    <div class="stat"><span id="sNextLabel"></span><em id="sCourseLeft" class="hidden"></em><b id="sNextDist">-</b><small id="sNextName">-</small></div>
     <div class="stat"><span id="sTodayLabel"></span><b id="sToday">0</b><small id="sTime">00:00</small></div>
   </div>
   <div class="bar"><i id="progBar"></i></div>
@@ -899,7 +902,7 @@
 </div>
 
 <script>
-const BUILD = '202611181520';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181820';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2311,6 +2314,8 @@ function hudWalk(pos){
   const other = !S.goalFin && (S.goalDist || tr(nh.lm.name) !== S.goalName);   // 완주 지점이 목표면 다음 바퀴 거점은 안 보여 줌     // 목표가 '다음 거점'이 아닐 때는 다음 거점도 작게 보여 줌
   $('sNextLabel').textContent = S.goalDist ? T.toGoal + ' ' + S.goalName : (S.goalFin ? '🏁 ' : '🚩 ') + S.goalName;
   $('sNextDist').textContent = fmtM(gl);
+  const fd = L - (((totalNow() % L) + L) % L), showLeft = !S.goalFin && Math.abs(fd - gl) > 30;   // 목표가 완주 지점이면 같은 숫자라 숨김
+  $('sCourseLeft').textContent = '🏁 ' + (fd >= 1000 ? (fd / 1000).toFixed(fd >= 100000 ? 0 : 1) + 'km' : Math.round(fd) + 'm'); $('sCourseLeft').classList.toggle('hidden', !showLeft); $('sCourseLeft').parentElement.classList.toggle('hasLeft', showLeft);
   $('sNextName').textContent = other ? '🚩 ' + tr(nh.lm.name) + ' ' + (nh.d >= 1000 ? (nh.d/1000).toFixed(1) + 'km' : Math.round(nh.d) + 'm')
     : (sp > 0 ? T.approx + ' ' + Math.max(1, Math.round(gl / (sp/3.6) / 60)) + T.min : '');
   $('sTodayLabel').textContent = T.today;
@@ -2326,7 +2331,7 @@ function hudClimb(st){
   $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');
   $('altiPill').textContent = tower ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
   $('sNextLabel').textContent = tower ? T.toTop : T.toSummit;
-  $('sNextDist').textContent = Math.round(st.remain) + ' m';
+  $('sNextDist').textContent = Math.round(st.remain) + ' m'; $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
   $('sNextName').textContent = (tower ? (st.m.floors - st.floor) + T.floorUnit + ' · ' : '') + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
   $('sTodayLabel').textContent = T.todayUp;
   $('sToday').textContent = Math.round(S.sessionM) + ' m';
@@ -3916,7 +3921,7 @@ $('map').onclick = () => {
   }
   NAV.full = !NAV.full; showViewMode(true);
 };
-/* 손가락 두 개로 지도 확대·축소 (11/16) · 0.25배 ~ 5배 · 두 번 톡 = 원래대로 (NAV.zoom은 NAV 정의에서 1) */
+/* 손가락 두 개로 지도 확대·축소 (11/16) · 11/18 보스 "4배는 적음" → 최대 16배(NAV.zoom 1/16) ~ 축소 5배 · 두 번 톡 = 원래대로 (NAV.zoom은 NAV 정의에서 1) */
 (() => {
   let d0 = 0, z0 = 1, lastTap = 0;
   const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
@@ -3926,13 +3931,14 @@ $('map').onclick = () => {
   /* 11/17 보스: 바깥 일반에서 확대 안 됨 → 지도가 화면 위쪽 절반뿐이라 손가락이 아래 숫자 칸·알약 위에 놓이면 안 먹었음.
      운동 중에는 화면 어디서 두 손가락을 벌려도 확대 (창·입력칸 위 제외). 한 손가락(두 번 톡·끌기)은 지도 위에서만 */
   const runTouch = e => S.running && e.target.closest && !e.target.closest('.modal,input,select,textarea');
+  const ZMIN = 1 / 16;
   document.addEventListener('touchstart', e => { if (!runTouch(e)) return; if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
     else if (e.touches.length === 1 && e.target === cv){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else NAV.zoom = 1; zoomTag(); } lastTap = n;
       if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; } } }, { passive: false });
-  document.addEventListener('touchmove', e => { if (!S.running) return; if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(0.25, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
+  document.addEventListener('touchmove', e => { if (!S.running) return; if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(ZMIN, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
     else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); } }, { passive: false });
   document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) pan = null; });
-  cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(0.25, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
+  cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(ZMIN, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
 function zoomTag(){ const t = $('zoomTag'); if (!t) return;
   if (!S.running){ t.classList.add('hidden'); return; }   // 시작 화면에 배율 안내가 남지 않게
@@ -4359,6 +4365,7 @@ function hudFree(){
   const up = isClimb(), goalM = freeGoalM(), left = Math.max(0, goalM - S.sessionM), sp = effSpeed();
   $('namePill').textContent = T.freeName.replace('{g}', freeGoalText(S.freeGoal, up));
   $('sNextLabel').textContent = S.freeGoal ? T.freeLeft : T.today;
+  $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
   $('sNextDist').textContent = S.freeGoal ? (up ? Math.ceil(left / FLOOR_M) + T.floorUnit : fmtM(left)) : fmtM(S.sessionM);
   $('sNextName').textContent = S.freeGoal && left > 0 ? T.approx + ' ' + Math.max(1, Math.round(up ? left / climbMpm() : left / Math.max(0.3, sp / 3.6) / 60)) + T.min : (S.freeHit ? '🎉' : '');
   $('sTodayLabel').textContent = up ? T.todayUp : T.today;
