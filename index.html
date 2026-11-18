@@ -905,7 +905,7 @@
 </div>
 
 <script>
-const BUILD = '202611181840';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181850';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3919,10 +3919,10 @@ $('galNext').onclick = e => { e.stopPropagation(); galI = (galI + 1) % galList.l
 $('gallery').onclick = () => $('gallery').classList.add('hidden');
 $('ipView').onclick = e => { e.stopPropagation(); if (ipViewLm) openGallery(ipViewLm); };
 $('ipPhoto').addEventListener('click', e => { if (ipViewLm && typeof ipViewLm.photo === 'string'){ e.stopPropagation(); openGallery(ipViewLm); } });
-function satBtn(){ $('bSat').textContent = mapSty() === 'map' ? T.mapOn : T.satOn; }
+function satBtn(){ v3dBtn(); }   // 11/18: 지도 버튼 하나로 (v3dBtn)
 $('bSat').onclick = e => { e.stopPropagation(); DB.sat = true; DB.mapSty = mapSty() === 'sat' ? 'map' : 'sat'; saveDB(); satBtn(); };   // 🛰 위성 ↔ 🗺 지도 두 가지만
 function showViewMode(on){
-  $('bSat').classList.toggle('hidden', !(on && !isClimb() && (S.gps || SAT_OK))); satBtn();
+  $('bSat').classList.add('hidden');
   $('map').classList.toggle('hidden', !on);
   $('infoPanel').classList.toggle('hidden', !(on && NAV.full));
   $('infoPanel').classList.toggle('mini', !!DB.ipMini); $('ipFold').textContent = DB.ipMini ? T.ipOpen : T.ipClose;
@@ -5288,14 +5288,26 @@ function v3dClimb(st){
   v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 70);
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
-function v3dBtn(){   // 3D ↔ 평면 버튼 (3D가 되는 코스에서만 보임). 3D일 때는 위성↔지도 버튼을 숨김(3D는 위성 사진만)
-  const hot = V3D.hot; V3D.hot = false; const can0 = v3dAble(); V3D.hot = hot;   // 과열로 평면이 됐어도 버튼은 남겨 다시 켤 수 있게
-  const b = $('b3d'), can = can0 && !NAV.full; b.classList.toggle('hidden', !can); b.textContent = DB.v3d !== false && !hot ? T.v3dOn : T.v3dOff;
-  if (can && DB.v3d !== false){ v3dLoad(); if (V3D.ready) $('bSat').classList.add('hidden'); }
+/* 11/18 18:32 보스 "지도 탭이 헷갈림 → 한 버튼, 누를 때마다 바뀜": 예전 🏔3D↔▦평면 + 🛰위성↔🗺지도 두 버튼 → 한 버튼 순환
+   길(방구석) = 🏔 3D → 🛰 위성 → 🗺 지도 / 산 = 🏔 3D → ▦ 평면 / 바깥 = 🛰 위성 → 🗺 지도. 버튼 글자 = 지금 보이는 지도 + ↻ */
+const MAPL = { '3d': '🏔 3D', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
+function mapModes(){
+  const hot = V3D.hot; V3D.hot = false; const c3 = v3dAble() && !NAV.full; V3D.hot = hot;   // 과열로 평면이 됐어도 3D를 다시 고를 수 있게
+  const m = c3 ? ['3d'] : [];
+  if (!isClimb() && (S.gps || SAT_OK) && !NAV.full) m.push('sat', 'map'); else if (c3) m.push('flat');
+  return m;
+}
+const mapCur = m => m.includes('3d') && DB.v3d !== false && !V3D.hot ? '3d' : m.includes('sat') ? mapSty() : 'flat';
+function v3dBtn(){
+  const m = mapModes(), b = $('b3d'); $('bSat').classList.add('hidden');
+  b.classList.toggle('hidden', m.length < 2); if (m.length < 2) return;
+  const c = mapCur(m); b.textContent = MAPL[c] + ' ↻'; if (c === '3d') v3dLoad();
 }
 function voiceBtn(on){ const b = $('bVoice'); b.classList.toggle('hidden', !on); b.textContent = DB.voice === false ? '🔇' : '🔊'; }
 $('bVoice').onclick = () => { DB.voice = DB.voice === false; saveDB(); voiceBtn(true); if (DB.voice !== false) say('음성 안내를 켭니다.'); else { try { if (ttsNative()) CAP.Plugins.Tts.stop(); else window.speechSynthesis && speechSynthesis.cancel(); } catch(e){} } toastMsg(DB.voice === false ? '🔇 음성 안내 끔' : '🔊 음성 안내 켬'); };
-$('b3d').onclick = () => { if (V3D.hot){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; } else DB.v3d = DB.v3d === false; saveDB(); showViewMode(true); };
+$('b3d').onclick = e => { e.stopPropagation(); const m = mapModes(); if (m.length < 2) return; const n = m[(m.indexOf(mapCur(m)) + 1) % m.length];
+  if (n === '3d'){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; } else { DB.v3d = false; if (n !== 'flat'){ DB.sat = true; DB.mapSty = n; } }
+  saveDB(); showViewMode(true); toastMsg(MAPL[n] + ' 지도'); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));
 /* ---- 11/16 빌딩 창밖 = 실제 항공사진 (높이 오를수록 더 멀리·더 넓게) ----
