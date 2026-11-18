@@ -682,7 +682,6 @@
     </div>
     <div class="gpsNote hidden" id="gpsNote"></div>
   </div>
-  <button id="bPre" class="toggle hidden" style="margin-top:10px"></button>   <!-- 11/17 와이파이에서 미리 받기 -->
   <button class="big" id="bStart" data-t="start">출발</button>
 
 </div>
@@ -846,7 +845,7 @@
 </div>
 
 <script>
-const BUILD = '202611181026';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181150';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2830,6 +2829,8 @@ function meterBoxFill(){
     const bs = rs.filter(r => r.meter.batt != null && !r.meter.chg), bt = bs.reduce((a, r) => a + r.meter.min, 0), bb = bs.reduce((a, r) => a + r.meter.batt, 0);
     return '<b>' + (v === '3d' ? '3D' : '평면') + '</b> (' + rs.length + '회) · 30분당 데이터 ' + (rs.some(r => r.meter.est) ? '약 ' : '') + (Math.round(dm / tm * 30 * 10) / 10) + 'MB · 시간당 배터리 ' + (bt >= 3 ? (Math.round(bb / bt * 60 * 10) / 10) + '%' : '측정 안 됨');
   });
+  const pn = Object.keys(DB.pre || {}).length;
+  rows.push('📥 와이파이 자동 받기 · 코스 자료 ' + (DB.preAll ? DB.preAll.n + '개 받음' : '아직') + ' · 3D 높이 자료 ' + pn + '곳');
   box.innerHTML = '🔧 측정 (최근 10회 평균, 이 폰에만 저장)<br>' + rows.join('<br>');
 }
 (() => { let n = 0, t = 0; const h = document.querySelector('#recScreen h1'); if (!h) return;
@@ -2856,29 +2857,55 @@ function preUrls(){
       for (let dx = -pad; dx <= pad; dx++) for (let dy = -pad; dy <= pad; dy++) set.add('https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + z + '/' + (x + dx) + '/' + (y + dy) + '.png'); }); });
   return [...set];
 }
-function preBtn(){
-  const b = $('bPre'); if (PRE.busy) return;
-  const ok = 'caches' in window && navigator.serviceWorker && DB.v3d !== false && !DB.pre?.[preKey()] && METER.netNow !== 'cell' && !$('startScreen').classList.contains('hidden');
-  const u = ok ? preUrls() : null;
-  b.classList.toggle('hidden', !u); if (!u) return;
-  PRE.urls = u; b.textContent = '📥 와이파이에서 3D 지도 자료 미리 받기 · 약 ' + Math.max(1, Math.round((u.length * 70 + 950) / 1024)) + 'MB';
+/* 11/18 보스 지시 "와이파이 되는 곳은 자동으로" — 버튼 없이 조용히 받음 (데이터 요금 + 끊기는 곳 둘 다 대비)
+   ① 코스 자료 통째: 모든 코스의 선·높이 자료(data/ 약 2.7MB) + 3D 부품(lib/ 약 1MB) — 한 번 받으면 끝, 코스가 늘면 새것만
+   ② 고른 코스의 3D 높이 자료: 같은 코스를 4초 넘게 골라 두면 받음 (훑어보기만 한 코스는 안 받음)
+   · 와이파이일 때만. 모를 때(아이폰·일부 PC 브라우저)는 ①만, ②는 PC에서만. 받다가 모바일 데이터로 바뀌면 멈춤 */
+const isMob = /Android|iPhone|iPad/.test(navigator.userAgent);
+const preNetOk = big => METER.netNow === 'wifi' || (METER.netNow === '' && (!big || !isMob));
+function preAllList(){
+  const set = new Set(['lib/maplibre-gl.js', 'lib/maplibre-gl.css']), seen = new Set();
+  (function walk(o){ if (!o || typeof o !== 'object' || seen.has(o)) return; seen.add(o);
+    if (typeof o.geo === 'string' && /^data\//.test(o.geo)) set.add(o.geo);
+    if (typeof o.official === 'string' && /^data\//.test(o.official)) set.add(o.official + '?v=' + BUILD);   // 앱이 받는 주소 그대로
+    for (const k in o) if (o[k] && typeof o[k] === 'object') walk(o[k]); })(WORLD);
+  return [...set];
 }
-$('bPre').onclick = async () => {
-  if (PRE.busy || !PRE.urls) return; const sn = await meterSnap(); METER.netNow = sn.net;
-  if (sn.net === 'cell'){ toastMsg('📶 모바일 데이터 중이에요 — 와이파이에서 받아 주세요'); preBtn(); return; }
-  PRE.busy = true; const b = $('bPre'), u = PRE.urls.slice(), key = preKey(); let done = 0, got = 0;
-  try { const own = await caches.open('bgr-own-v1'); for (const f of ['lib/maplibre-gl.js', 'lib/maplibre-gl.css']) if (!(await own.match(f))){ const r = await fetch(f); if (r.ok) await own.put(f, r); } } catch(e){}
-  const c = await caches.open('bgr-tiles-v1');
-  const work = async () => { while (u.length){ const x = u.shift();
-    try { if (!(await c.match(x))){ const r = await fetch(x, { mode: 'cors' }); if (r.ok){ await c.put(x, r); got++; } } else got++; } catch(e){}
-    done++; b.textContent = '📥 받는 중 ' + Math.round(done / PRE.urls.length * 100) + '%'; } };
+async function preRun(list, cname, opt){
+  const c = await caches.open(cname); let got = 0, done = 0; const u = list.slice();
+  const work = async () => { while (u.length){ if (METER.netNow === 'cell'){ u.length = 0; break; } const x = u.shift();
+    try { if (await c.match(x, opt)) got++; else { const r = await fetch(x, cname === 'bgr-tiles-v1' ? { mode: 'cors' } : undefined); if (r.ok){ await c.put(x, r); got++; } } } catch(e){}
+    done++; } };
   await Promise.all([work(), work(), work(), work()]);
-  PRE.busy = false; DB.pre = DB.pre || {}; if (got >= done * 0.8){ DB.pre[key] = Date.now(); saveDB(); toastMsg('✅ 미리 받아 뒀어요 — 이 코스는 3D 데이터를 덜 써요'); }
-  else toastMsg('일부만 받았어요 — 다음에 다시 눌러 주세요');
-  preBtn();
-};
-setTimeout(() => { saverBtn(); meterSnap().then(sn => { METER.netNow = sn.net; preBtn(); }); }, 1200);
-setInterval(() => { if (!S.running) preBtn(); }, 2500);
+  return { got, done, all: list.length };
+}
+async function preAll(){
+  if (!('caches' in window) || !navigator.serviceWorker || !preNetOk(false)) return false;
+  const list = preAllList(), sig = list.length + ':' + list.map(x => x.split('?')[0]).join('|').length;
+  if (DB.preAll && DB.preAll.sig === sig) return false;
+  if (Date.now() - (PRE.allTry || 0) < 6e5) return false; PRE.allTry = Date.now();   // 덜 받았으면 10분 뒤 다시 (계속 두드리지 않게)
+  const r = await preRun(list, 'bgr-own-v1', { ignoreSearch: true });
+  if (r.got === r.all){ DB.preAll = { sig, n: r.all, t: Date.now() }; saveDB(); meterBoxFill(); }
+  return true;
+}
+function preTick(){
+  if (PRE.busy || S.running || !('caches' in window) || !navigator.serviceWorker) return;
+  PRE.busy = true;
+  (async () => {
+    if (await preAll()) return;
+    if (DB.v3d === false || $('startScreen').classList.contains('hidden') || !preNetOk(true)) { PRE.k = ''; return; }
+    const key = preKey(); if (DB.pre?.[key]) return;
+    if (PRE.k !== key){ PRE.k = key; PRE.t = Date.now(); return; }
+    if (Date.now() - PRE.t < 4000) return;
+    const u = preUrls(); if (!u) return;
+    const r = await preRun(u, 'bgr-tiles-v1');
+    if (r.got >= r.all * 0.8){ DB.pre = DB.pre || {}; DB.pre[key] = Date.now(); saveDB(); meterBoxFill(); }
+  })().catch(() => {}).finally(() => { PRE.busy = false; });
+}
+function preNet(){ return meterSnap().then(sn => { METER.netNow = sn.net; }).catch(() => {}); }
+try { navigator.connection && navigator.connection.addEventListener('change', () => preNet()); } catch(e){}
+setTimeout(() => { saverBtn(); preNet().then(preTick); }, 1200);
+setInterval(() => { if (!S.running) preNet().then(preTick); }, 5000);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 function tel(ev, o){

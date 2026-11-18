@@ -4,6 +4,7 @@
    · 오픈스트리트맵 지도는 정책상 "다시 볼 때 저장"만 허용 → 30일까지 저장, 미리 받기는 안 함
    · 브이월드·Esri 위성 사진은 저장 허락이 확인되지 않아 저장하지 않음 (평소처럼 받음)
    · 최대 약 200MB(3,000장 남짓) — 넘으면 오래된 것부터 지움
+   · 11/18: 와이파이에서 코스 자료(data/·lib/)를 통째로 미리 받음 — 인터넷이 끊겨도 코스 선·높이 그래프
    · index.html 같은 화면 파일은 건드리지 않음 (새 버전 확인이 그대로 되게) */
 const TILES = 'bgr-tiles-v1', OWN = 'bgr-own-v1', MAX = 3000;
 const KEEP = [/^https:\/\/s3\.amazonaws\.com\/elevation-tiles-prod\//, /^https:\/\/tiles\.openfreemap\.org\//];
@@ -35,7 +36,11 @@ async function trim(c){
 }
 async function own(q, e){   // 저장본을 바로 주고, 뒤에서 새것으로 바꿔 둠 (파일이 바뀌어도 다음 번엔 새것)
   const c = await caches.open(OWN), hit = await c.match(q);
-  const net = fetch(q).then(r => { if (r.ok) c.put(q, r.clone()); return r; }).catch(() => hit || Response.error());
+  const net = fetch(q).then(r => { if (r.ok){ c.put(q, r.clone()); dedupe(c, q.url); } return r; })
+    .catch(async () => hit || await c.match(q, { ignoreSearch: true }) || Response.error());   // 11/18 인터넷이 끊기면 ?v= 숫자가 달라도 저장본으로
   if (hit){ e.waitUntil(net); return hit; }
   return net;
+}
+async function dedupe(c, url){   // 같은 파일의 옛 ?v= 저장본은 지움 (판이 바뀔 때마다 쌓이지 않게)
+  try { const p = url.split('?')[0]; for (const k of await c.keys()) if (k.url !== url && k.url.split('?')[0] === p) await c.delete(k); } catch(e){}
 }
