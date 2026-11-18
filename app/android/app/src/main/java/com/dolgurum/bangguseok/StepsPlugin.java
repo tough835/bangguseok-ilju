@@ -1,6 +1,11 @@
 package com.dolgurum.bangguseok;
 
 import android.Manifest;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Build;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
@@ -38,6 +43,36 @@ public class StepsPlugin extends Plugin {
         if (needsPerm()) { JSObject r = new JSObject(); r.put("available", false); r.put("reason", "permission"); call.resolve(r); return; }
         schedule(); today(call);
     }
+
+    /* 11/18: 운동 중 실시간 걸음 (삼성헬스처럼 폰을 몸에 지니고 러닝머신·계단) — 걸음마다 'step' 알림
+       걸음 감지기(STEP_DETECTOR)가 있으면 한 걸음씩 바로, 없으면 걸음 칩(STEP_COUNTER) 값의 차이로 */
+    private SensorManager liveSm; private SensorEventListener liveL; private long liveBase = -1;
+    @PluginMethod
+    public void liveStart(PluginCall call) {
+        if (needsPerm()) { JSObject r = new JSObject(); r.put("ok", false); r.put("reason", "permission"); call.resolve(r); return; }
+        liveStopInner();
+        liveSm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        Sensor det = liveSm == null ? null : liveSm.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+        Sensor cnt = liveSm == null ? null : liveSm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        final boolean useDet = det != null;
+        liveBase = -1;
+        liveL = new SensorEventListener() {
+            @Override public void onSensorChanged(SensorEvent e) {
+                int n;
+                if (useDet) n = Math.max(1, Math.round(e.values.length > 0 ? e.values[0] : 1));
+                else { long v = (long) e.values[0]; if (liveBase < 0) { liveBase = v; return; } n = (int) (v - liveBase); liveBase = v; if (n <= 0) return; }
+                JSObject d = new JSObject(); d.put("n", n); notifyListeners("step", d);
+            }
+            @Override public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
+        boolean ok = (useDet ? det : cnt) != null && liveSm.registerListener(liveL, useDet ? det : cnt, SensorManager.SENSOR_DELAY_FASTEST, 0);
+        JSObject r = new JSObject(); r.put("ok", ok); r.put("type", useDet ? "detector" : "counter"); call.resolve(r);
+    }
+    private void liveStopInner() { try { if (liveSm != null && liveL != null) liveSm.unregisterListener(liveL); } catch (Exception ignored) {} liveL = null; }
+    @PluginMethod
+    public void liveStop(PluginCall call) { liveStopInner(); call.resolve(); }
+    @Override
+    protected void handleOnDestroy() { liveStopInner(); }
 
     @PluginMethod
     public void today(PluginCall call) {

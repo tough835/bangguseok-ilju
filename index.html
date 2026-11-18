@@ -887,7 +887,7 @@
 </div>
 
 <script>
-const BUILD = '202611181320';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181325';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1325,7 +1325,7 @@ const TEXT = {
     goalReach: '🎯 목표 달성!', soClose: '{s}까지 {d} 남았어요', reachBy: '→ {s} 도착',
     arrive: '도착', passedBy: '지나온 곳', trail: '지나온 길', trailPre: '이 코스 거점 (앞으로 지날 곳)', trailNone: '아직 이 코스에서 지나온 곳이 없어요. 흐린 칸은 앞으로 지날 거점이에요.',
     stampSum: '거점 {a}/{b} · 지나온 명소 {c}/{d}', visits: '도착 {n}회 · 처음 {d}', notYet: '아직 도착 전', aheadOf: '여기서 {d}', atKm: '{k}km 지점',
-    autoBtn: '📱 폰 센서로 자동 (폰을 쥐고 운동)', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
+    autoBtn: '📱 폰 걸음으로 자동 (폰을 몸에 지니고)', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
     stepsN: '걸음 {n}', calibrated: '보폭을 맞췄습니다 (다음부터 더 정확)', spmUnit2: '칸/분',
     syncBtn: '📏 거리 맞추기', syncTitle: '자전거에 보이는 거리 (km)', close: '닫기',
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
@@ -3058,7 +3058,7 @@ $('bFix').onclick = () => {   // 기계에 찍힌 숫자로 맞추기
   let cal = false;
   if (usedSensor && oldM > 50 && S.sessionM > 0){   // 센서로 잰 거리 vs 기계 숫자 → 보폭 자동 보정 (반만 반영해서 천천히 맞춤)
     const r = Math.max(0.5, Math.min(2, S.sessionM / oldM)), k = 1 + (r - 1) * 0.5;
-    if (isClimb()) DB.stride.stair *= k; else { DB.stride.walk *= k; DB.stride.run *= k; }
+    if (isClimb()) DB.stride.stair *= k; else { DB.stride.walk *= k; DB.stride.run *= k; DB.strideCal = true; }   // 맞춘 뒤로는 키 추정을 덮어쓰지 않음
     saveDB(); cal = true; SENS.sessDist = 0;
   }
   autosave(true); fillEnd(); $('fixMsg').textContent = '✅ ' + (cal ? T.calibrated : T.fixOk);
@@ -3426,8 +3426,12 @@ function checkGoal(){
    · 센서가 막혀 있으면(예: Claude 앱 안) 3초 뒤 수동으로 바뀜
    ===================================================================== */
 if (!DB.stride) DB.stride = { walk: 0.72, run: 1.0, stair: 1.0 };
-DB.autoSensor = false;   // 폰 센서 자동은 아직 안 됨 → 버튼 숨김 (외부 주소 단계에서 다시)
-const SENS = { on: false, ok: false, times: [], lastPeak: 0, avg: 9.8, f: 0, rising: false, sessSteps: 0, sessDist: 0 };
+/* 11/18 보스 "방구석 일반, 폰을 몸에 지니고 뛸 때 거리·속도·칼로리가 나오게 (삼성헬스처럼)" → 다시 켬
+   · 앱(APK v0.1.13~) = 폰 걸음 감지기(삼성헬스와 같은 칩) · 웹·옛 앱 = 흔들림 센서
+   · 보폭: 처음엔 키로 추정(몸 정보), 끝나고 기계 숫자로 맞추면 스스로 고침 */
+const SENS = { on: false, ok: false, times: [], lastPeak: 0, avg: 9.8, f: 0, rising: false, sessSteps: 0, sessDist: 0, nat: null, natL: null };
+const stepsNative = () => { const P = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.Steps; return P && typeof P.liveStart === 'function' ? P : null; };
+function strideFromBody(){ const cm = DB.body && DB.body.cm; if (!DB.strideCal && cm > 120 && cm < 220){ DB.stride.walk = Math.round(cm * 0.415) / 100; DB.stride.run = Math.round(cm * 0.65) / 100; } }   // 키 × 0.415 (걷기) / 0.65 (뛰기)
 const autoCapable = () => S.act === 'tread' || S.act === 'stair';
 const autoActive = () => SENS.on && SENS.ok;
 window.addEventListener('error', e => errNote(e.message || 'error'));
@@ -3452,7 +3456,19 @@ function errNote(m){
 function toastMsg(m){ const t = $('toast'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.add('hidden'), 2600); }
 async function sensorStart(){
   Object.assign(SENS, { on: false, ok: false, times: [], sessSteps: 0, sessDist: 0, rising: false, f: 0 });
-  if (!DB.autoSensor || !autoCapable() || typeof DeviceMotionEvent === 'undefined'){ updateAutoUI(); return; }
+  if (!DB.autoSensor || !autoCapable() || S.gps){ updateAutoUI(); return; }
+  strideFromBody();
+  const P = stepsNative();
+  if (P){   // 앱: 폰 걸음 감지기 (주머니·팔에 차도 됨, 화면이 꺼져도)
+    try {
+      SENS.natL = await P.addListener('step', d => { if (!SENS.ok){ SENS.ok = true; updateAutoUI(); refreshSpeedBox(false); } const n = Math.min(6, (d && d.n) || 1), t = performance.now(); for (let i = 0; i < n; i++) onStep(t - (n - 1 - i) * 300); });
+      const r = await P.liveStart();
+      if (r && r.ok){ SENS.on = true; SENS.nat = P; updateAutoUI(); toastMsg('📱 폰 걸음으로 거리를 잽니다 — 폰을 몸에 지니고 운동하세요'); return; }
+      try { SENS.natL && SENS.natL.remove(); } catch(e){}
+      if (r && r.reason === 'permission') toastMsg('신체 활동 권한이 필요해요 — 설정 → 앱 → 방구석러너 → 권한');
+    } catch(e){}
+  }
+  if (typeof DeviceMotionEvent === 'undefined'){ toastMsg(T.sensorNo); updateAutoUI(); return; }
   try {
     if (typeof DeviceMotionEvent.requestPermission === 'function'){   // 아이폰: 허용 필요
       const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted'){ toastMsg(T.sensorNo); updateAutoUI(); return; }
@@ -3462,7 +3478,7 @@ async function sensorStart(){
   setTimeout(() => { if (S.running && SENS.on && !SENS.ok){ sensorStop(); toastMsg(T.sensorNo); updateAutoUI(); refreshSpeedBox(false); } }, 3000);
   updateAutoUI();
 }
-function sensorStop(){ window.removeEventListener('devicemotion', onMotion); SENS.on = false; updateAutoUI(); }
+function sensorStop(){ window.removeEventListener('devicemotion', onMotion); try { if (SENS.nat){ SENS.nat.liveStop(); SENS.natL && SENS.natL.remove(); } } catch(e){} SENS.nat = null; SENS.natL = null; SENS.on = false; updateAutoUI(); }
 function onMotion(e){
   const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
   if (!SENS.ok){ SENS.ok = true; updateAutoUI(); refreshSpeedBox(false); }
@@ -3474,7 +3490,7 @@ function onMotion(e){
 }
 function cadence(){   // 분당 걸음 (최근 6초)
   const n = SENS.times.length, now = performance.now();
-  if (n < 3 || now - SENS.times[n-1] > 2500) return 0;
+  if (n < 3 || now - SENS.times[n-1] > 3500) return 0;
   return (n - 1) / ((SENS.times[n-1] - SENS.times[0]) / 60000);
 }
 function onStep(t){
@@ -3490,12 +3506,12 @@ function autoSpeedTick(){
   else { S.speed = Math.round(c * (c >= 140 ? DB.stride.run : DB.stride.walk) * 60 / 100) / 10; $('spdVal').textContent = S.speed.toFixed(1); $('spdUnit').innerHTML = 'km/h <em>' + T.autoTag + '</em>'; }
 }
 function updateAutoUI(){
-  $('bAuto').classList.add('hidden');
+  $('bAuto').classList.toggle('hidden', !autoCapable() || S.gps || DB.zone === 'out');
   $('bAuto').classList.toggle('on', !!DB.autoSensor);
   $('bAuto').innerHTML = '<span>' + T.autoBtn + '</span><i>' + (DB.autoSensor ? T.autoOn : T.autoOff) + '</i>';
   ['bDown', 'bUp'].forEach(id => $(id).classList.toggle('dim', autoActive()));
 }
-$('bAuto').onclick = () => { DB.autoSensor = !DB.autoSensor; saveDB(); updateAutoUI(); };
+$('bAuto').onclick = () => { DB.autoSensor = !DB.autoSensor; saveDB(); updateAutoUI(); if (S.running){ if (DB.autoSensor) sensorStart(); else { sensorStop(); refreshSpeedBox(false); } } };
 
 
 /* =====================================================================
