@@ -1,0 +1,34 @@
+"""실제 지도 조각으로 방구석 테마 운동 화면을 찍음 (GitHub Actions 'shot.yml'에서만). 위성 3D · 그림 3D 두 장씩"""
+import sys, os, time
+from playwright.sync_api import sync_playwright
+
+city, course = (sys.argv[1] if len(sys.argv) > 1 else "busan:haeundae-5k").split(":")
+URL = "https://tough835.github.io/bangguseok-runner/index.html?notel"
+os.makedirs("shots", exist_ok=True)
+
+with sync_playwright() as p:
+    b = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
+    ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    logs = []
+    page.on("console", lambda m: logs.append(m.type + ": " + m.text[:200]))
+    page.goto(URL); page.wait_for_timeout(4000)
+    page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}"); page.wait_for_timeout(4000)
+    page.evaluate("()=>{const z=document.querySelector('[data-zone=in]'); if(z&&z.offsetParent) z.click()}"); page.wait_for_timeout(800)
+    page.evaluate("()=>{const r=document.getElementById('resumeBox'); if(r&&!r.classList.contains('hidden')) document.getElementById('rsCancel').click(); setAct('tread')}")
+    page.evaluate("()=>document.getElementById('bStart').click()"); page.wait_for_timeout(1500)
+    page.evaluate("()=>{const r=document.getElementById('rsRestart'); if(r&&r.offsetParent) r.click()}")
+    page.wait_for_timeout(3000)
+    for at in (300, 1500):
+        page.evaluate(f"()=>advance({at} - (totalNow() % L))"); page.wait_for_timeout(500)
+        for sty in ("3d", "toon"):
+            page.evaluate(f"()=>{{DB.v3d=true; DB.v3dSty='{'toon' if sty == 'toon' else 'sat'}'; saveDB(); v3dBtn(); if(V3D.ready) v3dStyle('{sty}')}}")
+            t0 = time.time()
+            while time.time() - t0 < 60:
+                if page.evaluate("()=>!!(V3D.map && V3D.ready && V3D.map.areTilesLoaded())"): break
+                page.wait_for_timeout(1000)
+            page.wait_for_timeout(4000)
+            page.screenshot(path=f"shots/{course}_{at}m_{sty}.png")
+            print(at, sty, page.evaluate("()=>[V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn()]"))
+    print("\n".join(l for l in logs if "error" in l.lower())[:3000])
+    b.close()

@@ -1,0 +1,20 @@
+name: 3D shot
+# 실제 지도 조각으로 운동 화면을 찍어 보는 시험 (손으로만 실행). 앱·APK와 무관
+on:
+  workflow_dispatch:
+    inputs:
+      course:
+        description: "city:course"
+        default: "busan:haeundae-5k"
+jobs:
+  shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
+      - run: python tools/shot.py "${{ github.event.inputs.course }}"
+      - uses: actions/upload-artifact@v4
+        with: { name: shots, path: shots/ }
