@@ -16,6 +16,8 @@
   /* ── 운동 중 화면 ── 중요도: 속도 > 남은 거리·오늘 운동량 > 진행 막대 > 이름·고도 > 작은 지도 */
   #map{position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;width:96px;height:96px;
     border-radius:14px;background:rgba(250,248,240,.85);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+  #altChip{position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;padding:5px 10px;border-radius:12px;background:rgba(20,22,25,.72);color:#fff;font-size:15px;font-weight:800;line-height:1.2;text-align:right;pointer-events:none}
+  #altChip small{display:block;font-size:11px;font-weight:700;color:var(--vt)}
   #hudTop{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:116px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
   .pill{background:rgba(0,0,0,.45);padding:6px 11px;border-radius:999px;font-size:14px;line-height:1.2;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pill.alt{font-size:24px;font-weight:900;padding:7px 14px}
@@ -529,6 +531,7 @@
   <button class="pill satb hidden" id="b3d"></button>
   <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>   <!-- 11/17 음성 안내 켜기·끄기 -->
 </div>
+<div id="altChip" class="hidden"></div>   <!-- 11/18 고도: 오른쪽 위 작은 칸 (지금 해발 · 오늘 오른 높이) -->
 
 <div id="hudBottom" class="hidden">
   <div class="stats">
@@ -896,7 +899,7 @@
 </div>
 
 <script>
-const BUILD = '202611181445';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181520';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2303,7 +2306,8 @@ function hudWalk(pos){
   if (S.gps && S.speed > 0 && Date.now() - (GPS.lastMove || 0) > 8000){ S.speed = 0; GPS.spd = 0; refreshSpeedBox(false); }   // 멈춰 서 있으면 0
   if (autoActive()) autoSpeedTick();
   const sp = effSpeed(), nh = nextSpotFrom(totalNow()), gl = Math.max(0, S.goalAt - totalNow());
-  $('namePill').textContent = tr(COURSE.short || COURSE.name) + ' · ' + gradeText(pos) + ' · ' + T.alti + ' ' + Math.round(elevAt(pos)) + 'm';
+  $('namePill').textContent = tr(COURSE.short || COURSE.name) + ' · ' + gradeText(pos);   // 해발은 오른쪽 위 고도 칸(11/18)
+  if (!S.gps) altSet(elevAt(pos));
   const other = !S.goalFin && (S.goalDist || tr(nh.lm.name) !== S.goalName);   // 완주 지점이 목표면 다음 바퀴 거점은 안 보여 줌     // 목표가 '다음 거점'이 아닐 때는 다음 거점도 작게 보여 줌
   $('sNextLabel').textContent = S.goalDist ? T.toGoal + ' ' + S.goalName : (S.goalFin ? '🏁 ' : '🚩 ') + S.goalName;
   $('sNextDist').textContent = fmtM(gl);
@@ -2314,6 +2318,7 @@ function hudWalk(pos){
   $('sTime').textContent = fmtTime(S.elapsed) + ' · ' + (autoActive() ? T.stepsN.replace('{n}', SENS.sessSteps) : S.act === 'bike' ? T.aBike : (sp >= WALK_RUN_LIMIT ? T.run : T.walk));
   $('progBar').style.width = (pos / L * 100).toFixed(1) + '%';   // 코스 전체 진행
   const wn = walkNote(pos); $('notePill').textContent = wn[0]; $('notePill').classList.toggle('hidden', wn[1]);
+  altChip();
 }
 function hudClimb(st){
   if (autoActive()) autoSpeedTick();
@@ -2328,6 +2333,7 @@ function hudClimb(st){
   $('sTime').textContent = fmtTime(S.elapsed) + ' · ' + (autoActive() ? T.stepsN.replace('{n}', SENS.sessSteps) : (tower ? T.machineLv : T.machineFloors).replace('{n}', Math.floor(S.sessionM / FLOOR_M)));
   $('progBar').style.width = (st.ratio * 100).toFixed(1) + '%';
   const cn = climbNote(st); $('notePill').textContent = cn[0]; $('notePill').classList.toggle('hidden', cn[1]);
+  if (!tower) ALT.st = st; altChip();
 }
 function refreshSpeedBox(flash){
   const v = isClimb() ? String(S.level) : S.speed.toFixed(1), u = isClimb() ? T.levelUnit : 'km/h';
@@ -2818,7 +2824,8 @@ $('addClose').onclick = () => $('addBox').classList.add('hidden');
 function showRun(on){
   document.body.classList.toggle('running', !!on);
   ['map','hudTop','hudBottom'].forEach(id => $(id).classList.toggle('hidden', !on));
-  $('altiPill').classList.toggle('hidden', !(on && isClimb() && !S.free));
+  $('altiPill').classList.toggle('hidden', !(on && isClimb() && !S.free && TGT(DB.climb.sel).kind === 'tower'));   // 산의 해발은 고도 칸으로 (11/18)
+  if (!on) $('altChip').classList.add('hidden');
   showViewMode(on); voiceBtn(on);
   if (on && S.free){ $('map').classList.add('hidden'); $('infoPanel').classList.add('hidden'); $('hudTop').classList.remove('hidden'); $('notePill').classList.add('hidden'); }
   if (!on) $('syncBox').classList.add('hidden');
@@ -2840,6 +2847,7 @@ $('bStart').onclick = () => {
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
   $('bPause').textContent = '⏸ ' + T.paused; $('pauseBadge').classList.add('hidden');
+  altStart();
   if (S.gps){ S.speed = 0; try { gpsStart(); } catch(e){ errNote(e.message); } } else sensorStart();   // GPS가 실패해도 운동 화면은 열림
   ['bDown', 'bUp'].forEach(id => $(id).style.visibility = S.gps ? 'hidden' : '');
   $('gpsPill').classList.toggle('hidden', !S.gps); if (S.gps) $('gpsPill').textContent = T.gpsWait;
@@ -2849,6 +2857,7 @@ $('bStart').onclick = () => {
 function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted">(' + T['kcalLv' + bodyFix()[2]] + ')</span>' : ''; }
 function fillEnd(){
   if (S.hikeGps) return fillHike();
+  setTimeout(endAlt, 0);
   $('fixLabel').classList.remove('hidden'); $('fixIn').parentElement.classList.remove('hidden');
   $('myBox').querySelector('.muted').textContent = T.myBoxSub; $('myYes').textContent = '⭐ 내 코스로 저장';
   const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600); setTimeout(() => { const el = $('endSummary'); if (el && el.innerHTML.indexOf('🔥') < 0) el.innerHTML += endKcal(); }, 0);
@@ -3061,7 +3070,7 @@ function doEnd(){
   meterEnd();
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
   S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
-  zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
+  zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); altStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
   showRun(false); clearPopups(); $('fixMsg').textContent = ''; $('fixIn').value = '';
   fillEnd(); $('endScreen').classList.remove('hidden');
@@ -4344,6 +4353,7 @@ function freeAdvance(dm){
   if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
 }
 function hudFree(){
+  altChip();
   if (S.gps && S.speed > 0 && Date.now() - (GPS.lastMove || 0) > 8000){ S.speed = 0; GPS.spd = 0; refreshSpeedBox(false); }
   if (autoActive()) autoSpeedTick();
   const up = isClimb(), goalM = freeGoalM(), left = Math.max(0, goalM - S.sessionM), sp = effSpeed();
@@ -4634,6 +4644,7 @@ function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·�
   if (v > (S.act === 'bike' ? 25 : 12)){ GPS.last = now; return; }   // 튀는 값
   if (d < Math.max(4, acc * 0.4)) return;                              // 제자리 흔들림
   GPS.last = now; if (!S.paused) trackPush(lat, lon);
+  altGps(lat, lon);
   GPS.lastMove = Date.now();
   if (!S.paused){
     advance(d); GPS.spd = GPS.spd ? GPS.spd * 0.6 + v * 3.6 * 0.4 : v * 3.6; S.speed = Math.round(GPS.spd * 10) / 10; refreshSpeedBox(false);
@@ -4828,6 +4839,67 @@ const MINE_MIN_M = 1000;   // 11/18 보스: 300m → 1km (단지 한 바퀴로 �
    · 내 산 코스 기준 = 출발 → 가장 높은 곳까지 오른 높이 100m 이상 (거리는 산마다 달라 기준으로 안 씀. 100m ≈ 30층·동네 뒷산)
    · 저장 = 출발 → 가장 높은 곳까지만 (내려온 길은 뺌 — 앱의 산 코스는 정상까지 오르는 모양) */
 const MINE_MIN_UP = 100;
+/* ---- 11/18 보스 "운동 중 고도 · 모든 운동 · 오른쪽 위 작게" ----
+   · 바깥(GPS): 앱 v0.1.14~ 기압계(BaroPlugin) = 오르내림을 1~2m까지 · 해발 기준점은 출발지 지형 자료 / 기압계 없는 폰·웹 = 지금 위치의 지형 자료(AWS)
+   · 방구석: 테마 길 = 코스 높이 자료 · 산 = 등산로 높이 · 일반 천국의 계단 = 오른 높이만 · 러닝머신·실내 자전거 일반 = 높이 없음(칸 숨김)
+   · 오른 높이 = 3m 넘게 오를 때만 셈(흔들림 무시) */
+const ALT = { src: null, rel: null, ref: null, gain: 0, topRel: null, ema: null, off: null, dem: null, nat: null, natL: null, demC: new Map(), st: null, end: null };
+const pAlt = h => 44330 * (1 - Math.pow(h / 1013.25, 0.1903));   // 기압(hPa) → 높이(m), 표준 대기
+function demAt(la, lo){   // 지금 위치의 지형 높이 (조각을 처음 보면 받기 시작하고 null)
+  const z = 13, n = 2 ** z, x = (lo + 180) / 360 * n, r = la * Math.PI / 180, y = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n, k = Math.floor(x) + '/' + Math.floor(y);
+  const d = ALT.demC.get(k);
+  if (d === undefined){ ALT.demC.set(k, null); const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.drawImage(im, 0, 0); ALT.demC.set(k, g.getImageData(0, 0, 256, 256).data); } catch(e){ ALT.demC.set(k, false); } };
+    im.onerror = () => { ALT.demC.set(k, false); setTimeout(() => ALT.demC.delete(k), 60000); };
+    im.src = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + z + '/' + k + '.png'; return null; }
+  if (!d) return null;
+  const i = (Math.min(255, Math.floor((y % 1) * 256)) * 256 + Math.min(255, Math.floor((x % 1) * 256))) * 4;
+  return d[i] * 256 + d[i + 1] + d[i + 2] / 256 - 32768;
+}
+function altSet(rel){   // rel = 기압계면 상대 높이, 나머지는 해발 그대로
+  if (rel == null || isNaN(rel)) return;
+  ALT.rel = rel; if (ALT.ref == null){ ALT.ref = rel; ALT.topRel = rel; }
+  if (rel - ALT.ref >= 3){ ALT.gain += rel - ALT.ref; ALT.ref = rel; } else if (rel < ALT.ref) ALT.ref = rel;
+  if (rel > ALT.topRel) ALT.topRel = rel;
+}
+function altStart(){
+  Object.assign(ALT, { src: S.gps ? 'dem' : 'course', rel: null, ref: null, gain: 0, topRel: null, ema: null, off: null, dem: null, st: null, end: null });
+  const P = S.gps && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Baro;
+  if (!P || typeof P.start !== 'function') return;
+  try {
+    P.addListener('baro', d => { if (!S.running || !d || !(d.hpa > 300)) return; const a = pAlt(d.hpa);
+      ALT.ema = ALT.ema == null ? a : ALT.ema * 0.8 + a * 0.2;
+      if (ALT.off == null && ALT.dem != null) ALT.off = ALT.dem - ALT.ema;   // 해발 기준 = 출발지 지형 높이
+      if (!S.paused) altSet(ALT.ema); }).then(l => { ALT.natL = l; });
+    P.start().then(r => { if (r && r.ok){ ALT.nat = P; ALT.src = 'baro'; } }).catch(() => {});
+  } catch(e){}
+}
+function altStop(){ try { ALT.nat && ALT.nat.stop(); ALT.natL && ALT.natL.remove(); } catch(e){} ALT.nat = null; ALT.natL = null; }
+function altGps(lat, lon){
+  const e = demAt(lat, lon); if (e == null) return;
+  ALT.dem = e;
+  if (ALT.src === 'baro'){ if (ALT.off == null && ALT.ema != null) ALT.off = e - ALT.ema; return; }
+  ALT.ema = ALT.ema == null ? e : ALT.ema * 0.6 + e * 0.4; if (!S.paused) altSet(ALT.ema);
+}
+function altChip(){
+  let top = null, sub = null;
+  if (S.gps){ if (ALT.rel != null){ top = ALT.src === 'baro' ? (ALT.off != null ? ALT.rel + ALT.off : null) : ALT.rel; sub = ALT.gain; } }
+  else if (isClimb()){ const st = ALT.st; if (!S.free && st && st.m.kind !== 'tower'){ top = st.elev; const td = tempDrop(st); sub = S.sessionM; if (td >= 1) sub = Math.round(sub) + 'm · 🌡 −' + td + '℃'; } else if (S.free) sub = S.sessionM; }
+  else if (!S.free && ALT.rel != null){ top = ALT.rel; sub = ALT.gain; }
+  const show = S.running && (top != null || sub != null);
+  $('altChip').classList.toggle('hidden', !show); if (!show) return;
+  const mp = $('map'), mr = !mp.classList.contains('hidden') && mp.getBoundingClientRect(); $('altChip').style.top = mr && mr.height ? Math.round(mr.bottom + 8) + 'px' : '';   // 작은 지도가 있으면 바로 아래
+  $('altChip').innerHTML = (top != null ? '⛰ ' + Math.round(top).toLocaleString() + 'm' : '⛰') + (sub != null ? '<small>↑ ' + (typeof sub === 'number' ? Math.round(sub).toLocaleString() + 'm' : sub) + '</small>' : '');
+}
+function endAlt(){   // 바깥 운동 끝 화면 한 줄: 오른 높이 · 가장 높은 곳 (기압계 > 지형 자료)
+  if (!S.gps || S.hikeGps) return;
+  const put = () => { if (!ALT.end || $('endAltLine')) return; $('endSummary').insertAdjacentHTML('beforeend', '<div id="endAltLine">' + T.hikeUp.replace('{g}', ALT.end.g).replace('{top}', ALT.end.top) + '</div>'); };
+  if (ALT.end) return put();
+  const r = DB.records.find(x => x.id === S.sessionId), save = (g, top) => { ALT.end = { g, top }; if (r){ r.gainM = g; r.topM = top; saveDB(); } put(); };
+  if (ALT.src === 'baro' && ALT.rel != null && ALT.off != null) return save(Math.round(ALT.gain), Math.round(ALT.topRel + ALT.off));
+  const t = GPS.track || []; if (t.length < 2) return;
+  demEle(thinPath(t, 600)).then(e => { const sm = e.map((v, i) => Math.round((e[Math.max(0, i - 1)] + v + e[Math.min(e.length - 1, i + 1)]) / 3)); save(upGain(sm), Math.max(...sm)); }).catch(() => {});
+}
 const hikeGpsOK = () => DB.zone === 'out' && isFree() && S.act === 'hike' && gpsUsable();
 function demEle(pts){   // [[위도, 경도]] → 높이(m) 배열. 3D와 같은 AWS 지형 조각(terrarium), 조각 40장 넘으면 한 단계 거칠게
   const go = z => {
@@ -4854,7 +4926,8 @@ function fillHike(){
   const pts = thinPath(t, 600);
   demEle(pts).then(e => {
     const sm = e.map((v, i) => Math.round((e[Math.max(0, i - 1)] + v + e[Math.min(e.length - 1, i + 1)]) / 3));   // 앞뒤 평균으로 고르게
-    const gain = upGain(sm), top = Math.max(...sm), im = sm.indexOf(top), net = top - sm[0];
+    const im = sm.indexOf(Math.max(...sm)), net = sm[im] - sm[0], baro = ALT.src === 'baro' && ALT.rel != null;
+    const gain = baro ? Math.round(ALT.gain) : upGain(sm), top = baro && ALT.off != null ? Math.round(ALT.topRel + ALT.off) : sm[im];   // 기압계가 있으면 그 숫자(더 정밀), 코스 모양은 지형 자료
     if (r){ r.act = 'hike'; r.upM = gain; r.distM = Math.round(S.sessionM); saveDB(); }
     const kc = kcalOf({ act: 'hike', sec, distM: 0, upM: gain });
     $('endSummary').innerHTML = head + '<br>' + T.hikeUp.replace('{g}', gain).replace('{top}', top) + (kc ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(kc) + '</b>' : '');
