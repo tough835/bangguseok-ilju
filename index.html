@@ -887,7 +887,7 @@
 </div>
 
 <script>
-const BUILD = '202611181325';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181330';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3041,7 +3041,8 @@ window.addEventListener('online', telFlush);
 function doEnd(){
   meterEnd();
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
-  S.running = false; zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
+  S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
+  zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
   showRun(false); clearPopups(); $('fixMsg').textContent = ''; $('fixIn').value = '';
   fillEnd(); $('endScreen').classList.remove('hidden');
