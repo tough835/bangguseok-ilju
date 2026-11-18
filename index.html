@@ -25,9 +25,9 @@
     background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.72) 30%)}
   .stats{display:flex;gap:8px}
   .stat{flex:1;background:rgba(0,0,0,.4);border-radius:16px;padding:8px 12px 9px;min-width:0;position:relative}
-  #sCourseLeft{position:absolute;top:8px;right:12px;font-size:13px;font-style:normal;font-weight:800;color:var(--vt)}   /* 11/18 보스: 코스 전체 남은 거리도 줄어들게 */
+  #sCourseLeft{position:absolute;bottom:10px;right:12px;font-size:14px;font-style:normal;font-weight:800;color:var(--vt)}   /* 11/18 보스: 코스 전체 남은 거리도 줄어들게 */
   #sCourseLeft:not(.hidden) ~ b{margin-top:0}
-  .stat.hasLeft span{padding-right:70px}
+  .stat.hasLeft small{padding-right:70px}
   .stat span{display:block;font-size:13px;opacity:.75}
   .stat b{display:block;font-size:34px;font-weight:900;line-height:1.15;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stat small{display:block;font-size:15px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -902,7 +902,7 @@
 </div>
 
 <script>
-const BUILD = '202611181820';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181830';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
