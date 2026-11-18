@@ -5469,7 +5469,8 @@ function v3dEye(lat, lon){
 }
 function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
-  V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * (V3D.sty === 'toon' ? 0.05 : 0.08);
+  const dh = ((((hd - (V3D.brg == null ? hd : V3D.brg)) % 360) + 540) % 360 - 180);
+  V3D.brg = V3D.brg == null || Math.abs(dh) > 50 ? hd : V3D.brg + dh * (V3D.sty === 'toon' ? 0.06 : 0.08);   // 크게 꺾이거나 순간 이동하면 바로 맞춤
   if (V3D.sty === 'toon') return v3dEye(lat, lon);   // 11/18 21:46 보스 "사용자 눈높이에서 보는 풍경" → 1인칭
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감

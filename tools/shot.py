@@ -37,6 +37,6 @@ with sync_playwright() as p:
                 page.wait_for_timeout(1000)
             page.wait_for_timeout(4000)
             page.screenshot(path=f"shots/{course}_{at}m_{sty}.png", timeout=180000, animations="disabled")
-            print(at, sty, page.evaluate("()=>(V3D.props||[]).filter(p=>p.vis).map(p=>p.el.className+'@'+Math.round(p.at)).join(' ')"), page.evaluate("()=>[V3D.el, V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
+            print(at, sty, page.evaluate("()=>(V3D.props||[]).filter(p=>p.vis).map(p=>p.el.className+'@'+Math.round(p.at)).join(' ')"), page.evaluate("()=>[Math.round(V3D.brg), Math.round(V3D.map.getBearing()), Math.round(headingAt(totalNow())*180/Math.PI), (V3D.map.getSource('crowd3d')&&V3D.map.getSource('crowd3d')._data.features.length), V3D.map.getLayoutProperty('t-crowd','visibility'), V3D.el, V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
     print("\n".join(l for l in logs if "error" in l.lower())[:3000])
     b.close()
