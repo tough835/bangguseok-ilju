@@ -921,7 +921,7 @@
 </div>
 
 <script>
-const BUILD = '202611182230';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182250';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5423,13 +5423,15 @@ function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나�
   const inRing = (x, y, ring) => { let ins = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++){ const [xi, yi] = ring[i], [xj, yj] = ring[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins; } return ins; };
   const oct = (lon, lat, r) => { const pts = []; for (let i = 0; i <= 8; i++){ const a = i / 8 * Math.PI * 2; pts.push([lon + Math.cos(a) * r / (mPerDeg * cl), lat + Math.sin(a) * r / mPerDeg]); } return [pts]; };
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const near = []; if (COURSE && COURSE.path) for (let d = 0; d < L; d += 5){ const g = geoOf(pointAt(d)); if (Math.abs(g[0] - c.lat) < R / mPerDeg + 0.001 && Math.abs(g[1] - c.lng) < R / (mPerDeg * cl) + 0.001) near.push(g); }
+  const onPath = (x, y) => near.some(g => Math.hypot((g[0] - y) * mPerDeg, (g[1] - x) * mPerDeg * cl) < 7);   // 길 위·바로 옆엔 안 심음(1인칭에서 앞을 가림)
   const step = 14 / mPerDeg;   // 14m 격자 + 흔들기
   for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 1400; la += step)
     for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 1400; lo += step / cl){
       const x = lo + (rnd() - 0.5) * step / cl, y = la + (rnd() - 0.5) * step, wood = rnd();
       const hit = polys.find(f => { const g = f.geometry; const rs = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []; return rs.some(r => r[0] && inRing(x, y, r[0])); });
-      if (!hit || (hit.properties.class === 'grass' && wood > 0.25)) continue;   // 풀밭은 듬성듬성
-      const h = 7 + rnd() * 6, r = 2.6 + rnd() * 1.6;
+      if (!hit || (hit.properties.class === 'grass' && wood > 0.25) || onPath(x, y)) continue;   // 풀밭은 듬성듬성
+      const h = 6 + rnd() * 4.5, r = 2.1 + rnd() * 1.3;
       out.push({ type: 'Feature', properties: { h, b: 2.2, c: rnd() > 0.5 ? '#5f9f4c' : '#6fae57' }, geometry: { type: 'Polygon', coordinates: oct(x, y, r) } });
       trunk.push({ type: 'Feature', properties: { h: 2.4 }, geometry: { type: 'Polygon', coordinates: oct(x, y, 0.45) } });
     }
