@@ -920,7 +920,7 @@
 </div>
 
 <script>
-const BUILD = '202611182150';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182200';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5427,7 +5427,7 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
 function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
   V3D.brg = V3D.brg == null ? hd : V3D.brg + ((((hd - V3D.brg) % 360) + 540) % 360 - 180) * 0.08;
-  if (V3D.sty === 'toon'){ zoom += 1.4; pitch = Math.min(74, pitch + 8); }   // 눈높이에 가깝게, 단 고층 건물에 길이 가리지 않을 만큼   // 그림 3D = 눈높이에 가깝게
+  if (V3D.sty === 'toon'){ zoom += 1.1; pitch = Math.min(72, pitch + 6); }   // 눈높이에 가깝게, 단 고층 건물에 길이 가리지 않을 만큼   // 그림 3D = 눈높이에 가깝게
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
   V3D.me.setLngLat([lon, lat]); v3dProps();
