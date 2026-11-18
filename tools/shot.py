@@ -9,6 +9,7 @@ os.makedirs("shots", exist_ok=True)
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
     ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx.add_init_script("setInterval(()=>{ try { V3D.hot=false; METER.hz.bad=0 } catch(e){} }, 300)")   # 시험 기계는 그래픽이 느려 과열 보호가 3D를 끔 → 시험에서만(새로 받아도 유지)
     page = ctx.new_page()
     logs = []
     page.on("console", lambda m: logs.append(m.type + ": " + m.text[:200]))
@@ -20,7 +21,6 @@ with sync_playwright() as p:
         route.fulfill(status=r.status, body=r.body(), headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"})
     ctx.route("**/api.vworld.kr/**", vw)
     page.goto(URL); page.wait_for_timeout(4000)
-    page.evaluate("()=>setInterval(()=>{ V3D.hot=false; try{ METER.hz.bad=0 }catch(e){} }, 300)")   # 시험 기계는 그래픽이 느려 과열 보호가 3D를 끔 → 시험에서만 끔
     page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}"); page.wait_for_timeout(4000)
     page.evaluate("()=>{const z=document.querySelector('[data-zone=in]'); if(z&&z.offsetParent) z.click()}"); page.wait_for_timeout(800)
     page.evaluate("()=>{const r=document.getElementById('resumeBox'); if(r&&!r.classList.contains('hidden')) document.getElementById('rsCancel').click(); setAct('tread')}")
