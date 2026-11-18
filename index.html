@@ -636,6 +636,7 @@
     <input id="bFind" class="find hidden" type="search" placeholder="🔍 산 이름으로 찾기" autocomplete="off">
     <div class="muted" id="nearNote" style="margin:10px 0;line-height:1.5"></div>
     <div class="card" id="browseList"></div>
+    <button id="bChange" class="toggle hidden"></button>
   </div>
   <div id="regionPane">
   <h2 class="rgh"><span data-t="region">지역</span><button id="bPromo" class="promobtn">📣 행사<i id="promoDot" class="hidden"></i></button></h2>
@@ -845,7 +846,7 @@
 </div>
 
 <script>
-const BUILD = '202611181150';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181210';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2503,6 +2504,9 @@ function browseRow(it, extra){
   return '<div class="mrow' + (sel ? ' sel' : '') + '" data-bt="' + it.type + '" data-bid="' + it.id + '" data-bc="' + it.cid + '"><div><b>' + name + '</b><br><span class="muted">' + info + (extra ? ' · ' + extra : '') + '</span></div>' +
     '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + '</div></div>';
 }
+/* 11/18 보스 "주제별에서 골랐는데 지역별로 넘어가면 혼선" → 고른 탭에 그대로 머묾. 지역별처럼 고른 코스 한 줄로 접고 '코스 바꾸기'로 다시 펼침 */
+let bOpen = false;
+const bSel = it => it.type === 'road' ? DB.pick.type === 'road' && it.id === COURSE.id : DB.pick.type === 'climb' && it.id === DB.pick.id;
 function refreshBrowse(){
   if (!['near', 'topic', 'region'].includes(DB.browse)) DB.browse = 'region';
   const br = DB.browse;
@@ -2516,8 +2520,10 @@ function refreshBrowse(){
     const have = TOPICS.filter(t => items.some(it => it.topics.includes(t.id)));
     if (!have.some(t => t.id === DB.topic)) DB.topic = have[0] ? have[0].id : 'long';
     $('topicChips').innerHTML = have.map(t => '<button data-tp="' + t.id + '" class="' + (t.id === DB.topic ? 'on' : '') + '">' + t.ko + ' ' + items.filter(it => it.topics.includes(t.id)).length + '</button>').join('');
-    $('topicChips').querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { DB.topic = b.dataset.tp; saveDB(); refreshBrowse(); });
+    $('topicChips').querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { DB.topic = b.dataset.tp; bOpen = true; saveDB(); refreshBrowse(); });
     let list = items.filter(it => it.topics.includes(DB.topic)).sort((a, b) => a.type !== b.type ? (a.type === 'road' ? -1 : 1) : (a.type === 'road' ? a.c.lengthM - b.c.lengthM : a.m.gain - b.m.gain));
+    const selIt = list.find(bSel);
+    if (selIt && !bOpen){ fold(browseRow(selIt), list.length); return; }
     if (DB.topic === 'mountain'){   // 산: 권역 알약 + 이름 찾기 + 8곳만 먼저
       $('bZones').innerHTML = MF_ZONES.map(([z, nm]) => [z, nm, z === 'all' ? list.length : list.filter(it => mtnZone(it.m) === z).length]).filter(x => x[2]).map(([z, nm, n]) => '<button data-z="' + z + '" class="' + (z === MF.zone ? 'on' : '') + '">' + nm + ' ' + n + '</button>').join('');
       $('bZones').querySelectorAll('[data-z]').forEach(b => b.onclick = () => { MF.zone = b.dataset.z; MF.bMore = false; refreshBrowse(); });
@@ -2531,19 +2537,35 @@ function refreshBrowse(){
     $('nearNote').textContent = HERE ? T.nearHere : T.nearFallback.replace('{s}', regionName(DB.region.city) || regionName('hamyang'));
     const list = items.filter(it => it.pts.length && it.cid !== 'mine').map(it => ({ it, d: Math.min(...it.pts.filter((p, i) => it.pts.length < 400 || i % 5 === 0).map(p => kmBetween(base, p))) }))
       .sort((a, b) => a.d - b.d).slice(0, 25);
-    rows = list.map(x => browseRow(x.it, '📍 ' + (x.it.approx ? T.nearApprox + ' ' : '') + (x.d < 10 ? x.d.toFixed(1) : Math.round(x.d).toLocaleString()) + 'km' + (x.it.c && x.it.c.long ? ' ' + T.nearPass : ''))).join('');
+    const nrow = x => browseRow(x.it, '📍 ' + (x.it.approx ? T.nearApprox + ' ' : '') + (x.d < 10 ? x.d.toFixed(1) : Math.round(x.d).toLocaleString()) + 'km' + (x.it.c && x.it.c.long ? ' ' + T.nearPass : ''));
+    const selX = list.find(x => bSel(x.it));
+    if (selX && !bOpen){ fold(nrow(selX), list.length); return; }
+    rows = list.map(nrow).join('');
   }
+  const hasSel = br === 'topic' ? items.some(it => it.topics.includes(DB.topic) && bSel(it)) : /class="mrow sel"/.test(rows);
   $('browseList').innerHTML = rows || '<div class="muted" style="padding:12px">' + T.noCourse + '</div>';
+  $('bChange').textContent = T.closeList; $('bChange').classList.toggle('hidden', !hasSel);
+  $('bChange').onclick = () => { bOpen = false; refreshBrowse(); };
   if ($('bMore')) $('bMore').onclick = () => { MF.bMore = true; refreshBrowse(); };
+  browsePick();
+}
+function fold(row, n){   // 고른 코스 한 줄 + '코스 바꾸기 (N)' — 지역별과 같은 모양
+  ['topicChips', 'bZones', 'bFind', 'nearNote'].forEach(k => $(k).classList.add('hidden'));
+  $('browseList').innerHTML = row;
+  $('bChange').textContent = T.changeCourse + ' (' + n + ')'; $('bChange').classList.remove('hidden');
+  $('bChange').onclick = () => { bOpen = true; refreshBrowse(); };
+  $('browseList').querySelectorAll('[data-bid]').forEach(r => r.onclick = () => { bOpen = true; refreshBrowse(); });
+}
+function browsePick(){
   $('browseList').querySelectorAll('[data-bid]').forEach(r => r.onclick = () => {
-    const rg = regionOf(r.dataset.bc); if (rg) DB.region = rg;
-    DB.browse = 'region'; listOpen = false;   // 고르면 그 코스의 지역 화면으로 (거점·정복·길 모양 등을 함께 봄)
+    const rg = regionOf(r.dataset.bc); if (rg) DB.region = rg;   // 지역은 맞춰 두되(지역별을 누르면 그 지역), 화면은 고른 탭에 그대로
+    bOpen = false; listOpen = false;
     if (r.dataset.bt === 'road'){ saveDB(); pickRoad(r.dataset.bc, r.dataset.bid); refreshStart(); return; }
     const m = TGT(r.dataset.bid); DB.pick = { type: 'climb', id: m.id }; DB.climb.sel = m.id; DB.tab = m.kind === 'tower' ? 'tower' : 'mountain'; S.act = 'stair';
     saveDB(); applyPick(); refreshStart(); askResume();
   });
 }
-$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; saveDB(); refreshBrowse(); });
+$('browseSeg').querySelectorAll('[data-br]').forEach(b => b.onclick = () => { DB.browse = b.dataset.br; bOpen = true; saveDB(); refreshBrowse(); });
 function pickRoad(cid, id){
   DB.pick = { type: 'road', id }; saveDB();
   if (id === COURSE.id && cid === ACTIVE.city){ applyPick(); return; }
@@ -2569,7 +2591,7 @@ function distChips(){
   const box = $('distChips'), on = !isFree() && actGrp(S.act) === 'foot';
   box.classList.toggle('hidden', !on); if (!on) return;
   box.innerHTML = DIST.map(([k, nm]) => '<button data-d="' + k + '" class="' + (k === (DB.dist || 'all') ? 'on' : '') + '">' + nm + '</button>').join('');
-  box.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { DB.dist = b.dataset.d; saveDB(); distChips(); listOpen = true; refreshCourses(); refreshBrowse(); });
+  box.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { DB.dist = b.dataset.d; saveDB(); distChips(); listOpen = true; bOpen = true; refreshCourses(); refreshBrowse(); });
 }
 function grpOK(it){ const g = actGrp(S.act); return g === 'up' ? it.type !== 'road' : it.type === 'road' && (g !== 'bike' || bikeList(it.c)) && (g !== 'foot' || distOK(it.c)); }
 function pickOK(){ const g = actGrp(S.act); return g === 'up' ? DB.pick.type === 'climb' : DB.pick.type === 'road' && (g !== 'bike' || bikeList(ALL_ROADS[DB.pick.id])); }
