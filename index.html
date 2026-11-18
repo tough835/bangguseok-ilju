@@ -921,7 +921,7 @@
 </div>
 
 <script>
-const BUILD = '202611182250';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182310';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5460,7 +5460,8 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
 /* 🎨 그림 3D = 1인칭: 땅 위 1.7m에서 앞 45m를 봄. 땅 높이는 지형 자료를 천천히 따라감(버벅임 없게) */
 const offM = (lat, lon, brg, d) => { const r = brg * Math.PI / 180; return [lat + Math.cos(r) * d / 111320, lon + Math.sin(r) * d / (111320 * Math.cos(lat * Math.PI / 180))]; };
 function v3dEye(lat, lon){
-  const m = V3D.map, b = V3D.brg, back = offM(lat, lon, b, -2), ahead = offM(lat, lon, b, 45);
+  const m = V3D.map, b = V3D.brg, pos = V3D.pos;
+  const back = pos != null ? geoOf(pointAt(pos - 3)) : offM(lat, lon, b, -2), ahead = pos != null ? geoOf(pointAt(pos + 35)) : offM(lat, lon, b, 45);   // 길 따라 35m 앞을 봄 → 굽은 길에서도 앞을 향함
   let g = null, ga = null; try { g = m.queryTerrainElevation([back[1], back[0]]); ga = m.queryTerrainElevation([ahead[1], ahead[0]]); } catch(e){}
   if (g != null && isFinite(g)){ const t = Math.max(g, ga != null && isFinite(ga) ? ga - 3 : g); V3D.el = V3D.el == null || Math.abs(t - V3D.el) > 300 ? t : V3D.el + (t - V3D.el) * 0.05; }
   const e0 = V3D.el || 0, ea = (ga != null && isFinite(ga)) ? Math.max(ga, e0 - 6) : e0;
@@ -5490,7 +5491,7 @@ function v3dRoad(pos){
     v3dRoute('r:' + COURSE.id, COURSE.path.map(q => [q[1], q[0]]), HUBS.slice(0, 24).map(h => { const g = geoOf(pointAt(Math.min(L - 1, h.at))); return [g[1], g[0], '🚩 ' + tr(h.name)]; }).concat([(g => [g[1], g[0], '🏁 완주 지점'])(geoOf(pointAt(L - 1)))]));
   }
   const d = ((pos % L) + L) % L / pathScale; let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
-  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos));
+  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos)); V3D.pos = pos;
   v3dDraw(g[0], g[1], headingAt(pos) * 180 / Math.PI, (mc[i - 1] + (mc[i] - mc[i - 1]) * t) / (mc[mc.length - 1] || 1), S.act === 'bike' ? 14.4 : 15.1, 66);
 }
 function v3dClimb(st){
@@ -5501,6 +5502,7 @@ function v3dClimb(st){
     v3dRoute('c:' + m.id, G.p.map(x => [x[1], x[0]]), tg);
   }
   const b = geoLerp(G, G.d, q.dist - 45), f = geoLerp(G, G.d, q.dist + 45), cl = Math.cos(q.lat * Math.PI / 180);
+  V3D.pos = null;   // 산: 길 코스 위치를 쓰지 않음
   v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 70);
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
