@@ -112,6 +112,9 @@
   .auto.on{border-color:#d7f548;background:rgba(215,245,72,.15)}
   .auto i{font-style:normal;font-size:14px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.15)}
   .auto.on i{background:#d7f548;color:#1b1c1f}
+  #bAuto.auto{height:44px;margin-top:10px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:var(--ch2);font-size:14px;font-weight:600;color:#cfd2d6}   /* 11/18 담백: 조용한 한 줄 */
+  #bAuto.auto.on{border-color:rgba(215,245,72,.5);background:var(--ch2);color:#fff}
+  #bAuto.auto i{font-size:12px;padding:3px 9px}
   .spdRow button.dim{opacity:.25}
   .spdBox em{white-space:nowrap;margin-left:4px;font-style:normal;font-size:12px;background:#d7f548;color:#1b1c1f;border-radius:99px;padding:2px 8px;align-self:center}
   #toast{z-index:40;position:fixed;left:50%;top:calc(110px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(0,0,0,.8);padding:10px 16px;border-radius:12px;font-size:15px;max-width:86vw}
@@ -887,7 +890,7 @@
 </div>
 
 <script>
-const BUILD = '202611181330';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181310';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2719,7 +2722,7 @@ function setAct(a){
   if (up){ makePresets([4, 6, 8, 10]); setSpeed(S.level); }
   else { makePresets(a === 'bike' ? [15, 20, 25, 30] : [4.5, 6, 8, 10]); setSpeed(S.spd[a] || 6); }
   // 바깥: 속도 고르기 없음. 길 = GPS 실시간 (못 쓰면 다녀온 기록 넣기), 산·빌딩 = 다녀온 기록 넣기
-  $('speedArea').classList.toggle('hidden', out);
+  $('speedArea').classList.toggle('hidden', out); updateAutoUI();
   const gpsOK = out && !up && gpsUsable();
   $('bStart').dataset.lbl = !out ? T.start : up ? T.hikeOut : gpsOK ? T.gpsStart : T.manualOut; startLabel();
   refreshFree();
@@ -3511,6 +3514,8 @@ function updateAutoUI(){
   $('bAuto').classList.toggle('on', !!DB.autoSensor);
   $('bAuto').innerHTML = '<span>' + T.autoBtn + '</span><i>' + (DB.autoSensor ? T.autoOn : T.autoOff) + '</i>';
   ['bDown', 'bUp'].forEach(id => $(id).classList.toggle('dim', autoActive()));
+  const autoUse = !!DB.autoSensor && autoCapable() && !S.gps && DB.zone !== 'out';
+  if (!S.running) $('speedArea').classList.toggle('hidden', autoUse || DB.zone === 'out');   // 자동이면 출발 전 속도 칸은 숨김 (걸음으로 잼)
 }
 $('bAuto').onclick = () => { DB.autoSensor = !DB.autoSensor; saveDB(); updateAutoUI(); if (S.running){ if (DB.autoSensor) sensorStart(); else { sensorStop(); refreshSpeedBox(false); } } };
 
