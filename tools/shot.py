@@ -21,7 +21,13 @@ with sync_playwright() as p:
         route.fulfill(status=r.status, body=r.body(), headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"})
     ctx.route("**/api.vworld.kr/**", vw)
     page.goto(URL); page.wait_for_timeout(4000)
-    page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}"); page.wait_for_timeout(4000)
+    try: page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}")
+    except Exception: pass
+    for _ in range(3):   # 코스를 고르면 화면을 새로 불러오고, 새 판이면 한 번 더 → 끝날 때까지 기다림
+        page.wait_for_timeout(5000); page.wait_for_load_state("load")
+        try:
+            if page.evaluate("()=>typeof DB!=='undefined' && COURSE && COURSE.id") == course: break
+        except Exception: pass
     page.evaluate("()=>{const z=document.querySelector('[data-zone=in]'); if(z&&z.offsetParent) z.click()}"); page.wait_for_timeout(800)
     page.evaluate("()=>{const r=document.getElementById('resumeBox'); if(r&&!r.classList.contains('hidden')) document.getElementById('rsCancel').click(); setAct('tread')}")
     page.evaluate("()=>document.getElementById('bStart').click()"); page.wait_for_timeout(1500)
