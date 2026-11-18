@@ -8,7 +8,7 @@ os.makedirs("shots", exist_ok=True)
 
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
-    ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=1.5, is_mobile=True, has_touch=True)
     ctx.add_init_script("setInterval(()=>{ try { V3D.hot=false; METER.hz.bad=0 } catch(e){} }, 300)")   # 시험 기계는 그래픽이 느려 과열 보호가 3D를 끔 → 시험에서만(새로 받아도 유지)
     page = ctx.new_page()
     logs = []
@@ -36,7 +36,7 @@ with sync_playwright() as p:
                 if page.evaluate("()=>!!(V3D.map && V3D.ready && V3D.map.areTilesLoaded())"): break
                 page.wait_for_timeout(1000)
             page.wait_for_timeout(4000)
-            page.screenshot(path=f"shots/{course}_{at}m_{sty}.png")
+            page.screenshot(path=f"shots/{course}_{at}m_{sty}.png", timeout=180000, animations="disabled")
             print(at, sty, page.evaluate("()=>[V3D.sty, Math.round(V3D.map.getPitch()), V3D.map.getZoom().toFixed(1), v3dOn(), V3D.ready, V3D.failed, V3D.hot, LOWP, SAT_OK, DB.v3d, S.running]"))
     print("\n".join(l for l in logs if "error" in l.lower())[:3000])
     b.close()
