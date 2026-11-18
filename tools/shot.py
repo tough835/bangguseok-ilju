@@ -33,7 +33,7 @@ with sync_playwright() as p:
     page.evaluate("()=>document.getElementById('bStart').click()"); page.wait_for_timeout(1500)
     page.evaluate("()=>{const r=document.getElementById('rsRestart'); if(r&&r.offsetParent) r.click()}")
     page.wait_for_timeout(3000)
-    for at, sty in ((300, "toon"), (690, "toon"), (1760, "toon"), (4440, "toon")):
+    for at, sty in ((640, "toon"), (640, "3d"), (1760, "toon"), (4330, "toon")):
         page.evaluate(f"()=>advance({at} - (totalNow() % L))"); page.wait_for_timeout(500)
         if True:
             page.evaluate(f"()=>{{DB.v3d=true; DB.v3dSty='{'toon' if sty == 'toon' else 'sat'}'; saveDB(); v3dBtn(); if(V3D.ready) v3dStyle('{sty}')}}")

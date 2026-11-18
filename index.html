@@ -451,6 +451,7 @@
   #map.big ~ #infoPanel{right:156px}
   /* 11/17 13:43 보스: 길·산 3D 큰 화면 · 산 목록 찾기 */
   #map3d{position:fixed;inset:0;pointer-events:none;background:var(--ch)}
+  #v3dRib{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}   /* 11/18 보스 "빌딩이 길을 가림" → 앞길 350m를 건물·언덕 위에 덧그림 */
   #v3dCredit{position:absolute;left:8px;bottom:300px;z-index:2;font-size:10px;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.7)}
   .v3me{width:44px;height:44px;border-radius:50%;background:rgba(232,87,74,.28);display:flex;align-items:center;justify-content:center}   /* 11/18 보스 "3D 화살표 없음" → 2D와 같은 화살표 */
   .v3me svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
@@ -523,7 +524,7 @@
 <div id="boot" style="position:fixed;inset:0;z-index:100;background:#1b1c1f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .25s"><img src="data:image/png;base64,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" width="120" height="120" alt=""><b style="font-size:22px;letter-spacing:.5px">방구석러너</b></div>
 
 <canvas id="view"></canvas>
-<div id="map3d" class="hidden"><div id="v3dCredit"></div></div>   <!-- 11/17 길·산 3D 큰 화면 (눌림은 아래 캔버스로 통과) -->
+<div id="map3d" class="hidden"><canvas id="v3dRib"></canvas><div id="v3dCredit"></div></div>   <!-- 11/17 길·산 3D 큰 화면 (눌림은 아래 캔버스로 통과) -->
 <canvas id="map" class="hidden"></canvas>
 <div id="zoomTag" class="hidden"></div>
 <div id="infoPanel" class="hidden">
@@ -921,7 +922,7 @@
 </div>
 
 <script>
-const BUILD = '202611182320';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182335';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5340,7 +5341,7 @@ function v3dToonAdd(){
     { id: 't-road', type: 'line', source: 'ofm', 'source-layer': 'transportation', filter: noRail, layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': ['match', ['get', 'class'], ['path', 'track'], '#f4ebd3', '#ffffff'], 'line-width': rw(0.78) } },
     { id: 't-bld', type: 'fill-extrusion', source: 'ofm', 'source-layer': 'building', minzoom: 13, filter: ['!=', ['get', 'hide_3d'], true],
       paint: { 'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8], 0, '#f7efe0', 20, '#efe3cd', 60, '#dde5ee', 150, '#c3d2e4'],
-               'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.88, 'fill-extrusion-vertical-gradient': true } }
+               'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.82, 'fill-extrusion-vertical-gradient': true } }
   ].forEach(l => { l.layout = Object.assign({ visibility: 'none' }, l.layout || {}); try { m.addLayer(l, before); } catch(e){} });
 }
 function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
@@ -5359,6 +5360,7 @@ function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
    · 광고 자리(예시): 두 번째 거점 앞 길가 현수막 1개 — 실제 가게·지자체가 정해지면 내용만 바꿈
    · 🏁 결승 아치: 완주 지점
    · 🌳 나무(그림 3D만): 지금 보이는 숲·공원 안에 나무를 심음(지도 자료의 숲 모양 안에서만) */
+const V3D_CHEER = false;   // 11/18 23:01 보스 "응원 모습은 일단 제외" — 켜면 다시 나옴
 const CHEER = ['힘내세요!', '파이팅!', '잘하고 있어요!', '거의 다 왔어요!', '멋져요!'];
 function v3dPropsBuild(key){
   (V3D.props || []).forEach(p => p.mk.remove()); V3D.props = [];
@@ -5370,7 +5372,7 @@ function v3dPropsBuild(key){
   hubs.forEach(h => crowdAt.add(Math.round(h.at - 40)));
   for (let d = 1000; d < L - 300; d += 1000) if (![...crowdAt].some(a => Math.abs(a - d) < 250)) crowdAt.add(d);
   crowdAt.add(Math.round(L - 120));
-  [...crowdAt].sort((a, b) => a - b).forEach(a => { const side = k++ % 2 ? 1 : -1;
+  if (V3D_CHEER) [...crowdAt].sort((a, b) => a - b).forEach(a => { const side = k++ % 2 ? 1 : -1;
     add(a, 'crowd', '<i>' + CHEER[k % CHEER.length] + '</i><b>🙋‍♀️📣🙌🧑‍🦱🎉</b>', side); });
   if (hubs[1]) add(hubs[1].at - 120, 'ad', '<b>📣 광고 자리</b><small>이 길의 가게·축제를 소개해요 (예시)</small>', 1.8);
   add(L - 4, 'arch', '<b>🏁 FINISH</b>', 0);
@@ -5479,7 +5481,7 @@ function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   if (V3D.sty === 'toon'){ zoom += 1.1; pitch = Math.min(72, pitch + 6); }   // 그림 3D = 드론 높이 (11/18 22:57 보스: 1인칭은 끊기고 가까운 것만 보여 해운대인지 모름 → 되돌림)
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
-  V3D.me.setLngLat([lon, lat]); v3dProps();
+  V3D.me.setLngLat([lon, lat]); v3dProps(); v3dRibbon(V3D.pos);
   const now = performance.now();
   if (now - V3D.last > 400){ V3D.last = now; v3dTrees(); const k = Math.max(0.0001, Math.min(0.9999, prog));
     try { m.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3f9a52', k, '#ffffff']); } catch(e){}
@@ -5493,7 +5495,7 @@ function v3dRoad(pos){
     v3dRoute('r:' + COURSE.id, COURSE.path.map(q => [q[1], q[0]]), HUBS.slice(0, 24).map(h => { const g = geoOf(pointAt(Math.min(L - 1, h.at))); return [g[1], g[0], '🚩 ' + tr(h.name)]; }).concat([(g => [g[1], g[0], '🏁 완주 지점'])(geoOf(pointAt(L - 1)))]));
   }
   const d = ((pos % L) + L) % L / pathScale; let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
-  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos)); V3D.pos = pos;
+  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), mc = V3D.mc, g = geoOf(pointAt(pos)); V3D.pos = pos; V3D.ribPos = pos;
   v3dDraw(g[0], g[1], headingAt(pos) * 180 / Math.PI, (mc[i - 1] + (mc[i] - mc[i - 1]) * t) / (mc[mc.length - 1] || 1), S.act === 'bike' ? 14.4 : 15.1, 66);
 }
 function v3dClimb(st){
@@ -5506,6 +5508,20 @@ function v3dClimb(st){
   const b = geoLerp(G, G.d, q.dist - 45), f = geoLerp(G, G.d, q.dist + 45), cl = Math.cos(q.lat * Math.PI / 180);
   V3D.pos = null;   // 산: 길 코스 위치를 쓰지 않음
   v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 70);
+}
+function v3dRibbon(pos){   // 앞길 350m를 화면 맨 위에 그림(건물·언덕에 가려도 보이게) · 멀수록 옅게
+  const cv = $('v3dRib'), m = V3D.map; if (!cv || !m) return;
+  const w = innerWidth, h = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  if (pos == null) return;
+  const pts = []; for (let d = 0; d <= 350; d += 8){ const q = geoOf(pointAt(pos + d)); try { const sp = m.project([q[1], q[0]]); if (isFinite(sp.x) && isFinite(sp.y)) pts.push([sp.x, sp.y, d]); } catch(e){} }
+  if (pts.length < 2) return;
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], f = 1 - b[2] / 380;
+    g.globalAlpha = 0.25 + 0.55 * f; g.strokeStyle = 'rgba(27,28,31,.75)'; g.lineWidth = 3 + 7 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    g.strokeStyle = '#d7f548'; g.lineWidth = 1.5 + 4 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+  g.globalAlpha = 1;
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
 /* 11/18 18:32 보스 "지도 탭이 헷갈림 → 한 버튼, 누를 때마다 바뀜": 예전 🏔3D↔▦평면 + 🛰위성↔🗺지도 두 버튼 → 한 버튼 순환
