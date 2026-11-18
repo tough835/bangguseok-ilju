@@ -112,9 +112,14 @@
   .auto.on{border-color:#d7f548;background:rgba(215,245,72,.15)}
   .auto i{font-style:normal;font-size:14px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.15)}
   .auto.on i{background:#d7f548;color:#1b1c1f}
-  #bAuto.auto{height:44px;margin-top:10px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:var(--ch2);font-size:14px;font-weight:600;color:#cfd2d6}   /* 11/18 담백: 조용한 한 줄 */
-  #bAuto.auto.on{border-color:rgba(215,245,72,.5);background:var(--ch2);color:#fff}
-  #bAuto.auto i{font-size:12px;padding:3px 9px}
+  /* 11/18 13:30 보스 "작명 이상·버튼 큼" → 속도 줄 오른쪽 끝 작은 알약 [📱 자동] 하나. 켜면 속도 칸 자리에 안내 한 줄 */
+  #liveBox{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  #liveBox>#speedArea,#liveBox>#autoNote{flex:1;min-width:0}
+  #liveBox>.gpsNote{flex-basis:100%}
+  #bAuto.auto{flex:none;width:auto;height:48px;padding:0 12px;margin-top:14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:var(--ch2);font-size:14px;font-weight:700;color:var(--mut)}
+  #bAuto.auto.on{border-color:var(--vt);color:var(--vt)}
+  #autoNote{margin-top:14px;min-height:48px;display:flex;align-items:center;font-size:14px;line-height:1.35;color:#cfd2d6}
+  #autoNote.hidden{display:none}
   .spdRow button.dim{opacity:.25}
   .spdBox em{white-space:nowrap;margin-left:4px;font-style:normal;font-size:12px;background:#d7f548;color:#1b1c1f;border-radius:99px;padding:2px 8px;align-self:center}
   #toast{z-index:40;position:fixed;left:50%;top:calc(110px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(0,0,0,.8);padding:10px 16px;border-radius:12px;font-size:15px;max-width:86vw}
@@ -711,7 +716,7 @@
   </div>
 
   <div id="liveBox">
-    <button id="bAuto" class="auto"></button>
+    <div id="autoNote" class="hidden"></div>
     <div id="speedArea">
     <h2 id="speedTitle"></h2>
     <div class="speedRow">
@@ -721,6 +726,7 @@
     </div>
     <div class="presets" id="presets"></div>
     </div>
+    <button id="bAuto" class="auto"></button>
     <div class="gpsNote hidden" id="gpsNote"></div>
   </div>
   <button class="big" id="bStart" data-t="start">출발</button>
@@ -890,7 +896,7 @@
 </div>
 
 <script>
-const BUILD = '202611181310';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181345';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1328,7 +1334,7 @@ const TEXT = {
     goalReach: '🎯 목표 달성!', soClose: '{s}까지 {d} 남았어요', reachBy: '→ {s} 도착',
     arrive: '도착', passedBy: '지나온 곳', trail: '지나온 길', trailPre: '이 코스 거점 (앞으로 지날 곳)', trailNone: '아직 이 코스에서 지나온 곳이 없어요. 흐린 칸은 앞으로 지날 거점이에요.',
     stampSum: '거점 {a}/{b} · 지나온 명소 {c}/{d}', visits: '도착 {n}회 · 처음 {d}', notYet: '아직 도착 전', aheadOf: '여기서 {d}', atKm: '{k}km 지점',
-    autoBtn: '📱 폰 걸음으로 자동 (폰을 몸에 지니고)', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
+    autoBtn: '📱 자동', autoNote: '폰을 몸에 지니면 걸음으로 거리·속도를 재요', autoOn: '켜짐', autoOff: '꺼짐', autoTag: '자동', sensorNo: '센서를 쓸 수 없어 수동으로 바꿉니다',
     stepsN: '걸음 {n}', calibrated: '보폭을 맞췄습니다 (다음부터 더 정확)', spmUnit2: '칸/분',
     syncBtn: '📏 거리 맞추기', syncTitle: '자전거에 보이는 거리 (km)', close: '닫기',
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
@@ -3512,10 +3518,12 @@ function autoSpeedTick(){
 function updateAutoUI(){
   $('bAuto').classList.toggle('hidden', !autoCapable() || S.gps || DB.zone === 'out');
   $('bAuto').classList.toggle('on', !!DB.autoSensor);
-  $('bAuto').innerHTML = '<span>' + T.autoBtn + '</span><i>' + (DB.autoSensor ? T.autoOn : T.autoOff) + '</i>';
+  $('bAuto').textContent = (DB.autoSensor ? '✓ ' : '') + T.autoBtn;
+  $('bAuto').setAttribute('aria-pressed', DB.autoSensor ? 'true' : 'false');
   ['bDown', 'bUp'].forEach(id => $(id).classList.toggle('dim', autoActive()));
   const autoUse = !!DB.autoSensor && autoCapable() && !S.gps && DB.zone !== 'out';
-  if (!S.running) $('speedArea').classList.toggle('hidden', autoUse || DB.zone === 'out');   // 자동이면 출발 전 속도 칸은 숨김 (걸음으로 잼)
+  if (!S.running) $('speedArea').classList.toggle('hidden', autoUse || DB.zone === 'out');
+  $('autoNote').textContent = T.autoNote; $('autoNote').classList.toggle('hidden', !autoUse || S.running);   // 자동이면 출발 전 속도 칸은 숨김 (걸음으로 잼)
 }
 $('bAuto').onclick = () => { DB.autoSensor = !DB.autoSensor; saveDB(); updateAutoUI(); if (S.running){ if (DB.autoSensor) sensorStart(); else { sensorStop(); refreshSpeedBox(false); } } };
 
