@@ -12,6 +12,13 @@ with sync_playwright() as p:
     page = ctx.new_page()
     logs = []
     page.on("console", lambda m: logs.append(m.type + ": " + m.text[:200]))
+    import re
+    def vw(route):   # 브이월드는 해외(깃허브 기계)에서 막힘 → 이 시험에서만 같은 칸의 Esri 사진으로 대신
+        m = re.search(r"/Satellite/(\d+)/(\d+)/(\d+)", route.request.url)
+        if not m: return route.continue_()
+        r = ctx.request.get("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/%s/%s/%s" % m.groups())
+        route.fulfill(status=r.status, body=r.body(), headers={"content-type": "image/jpeg", "access-control-allow-origin": "*"})
+    ctx.route("**/api.vworld.kr/**", vw)
     page.goto(URL); page.wait_for_timeout(4000)
     page.evaluate(f"()=>{{DB.zone='in'; DB.region=regionOf('{city}'); saveDB(); pickRoad('{city}','{course}')}}"); page.wait_for_timeout(4000)
     page.evaluate("()=>{const z=document.querySelector('[data-zone=in]'); if(z&&z.offsetParent) z.click()}"); page.wait_for_timeout(800)
