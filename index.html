@@ -451,7 +451,8 @@
   #map.big ~ #infoPanel{right:156px}
   /* 11/17 13:43 보스: 길·산 3D 큰 화면 · 산 목록 찾기 */
   #map3d{position:fixed;inset:0;pointer-events:none;background:var(--ch)}
-  #v3dRib{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}   /* 11/18 보스 "빌딩이 길을 가림" → 앞길 350m를 건물·언덕 위에 덧그림 */
+  #v3dRib{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+  #map3d .maplibregl-marker{z-index:3}   /* 11/18 보스 폰: 화살표가 앞길 띠 아래로 깔림 → 표식이 위 */   /* 11/18 보스 "빌딩이 길을 가림" → 앞길 350m를 건물·언덕 위에 덧그림 */
   #v3dCredit{position:absolute;left:8px;bottom:300px;z-index:2;font-size:10px;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.7)}
   .v3me{width:44px;height:44px;border-radius:50%;background:rgba(232,87,74,.28);display:flex;align-items:center;justify-content:center}   /* 11/18 보스 "3D 화살표 없음" → 2D와 같은 화살표 */
   .v3me svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
@@ -922,7 +923,7 @@
 </div>
 
 <script>
-const BUILD = '202611182345';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182355';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2996,6 +2997,7 @@ function meterFrame(dt){   // 그림 한 번마다: 3D/평면 시간 · 3D가 �
   if (!on || document.hidden){ H.t = 0; H.n = 0; H.bad = 0; return; }
   H.n++; if (!H.t) H.t = now;
   if (now - H.t >= 1000){ const fps = H.n * 1000 / (now - H.t); H.bad = fps < 15 ? H.bad + 1 : 0; H.n = 0; H.t = now;
+    if (H.bad >= 8 && !V3D.lite && V3D.map){ V3D.lite = true; H.bad = 0; try { V3D.map.setPixelRatio(0.8); ['t-tree', 't-trunk', 't-hill'].forEach(id => V3D.map.getLayer(id) && V3D.map.setLayoutProperty(id, 'visibility', 'none')); } catch(e){} }   // 11/18 보스 폰 "중간에 3D가 사라짐" → 먼저 가볍게
     if (H.bad >= 20 && !V3D.hot){ V3D.hot = true; toastMsg('🌡 화면이 계속 느려서 평면 지도로 바꿨어요 (다음 운동 때 다시 3D)'); showViewMode(true); } }
 }
 async function meterEnd(){
@@ -5349,7 +5351,7 @@ function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
   try { m.setTerrain({ source: 'dem', exaggeration: toon && V3D_EYE ? 1 : 1.2 }); } catch(e){}
   try { if (toon) v3dToonAdd(); m.setLayoutProperty('sat', 'visibility', toon ? 'none' : 'visible');
     m.setLight(toon ? { anchor: 'viewport', color: '#ffffff', intensity: 0.45, position: [1.15, 210, 30] } : { anchor: 'viewport', color: '#ffffff', intensity: 0.5 });   // 그림 3D 건물이 회색으로 무겁지 않게
-    TOON_L.forEach(id => { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', toon ? 'visible' : 'none'); });
+    TOON_L.forEach(id => { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', toon && !(V3D.lite && ['t-tree', 't-trunk', 't-hill'].includes(id)) ? 'visible' : 'none'); });
     m.setSky(toon ? { 'sky-color': '#8cc8f0', 'horizon-color': '#f4efe2', 'fog-color': '#efe8d8', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.8, 'fog-ground-blend': 0.65, 'atmosphere-blend': 0.5 }
                   : { 'sky-color': '#6fa8dc', 'horizon-color': '#dfe9f1', 'fog-color': '#c7d3dc', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.55, 'atmosphere-blend': 0.6 });
   } catch(e){}
@@ -5413,7 +5415,7 @@ function v3dProps(){
     if (p.vis !== show){ p.vis = show; p.el.style.display = show ? '' : 'none'; }
     if (show){ const sc = Math.max(0.45, Math.min(1.25, 1.3 - ahead / 360)); const k = Math.round(sc * 20) / 20; if (p.sc !== k){ p.sc = k; p.el.style.setProperty('--sc', k); } } });
 }
-function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나무(줄기 + 둥근 잎) — 1.5초마다, 많이 움직였을 때만 다시
+function v3dTrees(){ if (V3D.lite) return;   // 그림 3D: 화면에 보이는 숲·공원 안에 나무(줄기 + 둥근 잎) — 1.5초마다, 많이 움직였을 때만 다시
   const m = V3D.map; if (!m || V3D.sty !== 'toon' || !m.getSource('ofm')) return;
   const c = m.getCenter(), now = performance.now();
   if (V3D.treeAt && now - V3D.treeT < 1500) return; V3D.treeT = now;
@@ -5428,8 +5430,8 @@ function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나�
   const near = []; if (COURSE && COURSE.path) for (let d = 0; d < L; d += 5){ const g = geoOf(pointAt(d)); if (Math.abs(g[0] - c.lat) < R / mPerDeg + 0.001 && Math.abs(g[1] - c.lng) < R / (mPerDeg * cl) + 0.001) near.push(g); }
   const onPath = (x, y) => near.some(g => Math.hypot((g[0] - y) * mPerDeg, (g[1] - x) * mPerDeg * cl) < 7);   // 길 위·바로 옆엔 안 심음(1인칭에서 앞을 가림)
   const step = 14 / mPerDeg;   // 14m 격자 + 흔들기
-  for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 900; la += step)
-    for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 900; lo += step / cl){   // 폰 부담 줄임
+  for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 600; la += step)
+    for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 600; lo += step / cl){   // 폰 부담 줄임
       const x = lo + (rnd() - 0.5) * step / cl, y = la + (rnd() - 0.5) * step, wood = rnd();
       const hit = polys.find(f => { const g = f.geometry; const rs = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []; return rs.some(r => r[0] && inRing(x, y, r[0])); });
       if (!hit || (hit.properties.class === 'grass' && wood > 0.25) || onPath(x, y)) continue;   // 풀밭은 듬성듬성
@@ -5518,9 +5520,10 @@ function v3dRibbon(pos){   // 앞길 350m를 화면 맨 위에 그림(건물·�
   const pts = []; for (let d = 0; d <= 350; d += 8){ const q = geoOf(pointAt(pos + d)); try { const sp = m.project([q[1], q[0]]); if (isFinite(sp.x) && isFinite(sp.y)) pts.push([sp.x, sp.y, d]); } catch(e){} }
   if (pts.length < 2) return;
   g.lineJoin = 'round'; g.lineCap = 'round';
-  [['rgba(27,28,31,.7)', 3, 7], ['#d7f548', 1.5, 4]].forEach(([col, w0, w1]) => {   // 테두리 전체 → 속 전체 (조각이 겹쳐 사슬처럼 보이지 않게)
-    for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], f = 1 - b[2] / 380;
-      g.globalAlpha = 0.3 + 0.6 * f; g.strokeStyle = col; g.lineWidth = w0 + w1 * f; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); } });
+  const line = (from, to) => { g.beginPath(); let st = false; pts.forEach(p => { if (p[2] < from || p[2] > to) return; if (!st){ g.moveTo(p[0], p[1]); st = true; } else g.lineTo(p[0], p[1]); }); g.stroke(); };
+  // 11/18 보스 폰 "길 번들거림 심함": 조각마다 반투명으로 그려 이음매가 구슬처럼 겹쳤음 → 한 번에 이어 그리기, 먼 길만 옅게
+  [[0, 160, 1, 9, 5], [152, 350, 0.55, 6, 3]].forEach(([a0, a1, al, wo, wi]) => { g.globalAlpha = al;
+    g.strokeStyle = 'rgba(27,28,31,.75)'; g.lineWidth = wo; line(a0, a1); g.strokeStyle = '#d7f548'; g.lineWidth = wi; line(a0, a1); });
   g.globalAlpha = 1;
 }
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
