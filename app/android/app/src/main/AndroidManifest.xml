@@ -49,5 +49,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 24시간 걸음 칩 -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />   <!-- 11/18 운동 중 알림(워치에도 보임) -->
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
 </manifest>

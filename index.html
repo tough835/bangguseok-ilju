@@ -905,7 +905,7 @@
 </div>
 
 <script>
-const BUILD = '202611181850';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181910';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2266,7 +2266,7 @@ function loop(now){
       }
     } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
-  meterFrame(dt); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); }
+  meterFrame(dt); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); wkTick(); }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2874,7 +2874,7 @@ $('bStart').onclick = () => {
   S.startTotal = S.free ? 0 : isClimb() ? climbTotal(DB.climb.sel) : walkTotal();
   S.goalAt = null; if (!isClimb() && !S.free) startGoal();
   $('bPause').textContent = '⏸ ' + T.paused; $('pauseBadge').classList.add('hidden');
-  altStart();
+  altStart(); wkStart();
   if (S.gps){ S.speed = 0; try { gpsStart(); } catch(e){ errNote(e.message); } } else sensorStart();   // GPS가 실패해도 운동 화면은 열림
   ['bDown', 'bUp'].forEach(id => $(id).style.visibility = S.gps ? 'hidden' : '');
   $('gpsPill').classList.toggle('hidden', !S.gps); if (S.gps) $('gpsPill').textContent = T.gpsWait;
@@ -3097,7 +3097,7 @@ function doEnd(){
   meterEnd();
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
   S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
-  zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); altStop(); autosave(true);
+  zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); altStop(); wkStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
   showRun(false); clearPopups(); $('fixMsg').textContent = ''; $('fixIn').value = '';
   fillEnd(); $('endScreen').classList.remove('hidden');
@@ -4200,6 +4200,7 @@ function togglePause(){
   S.paused = !S.paused; S.lastT = Date.now();
   $('bPause').textContent = S.paused ? '▶ ' + T.resume : '⏸ ' + T.paused;
   $('pauseBadge').classList.toggle('hidden', !S.paused);
+  wkTick(true);
 }
 $('pauseBadge').innerHTML = T.paused + '<small>' + T.tapResume + '</small>';
 $('pauseBadge').addEventListener('click', togglePause);
@@ -4920,6 +4921,30 @@ function altChip(){
   const mp = $('map'), mr = !mp.classList.contains('hidden') && mp.getBoundingClientRect(); $('altChip').style.top = mr && mr.height ? Math.round(mr.bottom + 8) + 'px' : '';   // 작은 지도가 있으면 바로 아래
   $('altChip').innerHTML = (top != null ? '⛰ ' + Math.round(top).toLocaleString() + 'm' : '⛰') + (sub != null ? '<small>↑ ' + (typeof sub === 'number' ? Math.round(sub).toLocaleString() + 'm' : sub) + '</small>' : '');
 }
+/* ---- 11/18 보스 "워치·이어폰 연동" (앱 v0.1.15~ WorkoutPlugin) ----
+   · 알림 칸에 운동 숫자(15초마다 소리 없이 고침) → 갤럭시 워치가 폰 알림을 그대로 보여 줌. 1km마다 한 번 울림(워치 진동)
+   · 알림의 '일시정지/다시 시작' 버튼(워치에서도) · 이어폰 톡(재생/일시정지 버튼) = 일시정지 ↔ 다시 시작 */
+const WK = { P: null, L: null, t: 0, km: 0 };
+function wkStart(){
+  const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Workout;
+  if (!P || typeof P.show !== 'function') return;
+  Object.assign(WK, { P, t: 0, km: 0 });
+  try {
+    P.addListener('action', () => { if (!S.running) return; togglePause(); say(S.paused ? '일시정지합니다.' : '다시 시작합니다.'); }).then(l => { WK.L = l; });
+    P.media({ on: true });
+  } catch(e){}
+  setTimeout(() => wkTick(true), 1500);   // 화면 숫자가 채워진 뒤 첫 알림
+}
+function wkTick(force){
+  if (!WK.P || !S.running) return;
+  const now = Date.now(), km = isClimb() ? 0 : Math.floor(S.sessionM / 1000), alert = km > WK.km;
+  if (!force && !alert && now - WK.t < 15000) return;
+  WK.t = now; WK.km = Math.max(WK.km, km);
+  const dist = isClimb() ? '↑ ' + Math.round(S.sessionM) + 'm' : (S.sessionM / 1000).toFixed(2) + 'km';
+  const next = ($('sNextLabel').textContent + ' ' + $('sNextDist').textContent).trim();
+  try { WK.P.show({ title: (S.paused ? '⏸ ' : '🏃 ') + dist + ' · ' + fmtTime(S.elapsed), text: $('spdVal').textContent + ' ' + $('spdUnit').textContent + (next ? ' · ' + next : ''), paused: !!S.paused, alert }); } catch(e){}
+}
+function wkStop(){ if (!WK.P) return; try { WK.P.clear(); WK.P.media({ on: false }); WK.L && WK.L.remove(); } catch(e){} WK.P = null; WK.L = null; }
 function endAlt(){   // 바깥 운동 끝 화면 한 줄: 오른 높이 · 가장 높은 곳 (기압계 > 지형 자료)
   if (!S.gps || S.hikeGps) return;
   const put = () => { if (!ALT.end || $('endAltLine')) return; $('endSummary').insertAdjacentHTML('beforeend', '<div id="endAltLine">' + T.hikeUp.replace('{g}', ALT.end.g).replace('{top}', ALT.end.top) + '</div>'); };
