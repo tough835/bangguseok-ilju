@@ -920,7 +920,7 @@
 </div>
 
 <script>
-const BUILD = '202611182140';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182150';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5362,7 +5362,7 @@ function v3dPropsBuild(key){
   (V3D.props || []).forEach(p => p.mk.remove()); V3D.props = [];
   if (!key.startsWith('r:') || !COURSE) return;
   const add = (at, cls, html, side) => { const g = geoOf(pointAt(Math.max(0, Math.min(L - 1, at)))); const el = document.createElement('div'); el.className = 'v3p ' + cls; el.innerHTML = html;
-    V3D.props.push({ at, side, el, mk: new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [side * 46, 0], opacity: '1', opacityWhenCovered: '1' }).setLngLat([g[1], g[0]]).addTo(V3D.map) }); };
+    V3D.props.push({ at, side, el, mk: new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [side * 46, side ? 0 : -34], opacity: '1', opacityWhenCovered: '1' }).setLngLat([g[1], g[0]]).addTo(V3D.map) }); };
   const hubs = HUBS.filter(h => h.at > 120 && h.at < L - 150);
   let k = 0; const crowdAt = new Set();
   hubs.forEach(h => crowdAt.add(Math.round(h.at - 40)));
@@ -5370,8 +5370,8 @@ function v3dPropsBuild(key){
   crowdAt.add(Math.round(L - 120));
   [...crowdAt].sort((a, b) => a - b).forEach(a => { const side = k++ % 2 ? 1 : -1;
     add(a, 'crowd', '<i>' + CHEER[k % CHEER.length] + '</i><b>🙋‍♀️📣🙌🧑‍🦱🎉</b>', side); });
-  if (hubs[1]) add(hubs[1].at - 120, 'ad', '<b>📣 광고 자리</b><small>이 길의 가게·축제를 소개해요 (예시)</small>', 1);
-  add(L - 4, 'arch', '<b>🏁 FINISH</b><small>완주 지점</small>', 0);
+  if (hubs[1]) add(hubs[1].at - 120, 'ad', '<b>📣 광고 자리</b><small>이 길의 가게·축제를 소개해요 (예시)</small>', 1.8);
+  add(L - 4, 'arch', '<b>🏁 FINISH</b>', 0);
 }
 function v3dProps(){
   if (!V3D.props || !V3D.props.length) return;
@@ -5385,7 +5385,6 @@ function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나�
   const c = m.getCenter(), now = performance.now();
   if (V3D.treeAt && now - V3D.treeT < 1500) return; V3D.treeT = now;
   if (V3D.treeAt && Math.abs(V3D.treeAt[0] - c.lat) < 0.002 && Math.abs(V3D.treeAt[1] - c.lng) < 0.002) return;
-  V3D.treeAt = [c.lat, c.lng];
   let polys = [];
   try { polys = m.querySourceFeatures('ofm', { sourceLayer: 'landcover', filter: ['in', ['get', 'class'], ['literal', ['wood', 'grass']]] })
     .concat(m.querySourceFeatures('ofm', { sourceLayer: 'park' })); } catch(e){ return; }
@@ -5403,6 +5402,8 @@ function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나�
       out.push({ type: 'Feature', properties: { h, b: 2.2, c: rnd() > 0.5 ? '#5f9f4c' : '#6fae57' }, geometry: { type: 'Polygon', coordinates: oct(x, y, r) } });
       trunk.push({ type: 'Feature', properties: { h: 2.4 }, geometry: { type: 'Polygon', coordinates: oct(x, y, 0.45) } });
     }
+  if (!polys.length) return;   // 지도 조각이 아직 안 왔으면 다음에 다시
+  V3D.treeAt = [c.lat, c.lng];
   const fc = { type: 'FeatureCollection', features: out }, tc = { type: 'FeatureCollection', features: trunk };
   if (m.getSource('trees')){ m.getSource('trees').setData(fc); m.getSource('trunks').setData(tc); return; }
   const before = m.getLayer('route-case') ? 'route-case' : undefined;
