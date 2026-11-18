@@ -921,7 +921,7 @@
 </div>
 
 <script>
-const BUILD = '202611182310';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611182320';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -5344,8 +5344,8 @@ function v3dToonAdd(){
   ].forEach(l => { l.layout = Object.assign({ visibility: 'none' }, l.layout || {}); try { m.addLayer(l, before); } catch(e){} });
 }
 function v3dStyle(c){   // '3d' = 위성 / 'toon' = 그림
-  const m = V3D.map; if (!m) return; const toon = c === 'toon'; V3D.sty = c; document.body.classList.toggle('toon3d', toon); V3D.el = null;
-  try { m.setTerrain({ source: 'dem', exaggeration: toon ? 1 : 1.2 }); } catch(e){}
+  const m = V3D.map; if (!m) return; const toon = c === 'toon'; V3D.sty = c; document.body.classList.toggle('toon3d', toon && V3D_EYE); V3D.el = null;
+  try { m.setTerrain({ source: 'dem', exaggeration: toon && V3D_EYE ? 1 : 1.2 }); } catch(e){}
   try { if (toon) v3dToonAdd(); m.setLayoutProperty('sat', 'visibility', toon ? 'none' : 'visible');
     m.setLight(toon ? { anchor: 'viewport', color: '#ffffff', intensity: 0.45, position: [1.15, 210, 30] } : { anchor: 'viewport', color: '#ffffff', intensity: 0.5 });   // 그림 3D 건물이 회색으로 무겁지 않게
     TOON_L.forEach(id => { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', toon ? 'visible' : 'none'); });
@@ -5426,8 +5426,8 @@ function v3dTrees(){   // 그림 3D: 화면에 보이는 숲·공원 안에 나�
   const near = []; if (COURSE && COURSE.path) for (let d = 0; d < L; d += 5){ const g = geoOf(pointAt(d)); if (Math.abs(g[0] - c.lat) < R / mPerDeg + 0.001 && Math.abs(g[1] - c.lng) < R / (mPerDeg * cl) + 0.001) near.push(g); }
   const onPath = (x, y) => near.some(g => Math.hypot((g[0] - y) * mPerDeg, (g[1] - x) * mPerDeg * cl) < 7);   // 길 위·바로 옆엔 안 심음(1인칭에서 앞을 가림)
   const step = 14 / mPerDeg;   // 14m 격자 + 흔들기
-  for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 1400; la += step)
-    for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 1400; lo += step / cl){
+  for (let la = c.lat - R / mPerDeg; la < c.lat + R / mPerDeg && out.length < 900; la += step)
+    for (let lo = c.lng - R / (mPerDeg * cl); lo < c.lng + R / (mPerDeg * cl) && out.length < 900; lo += step / cl){   // 폰 부담 줄임
       const x = lo + (rnd() - 0.5) * step / cl, y = la + (rnd() - 0.5) * step, wood = rnd();
       const hit = polys.find(f => { const g = f.geometry; const rs = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []; return rs.some(r => r[0] && inRing(x, y, r[0])); });
       if (!hit || (hit.properties.class === 'grass' && wood > 0.25) || onPath(x, y)) continue;   // 풀밭은 듬성듬성
@@ -5458,6 +5458,7 @@ function v3dRoute(key, coords, tags){   // 코스가 바뀌면 길 선·이름�
     V3D.me = new maplibregl.Marker({ element: el, opacity: '1', opacityWhenCovered: '1' }).setLngLat(coords[0]).addTo(m); }
 }
 /* 🎨 그림 3D = 1인칭: 땅 위 1.7m에서 앞 45m를 봄. 땅 높이는 지형 자료를 천천히 따라감(버벅임 없게) */
+const V3D_EYE = false;   // 1인칭 눈높이 카메라 — 보류(폰에서 끊김 · 가까운 상자만 보여 어디인지 모름). 실사 영상 코스가 그 역할
 const offM = (lat, lon, brg, d) => { const r = brg * Math.PI / 180; return [lat + Math.cos(r) * d / 111320, lon + Math.sin(r) * d / (111320 * Math.cos(lat * Math.PI / 180))]; };
 function v3dEye(lat, lon){
   const m = V3D.map, b = V3D.brg, pos = V3D.pos;
@@ -5474,7 +5475,8 @@ function v3dDraw(lat, lon, hd, prog, zoom, pitch){
   const m = V3D.map, bot = (AREA ? AREA.bot / DPR : innerHeight * 0.62);
   const dh = ((((hd - (V3D.brg == null ? hd : V3D.brg)) % 360) + 540) % 360 - 180);
   V3D.brg = V3D.brg == null || Math.abs(dh) > 50 ? hd : V3D.brg + dh * (V3D.sty === 'toon' ? 0.06 : 0.08);   // 크게 꺾이거나 순간 이동하면 바로 맞춤
-  if (V3D.sty === 'toon') return v3dEye(lat, lon);   // 11/18 21:46 보스 "사용자 눈높이에서 보는 풍경" → 1인칭
+  if (V3D.sty === 'toon' && V3D_EYE) return v3dEye(lat, lon);   // 1인칭(보류)
+  if (V3D.sty === 'toon'){ zoom += 1.1; pitch = Math.min(72, pitch + 6); }   // 그림 3D = 드론 높이 (11/18 22:57 보스: 1인칭은 끊기고 가까운 것만 보여 해운대인지 모름 → 되돌림)
   m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * 0.04; m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
   V3D.me.setLngLat([lon, lat]); v3dProps();
@@ -5508,7 +5510,7 @@ function v3dClimb(st){
 function v3dShow(on){ const el = $('map3d'); if (on === !el.classList.contains('hidden')) return; el.classList.toggle('hidden', !on); if (on && V3D.map){ try { V3D.map.resize(); } catch(e){} } }
 /* 11/18 18:32 보스 "지도 탭이 헷갈림 → 한 버튼, 누를 때마다 바뀜": 예전 🏔3D↔▦평면 + 🛰위성↔🗺지도 두 버튼 → 한 버튼 순환
    길(방구석) = 🏔 3D → 🛰 위성 → 🗺 지도 / 산 = 🏔 3D → ▦ 평면 / 바깥 = 🛰 위성 → 🗺 지도. 버튼 글자 = 지금 보이는 지도 + ↻ */
-const MAPL = { '3d': '🏔 3D', toon: '🏃 1인칭', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
+const MAPL = { '3d': '🏔 3D', toon: '🎨 그림 3D', sat: '🛰 위성', map: '🗺 지도', flat: '▦ 평면' };
 function mapModes(){
   const hot = V3D.hot; V3D.hot = false; const c3 = v3dAble() && !NAV.full; V3D.hot = hot;   // 과열로 평면이 됐어도 3D를 다시 고를 수 있게
   const m = c3 ? ['3d', 'toon'] : [];   // 11/18 보스: 그림체 3D(실제 건물 모양·높이·지형, 눈높이)를 지도 선택지 하나로
