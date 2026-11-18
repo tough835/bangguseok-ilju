@@ -911,7 +911,7 @@
 </div>
 
 <script>
-const BUILD = '202611181925';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181950';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2294,11 +2294,11 @@ function announce(text){
   say(text.replace(/ · /g, ', '));
   toastMsg('🔔 ' + text);
 }
-const VOICE = { km: 0, kmT: 0, up: 0, warn: new Set() };
+const VOICE = { km: 0, kmT: 0, up: 0, warn: new Set(), upEnd: null };
 const elapsedNow = () => S.elapsed + (S.paused ? 0 : Math.max(0, (Date.now() - S.lastT) / 1000));
 function sayDur(sec){ sec = Math.round(sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + '시간 ' : '') + (m ? m + '분 ' : '') + (h ? '' : s + '초'); }
 function sayM(m){ return m >= 1000 ? (Math.round(m / 100) / 10) + '킬로미터' : (Math.round(m / 10) * 10) + '미터'; }
-function voiceReset(){ VOICE.km = 0; VOICE.kmT = 0; VOICE.up = 0; VOICE.warn.clear(); }
+function voiceReset(){ VOICE.km = 0; VOICE.kmT = 0; VOICE.up = 0; VOICE.warn.clear(); VOICE.upEnd = null; }
 function voiceTick(){   // 운동 중 수시로 (화면 켜짐 = 그림 돌 때, 화면 꺼짐 = GPS 신호 올 때)
   if (!S.running || S.paused) return;   // 꺼 둔 동안에도 셈은 계속 (다시 켰을 때 지난 안내가 몰려 나오지 않게, 말하기는 say()가 막음)
   const up = isClimb(), now = elapsedNow();
@@ -2310,19 +2310,36 @@ function voiceTick(){   // 운동 중 수시로 (화면 켜짐 = 그림 돌 때,
       else if (!S.free){ const nh = nextSpotFrom(totalNow()); if (nh && nh.lm && nh.d > 150) t += ' 다음 거점 ' + tr(nh.lm.name) + '까지 ' + sayM(nh.d) + '.'; }
       say(t); }
     if (!S.free) hubAlerts();
-    if (!S.free && !S.gps){   // 방구석 길: 앞쪽 오르막 미리 알림 (기계 경사를 올릴 때)
-      const pos = ((totalNow() % L) + L) % L, lap = Math.floor(totalNow() / L), B = gradeBands();
-      for (let i = 0; i < B.length; i++){ const b = B[i], upC = c => c === '#f0a03c' || c === '#d9534a';
-        if (!upC(b.col) || (B[i - 1] && upC(B[i - 1].col))) continue;
-        const ahead = b.from - pos; if (ahead <= 0 || ahead > 150) continue;
-        let to = b.to, steep = b.col === '#d9534a'; for (let j = i + 1; j < B.length && upC(B[j].col); j++){ to = B[j].to; steep = steep || B[j].col === '#d9534a'; }
-        const key = lap + ':' + b.from; if (to - b.from < 200 || VOICE.warn.has(key)) continue; VOICE.warn.add(key);
-        say('앞으로 ' + sayM(to - b.from) + ' 오르막' + (steep ? ', 가파른 구간이 있어요.' : '입니다.')); break; }
-    }
+    if (!S.free && !S.gps) inclineCoach();   // 방구석 길: 오르막·내리막 미리 알림 + 기계 경사·속도 권유 (11/18)
   } else if (!S.free){   // 산·빌딩: 100m 오를 때마다 남은 높이
     const n = Math.floor(S.sessionM / 100);
     if (n > VOICE.up){ VOICE.up = n; const st = climbState();
       say(n * 100 + '미터 올랐습니다. ' + sayDur(now) + '. ' + (st.m.kind === 'tower' ? st.floor + '층, ' : '') + (st.remain > 5 ? (st.m.kind === 'tower' ? '꼭대기' : '정상') + '까지 ' + Math.round(st.remain) + '미터.' : '')); }
+  }
+}
+/* 11/18 보스 "속도 6으로 가는데 경사가 높으면 조절하라고": 방구석 길 코스의 높이 자료로
+   · 오르막 150m 전: "앞으로 400미터 오르막, 평균 경사 5%. 기계 경사를 5로 올려 보세요." (자전거 = 저항) · 가파르고(6%↑) 시속 8 넘게 달리면 "속도를 조금 낮춰도 돼요"
+   · 오르막 끝: "오르막 끝. 기계 경사를 0으로 내리세요." · 긴 내리막(200m↑) 앞: "내리막. 경사를 0으로 두고 속도를 조금 올려 보세요."
+   · 기계와 직접 연결하지 않으므로 권유만 함(블루투스 연결 기계는 나중에) */
+function inclineCoach(){
+  const pos = ((totalNow() % L) + L) % L, lap = Math.floor(totalNow() / L), B = gradeBands(), bike = S.act === 'bike';
+  if (VOICE.upEnd && VOICE.upEnd.lap === lap && pos >= VOICE.upEnd.at){ VOICE.upEnd = null; say(bike ? '오르막 끝. 저항을 낮추세요.' : '오르막 끝. 기계 경사를 0으로 내리세요.'); return; }
+  const upC = c => c === '#f0a03c' || c === '#d9534a', dnC = c => c === '#4a8fd9';
+  for (let i = 0; i < B.length; i++){
+    const b = B[i], isUp = upC(b.col); if (!isUp && !dnC(b.col)) continue;
+    const same = c => isUp ? upC(c) : dnC(c);
+    if (B[i - 1] && same(B[i - 1].col)) continue;   // 이어지는 구간의 첫 칸만
+    const ahead = b.from - pos; if (ahead < -40 || ahead > 150) continue;   // 출발하자마자 오르막인 코스도 알림
+    let to = b.to; for (let j = i + 1; j < B.length && same(B[j].col); j++) to = B[j].to;
+    const key = lap + ':' + b.from; if (to - b.from < 200 || VOICE.warn.has(key)) continue; VOICE.warn.add(key);
+    const g = Math.round(Math.abs(elevAt(Math.min(L - 1, to)) - elevAt(b.from)) / (to - b.from) * 100), sp = effSpeed();
+    if (isUp){
+      const inc = Math.max(1, Math.min(15, g));
+      let t = (ahead > 0 ? '앞으로 ' : '지금부터 ') + sayM(to - b.from) + ' 오르막, 평균 경사 ' + inc + '퍼센트. ' + (bike ? '저항을 올려 보세요.' : '기계 경사를 ' + inc + ([3, 6, 0].includes(inc % 10) ? '으로' : '로') + ' 올려 보세요.');
+      if (!bike && g >= 6 && sp >= 8) t += ' 속도는 조금 낮춰도 돼요.';
+      say(t); VOICE.upEnd = { lap, at: to };
+    } else say((ahead > 0 ? '앞으로 ' : '지금부터 ') + sayM(to - b.from) + ' 내리막. ' + (bike ? '저항을 낮추세요.' : '경사를 0으로 두고 속도를 조금 올려 보세요.'));
+    break;
   }
 }
 function hubAlerts(){
