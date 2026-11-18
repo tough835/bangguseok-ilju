@@ -25,6 +25,8 @@
     background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.72) 30%)}
   .stats{display:flex;gap:8px}
   .stat{flex:1;background:rgba(0,0,0,.4);border-radius:16px;padding:8px 12px 9px;min-width:0;position:relative}
+  #lapBox .cg{font-size:22px;font-weight:900;color:var(--vt);text-align:center;margin-bottom:6px;animation:cgPop .6s ease-out}
+  @keyframes cgPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
   #sCourseLeft{position:absolute;bottom:10px;right:12px;font-size:14px;font-style:normal;font-weight:800;color:var(--vt)}   /* 11/18 보스: 코스 전체 남은 거리도 줄어들게 */
   #sCourseLeft:not(.hidden) ~ b{margin-top:0}
   .stat.hasLeft small{padding-right:70px}
@@ -602,6 +604,7 @@
 </div>
 <div id="lapBox" class="modal hidden">   <!-- 11/17 보스 "완주가 끝나도 계속 진행, 어디가 끝인지 모름" -->
   <div class="sb">
+    <div class="cg">🎉 도착을 축하합니다!</div>
     <div class="st" id="lapTitle"></div>
     <div class="rs" id="lapBody"></div>
     <div class="mbtn"><button id="lapMore">↻ 한 바퀴 더</button><button id="lapEnd" class="go">🏁 여기서 끝내기</button></div>
@@ -902,7 +905,7 @@
 </div>
 
 <script>
-const BUILD = '202611181830';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611181840';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2150,12 +2153,31 @@ function climbPassed(m, before, after){
   }
   return out;
 }
+/* 11/18 보스 "완주 때 축포·도착 축하" — 완주·정상 도착·일반 목표 달성: 축포 3발 + 꽃가루 4초 + 짧은 진동. 화면을 막지 않음(눌림 통과) */
+function celebrate(){
+  if ($('fx')) return;
+  const c = document.createElement('canvas'); c.id = 'fx'; c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  document.body.appendChild(c);
+  const d = Math.min(2, devicePixelRatio || 1), w = c.width = innerWidth * d, h = c.height = innerHeight * d, g = c.getContext('2d');
+  const col = ['#d7f548', '#ffffff', '#ffb547', '#6fd3ff', '#ff6b8b'], P = [];
+  const burst = (x, y) => { for (let i = 0; i < 70; i++){ const a = Math.random() * Math.PI * 2, v = (0.4 + Math.random()) * 7 * d;
+    P.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2 * d, c: col[i % 5], s: (3 + Math.random() * 4) * d, r: 0, vr: 0, life: 1, conf: false }); } };
+  [[0.25, 0.3, 0], [0.75, 0.25, 350], [0.5, 0.18, 700]].forEach(([fx, fy, t]) => setTimeout(() => burst(w * fx, h * fy), t));
+  for (let i = 0; i < 90; i++) P.push({ x: Math.random() * w, y: -Math.random() * h * 0.5, vx: (Math.random() - 0.5) * 1.5 * d, vy: (1.5 + Math.random() * 2) * d, c: col[i % 5], s: (4 + Math.random() * 4) * d, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, life: 1, conf: true });
+  const t0 = performance.now();
+  (function f(now){ const el = now - t0; g.clearRect(0, 0, w, h);
+    P.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += (p.conf ? 0.03 : 0.12) * d; p.vx *= 0.99; p.r += p.vr; if (!p.conf) p.life -= 0.012;
+      g.globalAlpha = Math.max(0, Math.min(1, p.life, (4000 - el) / 600)); g.fillStyle = p.c; g.save(); g.translate(p.x, p.y); g.rotate(p.r);
+      if (p.conf) g.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); else { g.beginPath(); g.arc(0, 0, p.s / 2, 0, 7); g.fill(); } g.restore(); });
+    if (el < 4000) requestAnimationFrame(f); else c.remove(); })(t0);
+  try { navigator.vibrate && navigator.vibrate([80, 60, 80, 60, 160]); } catch(e){}
+}
 /* 완주: 창을 띄워 끝낼지·한 바퀴 더 할지 고름. 25초 안에 안 누르면 한 바퀴 더(기계는 계속 돌고 있으니) */
 function lapDone(p){
   say('완주했습니다. ' + sayM(S.sessionM) + ', ' + sayDur(elapsedNow()) + '.');
   if (!S.running){ showPopup(p.name, p.desc, false); return; }
   $('lapTitle').textContent = p.name; $('lapBody').textContent = p.desc + ' · 오늘 ' + (S.sessionM / 1000).toFixed(2) + 'km · ' + fmtTime(S.elapsed);
-  $('lapBox').classList.remove('hidden'); shown();
+  $('lapBox').classList.remove('hidden'); shown(); celebrate();
   clearTimeout(lapDone.t); lapDone.t = setTimeout(() => { if (!$('lapBox').classList.contains('hidden')) $('lapMore').click(); }, 25000);
 }
 $('lapMore').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
@@ -2185,7 +2207,7 @@ function advanceClimb(dm){
   const m = TGT(DB.climb.sel), before = S.startTotal + S.sessionM; S.sessionM += dm;
   if (m.kind === 'tower'){ const fh = m.gain / m.floors, f0 = Math.floor((before % m.gain) / fh) + 1, f1 = Math.floor(((S.startTotal + S.sessionM) % m.gain) / fh) + 1;
     void f0; void f1; }
-  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); say(p.name.replace('!', '') + (p.photo ? ' 도착했습니다.' : '.')); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
+  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); say(p.name.replace('!', '') + (p.photo ? ' 도착했습니다.' : '.')); if (p.short) celebrate(); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
 }
 
 /* ---- 운동 기록 저장 (실시간) ---- */
@@ -4356,7 +4378,7 @@ function freeCredit(){ const prev = DB.records.find(r => r.id === S.sessionId); 
 function freeGoalM(){ return isClimb() ? S.freeGoal * FLOOR_M : S.freeGoal * 1000; }
 function freeAdvance(dm){
   S.sessionM += dm;
-  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
+  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; celebrate(); say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
 }
 function hudFree(){
   altChip();
