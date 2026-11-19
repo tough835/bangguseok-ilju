@@ -34,6 +34,7 @@
 </style>
 </head>
 <body>
+<a href="./" style="display:inline-block;padding:10px 0;color:inherit;opacity:.7;text-decoration:none;font-size:14px">‹ 앱으로</a>
 <h1>📊 방구석러너 · 오늘의 숫자</h1>
 <div class="sub" id="asof">이름 없는 사용 통계 · 한국 시간 기준</div>
 
@@ -111,6 +112,7 @@ function draw(d){
 $('go').onclick = () => load($('key').value.trim());
 $('key').onkeydown = e => { if (e.key === 'Enter') $('go').click(); };
 $('reload').onclick = () => load(key());
+window.bgrBack = () => { location.href = './'; return true; };   /* 설치 앱 '뒤로' = 앱 화면으로 */
 $('logout').onclick = () => { try { localStorage.removeItem('bgr_stats_key'); } catch(e){} location.reload(); };
 document.querySelectorAll('#per button').forEach(b => b.onclick = () => { document.querySelectorAll('#per button').forEach(x => x.classList.toggle('on', x === b)); days = +b.dataset.d; load(key()); });
 if (key()) load(key());

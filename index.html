@@ -948,7 +948,7 @@
 </div>
 
 <script>
-const BUILD = '202611191320';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611191400';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3062,6 +3062,7 @@ function meterBoxFill(){
   const pn = Object.keys(DB.pre || {}).length;
   rows.push('📥 와이파이 자동 받기 · 코스 자료 ' + (DB.preAll ? DB.preAll.n + '개 받음' : '아직') + ' · 3D 높이 자료 ' + pn + '곳');
   box.innerHTML = '🔧 측정 (최근 10회 평균, 이 폰에만 저장)<br>' + rows.join('<br>');
+  box.innerHTML += '<a href="stats.html" style="display:block;margin-top:8px;padding:10px 0;color:var(--vtx);font-weight:700;text-decoration:none">📊 오늘의 숫자 (사용자 통계) ›</a>';   /* 11/19 보스: 통계 화면을 내 폰 앱에서만 — 측정 보기를 켠 폰만 보임 */
 }
 (() => { let n = 0, t = 0; const h = document.querySelector('#recScreen h1'); if (!h) return;
   h.addEventListener('click', () => { const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
