@@ -557,7 +557,7 @@
 
 <div id="hudBottom" class="hidden">
   <div class="stats">
-    <div class="stat"><span id="sNextLabel"></span><em id="sCourseLeft" class="hidden"></em><b id="sNextDist">-</b><small id="sNextName">-</small></div>
+    <div class="stat" id="sNextBox"><span id="sNextLabel"></span><em id="sCourseLeft" class="hidden"></em><b id="sNextDist">-</b><small id="sNextName">-</small></div>
     <div class="stat"><span id="sTodayLabel"></span><b id="sToday">0</b><small id="sTime">00:00</small></div>
   </div>
   <div class="bar"><i id="progBar"></i></div>
@@ -574,6 +574,13 @@
 </div>
 
 <div id="pauseBadge" class="hidden"></div>
+<div id="permBox" class="modal hidden">   <!-- 11/19 독립 검수 #1: 위치를 거부하면 'GPS 찾는 중'에 갇히던 것 -->
+  <div class="sb">
+    <div class="st">📍 위치 권한이 꺼져 있어요</div>
+    <div class="muted" style="line-height:1.6;margin-top:6px">바깥 기록은 GPS가 필요해요.<br>폰 <b>설정 → 위치(앱 권한)</b>에서 방구석러너(웹이면 브라우저)의 위치를 <b>허용</b>한 뒤 다시 출발해 주세요.</div>
+    <div class="mbtn"><button id="permOk">확인</button><button id="permSet" class="go hidden">⚙️ 설정 열기</button></div>
+  </div>
+</div>
 <div id="confirmBox" class="modal hidden">
   <div class="sb">
     <div class="st" data-t="cfTitle">운동을 끝낼까요?</div>
@@ -908,6 +915,7 @@
     <div class="muted" style="margin-top:4px;line-height:1.5"></div>
     <input id="myName" class="myname" maxlength="30">
     <div class="mbtn"><button id="myNo" data-t="apNo"></button><button id="myYes" class="go">⭐ 내 코스로 저장</button></div>
+    <button id="myGo" class="go hidden" style="margin-top:10px;width:100%">⭐ 이 코스로 가기</button>
   </div>
   <div id="trackBox" class="hidden">
     <b id="trTitle"></b>
@@ -923,7 +931,7 @@
 </div>
 
 <script>
-const BUILD = '202611182359';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611191200';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1367,7 +1375,7 @@ const TEXT = {
     stepsN: '걸음 {n}', calibrated: '보폭을 맞췄습니다 (다음부터 더 정확)', spmUnit2: '칸/분',
     syncBtn: '📏 거리 맞추기', syncTitle: '자전거에 보이는 거리 (km)', close: '닫기',
     toScene: '🎬 풍경 보기', up: '⬆ 오르막', down: '⬇ 내리막', flat: '➡ 평지',
-    cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '▶ 이어서 운동',
+    cfTitle: '운동을 끝낼까요?', cfNo: '계속하기', cfYes: '끝내기', again: '↻ 한 번 더',   /* 11/19 검수 #2: 이어지지 않고 새 운동이라 이름을 맞춤 */
     nearWait: '📍 지금 위치를 찾는 중…', nearHere: '📍 지금 위치에서 가까운 순', nearFallback: '📍 위치를 못 받아서 {s} 기준으로 가까운 순 (위치 권한을 켜면 내 주변으로)',
     nearPass: '(지나가는 길)', tempLow: '산 아래보다 {t}℃ 낮아요', kcToday: '오늘 소모 칼로리', kcLife: '생활 걸음', kcSteps: '보', kcNone: '아직 기록이 없어요', sKcal: '소모 칼로리', kcalLv0: '기본값 계산', kcalLv1: '체중 반영', kcalLv2: '개인 맞춤', bodyBtn: '⚖️ 내 몸 정보 넣기 (칼로리 정확도)', bodySaved: '몸 정보 저장 — 칼로리를 다시 계산했어요', bodyCleared: '몸 정보를 지웠어요 — 기본값으로 계산해요', ipClose: '▴ 눌러서 접기', ipOpen: '▾ 눌러서 펼치기', gOfficial: '공식 노선 GPX', mapOfficial: '노선: 공식 GPX (두루누비·지리산둘레길)', nearApprox: '지역 중심', longTag: '🧭 장거리', noCourse: '코스가 없어요',
     rsTitle: '이어서 할까요?', rsNext: '다음 거점 {s}까지 {d}km', rsLeft: '완주까지 {d}km 남음', rsGo: '▶ 이어서 하기', rsRestart: '↺ 처음부터', rsStopped: '{s} 지나서 멈췄어요', cont: '이어서',
@@ -1401,7 +1409,7 @@ const TEXT = {
     gOk: '🛰 실제 길 모양 있음 ({s}) · 운동 화면에서 위성 지도 사용', gOsm: '오픈스트리트맵', gGps: '내 GPS 길', gWait: '⏳ 실제 길 모양 받는 중…',
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
-    myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myBoxSub: '⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.', myDone: '✅ 「{n}」 저장 · 테마 → ⭐ 내 코스에서 고르세요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
+    myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myBoxSub: '⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.', myDone: '✅ 「{n}」 저장했어요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
     ann500: '{c} · {s}까지 500미터', ann100: '{c} · 곧 {s}, 100미터 남았어요',
     passTitle: '🧭 이 지역을 지나는 장거리 여정:',
     lpErr: '⚠️ 코스를 만들지 못했어요', lpSet: '🔄 일반 목표를 이 코스로: {n}', lpNow: '🔄 따라갈 길: <b>{n}</b>', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
@@ -1860,6 +1868,8 @@ function placePopup(){   // 위쪽 칸(작은 지도·알약·정보창) 바로 
   let pt = 0; ['map', 'hudTop', 'infoPanel'].forEach(id => { const e = $(id); if (e && !e.classList.contains('hidden')) pt = Math.max(pt, e.getBoundingClientRect().bottom); });
   pp.style.top = pt ? Math.round(pt + 8) + 'px' : '';
 }
+function reopenHub(){ const p = S.lastHub; if (!p || !S.running) return; clearTimeout(popupTimer); popupTimer = null; popupQueue.unshift(p); nextPopup(); }   // 거점 칸을 누르면 마지막 거점 소개를 다시
+$('sNextBox').onclick = reopenHub; $('popup').addEventListener('click', e => { if (e.target.closest('#pPhoto')) return; clearTimeout(popupTimer); nextPopup(); });   // 거점 칸 = 지난 거점 다시 · 카드 누르면 닫기
 function showPopup(title, desc, photo){
   popupQueue.push({ title, desc, photo });
   if (!popupTimer) nextPopup();
@@ -1871,7 +1881,8 @@ function nextPopup(){
   const hasPh = typeof p.photo === 'string';   // 사진이 없으면 빈 '사진 자리' 칸을 띄우지 않음 (11/15 보스)
   $('pPhoto').classList.toggle('hidden', !hasPh); $('pPhoto').innerHTML = hasPh ? photoHtml(p.photo, 10) : '';
   $('popup').classList.remove('hidden'); placePopup(); clearInterval(popupPos); popupPos = setInterval(placePopup, 300);
-  popupTimer = setTimeout(nextPopup, 5500);
+  if (p.photo !== false) S.lastHub = p;   // 지나온 거점 다시 보기용
+  popupTimer = setTimeout(nextPopup, 9000);   // 11/19 검수 #6: 5.5초는 너무 짧음
 }
 $('popup').onclick = () => { clearTimeout(popupTimer); nextPopup(); };
 
@@ -2192,14 +2203,15 @@ function celebrate(){
 }
 /* 완주: 창을 띄워 끝낼지·한 바퀴 더 할지 고름. 25초 안에 안 누르면 한 바퀴 더(기계는 계속 돌고 있으니) */
 function lapDone(p){
+  S.lapHold = { m: S.sessionM, el: S.elapsed };   // 11/19 검수 #3: 축하 창이 떠 있는 동안 거리가 올라가 끝 화면 숫자가 어긋나던 것
   say('완주했습니다. ' + sayM(S.sessionM) + ', ' + sayDur(elapsedNow()) + '.');
   if (!S.running){ showPopup(p.name, p.desc, false); return; }
   $('lapTitle').textContent = p.name; $('lapBody').textContent = p.desc + ' · 오늘 ' + (S.sessionM / 1000).toFixed(2) + 'km · ' + fmtTime(S.elapsed);
   $('lapBox').classList.remove('hidden'); shown(); celebrate();
   clearTimeout(lapDone.t); lapDone.t = setTimeout(() => { if (!$('lapBox').classList.contains('hidden')) $('lapMore').click(); }, 25000);
 }
-$('lapMore').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
-$('lapEnd').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); doEnd(); };
+$('lapMore').onclick = () => { clearTimeout(lapDone.t); S.lapHold = null; $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
+$('lapEnd').onclick = () => { clearTimeout(lapDone.t); $('lapBox').classList.add('hidden'); if (S.lapHold){ S.sessionM = S.lapHold.m; S.elapsed = S.lapHold.el; S.lapFin = true; } doEnd(); S.lapFin = false; S.lapHold = null; };
 /* 다음 목표: 마지막 거점을 지나면 '완주 지점'까지 */
 function nextTarget(total){
   const n = nextSpotFrom(total), fd = L - (((total % L) + L) % L);
@@ -2238,6 +2250,7 @@ function sessionRecord(){
     passed: S.passed.slice(), site: S.free ? undefined : (siteOK(sitePlace().key) || undefined), meter: METER.res || undefined };
 }
 function autosave(final){
+  if (final && S.elapsed < 20 && S.sessionM < 30){ DB.records = DB.records.filter(r => r.id !== S.sessionId); saveDB(); if (S.sessionM >= 1) toastMsg('20초 미만이라 기록에 남기지 않았어요'); return; }   // 11/19 검수 #2: 몇 초짜리가 '운동 1번'으로 쌓이던 것
   if (S.sessionM >= 1) upsertRecord(sessionRecord());
   else if (final){ DB.records = DB.records.filter(r => r.id !== S.sessionId); saveDB(); }   // 움직인 게 없으면 빈 기록을 남기지 않음
 }
@@ -2319,7 +2332,7 @@ function voiceTick(){   // 운동 중 수시로 (화면 켜짐 = 그림 돌 때,
     if (km > VOICE.km){ VOICE.km = km; const lap = now - VOICE.kmT; VOICE.kmT = now;
       let t = km + '킬로미터. ' + sayDur(now) + '. ' + (S.act === 'bike' ? '평균 시속 ' + Math.round(S.sessionM / 1000 / Math.max(1, now) * 3600) + '킬로미터.' : '이번 1킬로미터 ' + sayDur(lap) + '.');
       if (S.free && S.freeGoal && !S.freeHit){ const left = freeGoalM() - S.sessionM; if (left > 0) t += ' 목표까지 ' + sayM(left) + '.'; }
-      else if (!S.free){ const nh = nextSpotFrom(totalNow()); if (nh && nh.lm && nh.d > 150) t += ' 다음 거점 ' + tr(nh.lm.name) + '까지 ' + sayM(nh.d) + '.'; }
+      else if (!S.free){ const nt = nextTarget(totalNow()); if (nt && nt.d > 150) t += nt.fin ? ' 완주 지점까지 ' + sayM(nt.d) + '.' : ' 다음 거점 ' + nt.name + '까지 ' + sayM(nt.d) + '.'; }   // 11/19 검수 #8
       say(t); }
     if (!S.free) hubAlerts();
     if (!S.free && !S.gps) inclineCoach();   // 방구석 길: 오르막·내리막 미리 알림 + 기계 경사·속도 권유 (11/18)
@@ -2922,6 +2935,7 @@ function fillEnd(){
   setTimeout(endAlt, 0);
   $('fixLabel').classList.remove('hidden'); $('fixIn').parentElement.classList.remove('hidden');
   $('myBox').querySelector('.muted').textContent = T.myBoxSub; $('myYes').textContent = '⭐ 내 코스로 저장';
+  ['myName'].forEach(id => $(id).classList.remove('hidden')); $('myBox').querySelector('.mbtn').classList.remove('hidden'); $('myBox').querySelector('.muted').classList.remove('hidden');
   const a = ACTS[S.act]; fillTrack(); setTimeout(checkConquest, 600); setTimeout(() => { const el = $('endSummary'); if (el && el.innerHTML.indexOf('🔥') < 0) el.innerHTML += endKcal(); }, 0);
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free || !S.passed.length);   // 11/18 A16: 지나온 곳이 없으면 칸째 숨김
   if (S.free){
@@ -2939,7 +2953,7 @@ function fillEnd(){
   } else {
     const pos = totalNow() % L;
     $('endSummary').innerHTML = a.icon + ' ' + T[a.key] + ' <b>' + (S.sessionM / 1000).toFixed(2) + ' km</b> · ' + fmtTime(S.elapsed) +
-      '<br>' + tr(COURSE.short || COURSE.name) + ' <b>' + (pos/1000).toFixed(2) + ' / ' + (L/1000) + ' km</b>';
+      '<br>' + tr(COURSE.short || COURSE.name) + ' <b>' + (S.lapFin ? '🏁 완주 ' + (L/1000) + ' / ' + (L/1000) : (pos/1000).toFixed(2) + ' / ' + (L/1000)) + ' km</b>';
     $('fixLabel').textContent = S.gps ? T.fixGps : T.fixKm; $('fixIn').placeholder = 'km';
   }
   // 지나온 길: 스티커처럼 표시, 누르면 간단한 소개
@@ -2998,7 +3012,7 @@ function meterFrame(dt){   // 그림 한 번마다: 3D/평면 시간 · 3D가 �
   H.n++; if (!H.t) H.t = now;
   if (now - H.t >= 1000){ const fps = H.n * 1000 / (now - H.t); H.bad = fps < 15 ? H.bad + 1 : 0; H.n = 0; H.t = now;
     if (H.bad >= 8 && !V3D.lite && V3D.map){ V3D.lite = true; H.bad = 0; try { V3D.map.setPixelRatio(0.8); ['t-tree', 't-trunk', 't-hill'].forEach(id => V3D.map.getLayer(id) && V3D.map.setLayoutProperty(id, 'visibility', 'none')); } catch(e){} }   // 11/18 보스 폰 "중간에 3D가 사라짐" → 먼저 가볍게
-    if (H.bad >= 20 && !V3D.hot){ V3D.hot = true; toastMsg('🌡 화면이 계속 느려서 평면 지도로 바꿨어요 (다음 운동 때 다시 3D)'); showViewMode(true); } }
+    if (H.bad >= 20 && !V3D.hot){ V3D.hot = true; toastMsg('🌡 화면이 느려서 평면 지도로 바꿨어요 · 왼쪽 위 지도 버튼으로 다시 3D'); showViewMode(true); } }
 }
 async function meterEnd(){
   clearInterval(METER.poll); if (!METER.s0) return;
@@ -3125,6 +3139,7 @@ function telFlush(){
     .catch(() => {}).finally(() => { telBusy = false; });
 }
 const telCourse = () => S.free ? '일반' : isClimb() ? tr((TGT(DB.climb.sel) || {}).name || { ko: '' }) : tr(COURSE.short || COURSE.name);
+setTimeout(() => { if (DB.telSeen || DB.tel === false) return; DB.telSeen = true; saveDB(); toastMsg('📊 이름 없는 사용 통계(운동 종류·거리)를 보내요 · 내 기록 → ⚙️ 설정에서 끌 수 있어요'); }, 3500);   // 11/19 검수: 첫 실행 알림 없던 것
 function telBtn(){ const b = $('bTel'); if (b) b.textContent = '📊 익명 사용 통계 보내기 · ' + (DB.tel === false ? '꺼짐' : '켜짐'); }
 $('bTel').onclick = () => { DB.tel = DB.tel === false ? true : false; saveDB(); telBtn(); toastMsg(DB.tel === false ? '통계를 보내지 않아요' : '이름 없는 사용 통계만 보내요 (위치·몸 정보 제외)'); };
 setTimeout(() => { telBtn(); tel('open', { zone: DB.zone || null }); }, 1500);
@@ -4540,7 +4555,7 @@ function fillApply(){
   const r = DB.records.find(x => x.id === S.sessionId);
   $('apYes').disabled = !r || S.sessionM < 1; $('apNo').disabled = false;
   $('applyBox').querySelector('b').textContent = T.apTitle;
-  apDone(false); if (!r || S.sessionM < 1) $('applyBox').classList.add('hidden');
+  apDone(false); if (!r || S.sessionM < 1 || !$('myBox').classList.contains('hidden')) $('applyBox').classList.add('hidden');   // 11/19 검수 #4: 내 코스 질문이 있으면 반영 질문은 그 뒤에
 }
 function apDone(done){ ['apSub', 'apTarget'].forEach(id => $(id).classList.toggle('hidden', done)); $('applyBox').querySelector('.mbtn').classList.toggle('hidden', done); }
 $('apYes').onclick = () => {
@@ -4733,13 +4748,20 @@ function gpsFix(lat, lon, acc, t){   // 위치 한 번 받을 때마다 (웹·�
   }
   if (document.hidden) voiceTick();   // 화면 꺼짐: 그림이 멈추므로 GPS 신호 때 음성 확인
 }
+function gpsDenied(){   // 위치 거부: 운동을 기록 없이 접고 안내 창
+  if (!S.running) return;
+  S.sessionM = 0; doEnd(); $('endScreen').classList.add('hidden'); try { $('bHome').click(); } catch(e){}
+  $('permSet').classList.toggle('hidden', !BG); $('permBox').classList.remove('hidden');
+}
+$('permOk').onclick = () => $('permBox').classList.add('hidden');
+$('permSet').onclick = () => { $('permBox').classList.add('hidden'); try { BG && BG.openSettings(); } catch(e){} };
 function gpsStart(){
   GPS.last = null; GPS.spd = 0;
   if (BG){   // 앱: 알림창에 '기록 중'을 띄우고 잠금 중에도 계속 받음
     // 앱 연결 방식(legacy bridge)에 따라 addWatcher가 약속(Promise)이 아니라 번호를 바로 돌려줌 → 둘 다 받기 (11/15 보스 폰 오류)
     let ret; try { ret = BG.addWatcher({ backgroundTitle: T.bgTitle, backgroundMessage: T.bgMsg, requestPermissions: true, stale: false, distanceFilter: 3 }, (loc, err) => {
       if (err){
-        if (err.code === 'NOT_AUTHORIZED'){ toastMsg(T.gpsPerm); $('gpsPill').textContent = T.gpsLost; try { BG.openSettings(); } catch(e){} }
+        if (err.code === 'NOT_AUTHORIZED') gpsDenied();
         return;
       }
       if (loc) gpsFix(loc.latitude, loc.longitude, loc.accuracy, loc.time);
@@ -4751,7 +4773,7 @@ function gpsStart(){
   try {
     GPS.id = navigator.geolocation.watchPosition(p => gpsFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.timestamp), e => {
       GPS.err = e && e.code;
-      if (e && e.code === 1){ toastMsg(T.gpsLost); gpsStop(); $('gpsPill').textContent = T.gpsLost; SITE.blocked = true; }   // 위치 권한 거부
+      if (e && e.code === 1){ gpsStop(); SITE.blocked = true; gpsDenied(); }   // 위치 권한 거부 → 안내 창
       else $('gpsPill').textContent = T.gpsWait;                                                                            // 잠깐 신호 없음 → 계속 기다림
     }, { enableHighAccuracy: true, maximumAge: 0 });
   } catch(e){ toastMsg(T.gpsLost); }
@@ -5055,8 +5077,9 @@ function saveMyMtn(){
 }
 function fillMine(){
   const t = GPS.track || [], d = trackLen(t), show = S.gps && S.free && !isClimb() && t.length > 10 && d >= MINE_MIN_M;
+  $('myGo').classList.add('hidden'); if (show) $('applyBox').classList.add('hidden');   // 11/19 검수 #4: 질문은 한 번에 하나 (내 코스 먼저, 답하면 반영 질문)
   $('myBox').classList.toggle('hidden', !show); if (!show) return;
-  const dt = new Date(); $('myTitle').textContent = T.myTitle.replace('{a}', (d / 1000).toFixed(2));
+  const dt = new Date(); $('myTitle').textContent = T.myTitle.replace('{a}', (S.sessionM / 1000).toFixed(2));   // 거리 숫자는 끝 화면과 같은 것 하나
   $('myName').value = '내 길 ' + (d / 1000).toFixed(1) + 'km (' + (dt.getMonth() + 1) + '/' + dt.getDate() + ')';
   $('myYes').disabled = false; $('myNo').disabled = false;
 }
@@ -5069,10 +5092,16 @@ $('myYes').onclick = () => {
   try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
   window.MINE_NEW = true;
   const r = DB.records.find(x => x.id === S.sessionId); if (r && !r.credit){ r.credit = { course: 'walk', target: id, m: r.distM || d }; saveDB(); }
-  $('myTitle').textContent = T.myDone.replace('{n}', name); $('myYes').disabled = true; $('myNo').disabled = true;
-  if (!$('applyBox').classList.contains('hidden')){ $('apYes').disabled = true; $('apNo').disabled = true; $('applyBox').querySelector('b').textContent = T.myApplied; }
+  $('myTitle').textContent = T.myDone.replace('{n}', name); myDoneUI(); $('myGo').dataset.id = id; $('myGo').classList.remove('hidden');   // 11/19 검수 #5: 저장 직후 '이 코스로 가기'
 };
-$('myNo').onclick = () => { $('myTitle').textContent = T.apLater; $('myYes').disabled = true; $('myNo').disabled = true; };
+$('myNo').onclick = () => { $('myTitle').textContent = T.apLater; myDoneUI(); if (S.free && S.sessionM >= 1) $('applyBox').classList.remove('hidden'); };
+function myDoneUI(){ $('myName').classList.add('hidden'); $('myBox').querySelector('.mbtn').classList.add('hidden'); $('myBox').querySelector('.muted').classList.add('hidden'); }   // 답한 뒤엔 결과 한 줄만
+$('myGo').onclick = () => {   // 방금 저장한 내 코스로 바로: 방구석 테마에서 그 코스를 골라 둠
+  const id = $('myGo').dataset.id; if (!id) return;
+  DB.free = DB.free || { km: 5, floors: 50 }; DB.free.on = false; DB.pick = { type: 'road', id }; DB.region = regionOf('mine') || DB.region; saveDB();
+  try { localStorage.setItem('bgsj_course', 'mine/' + id); sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){}
+  location.reload();
+};
 function fillTrack(){
   fillMine();
   const t = GPS.track || [], d = trackLen(t), show = S.gps && !S.free && !isClimb() && t.length > 10 && d > 300 && trackOnCourse(t);
