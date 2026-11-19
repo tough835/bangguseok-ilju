@@ -951,7 +951,7 @@
 </div>
 
 <script>
-const BUILD = '202611191511';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611191542';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2298,11 +2298,24 @@ function autosave(final){
   else if (final){ DB.records = DB.records.filter(r => r.id !== S.sessionId); saveDB(); }   // 움직인 게 없으면 빈 기록을 남기지 않음
 }
 
-/* ===================== 반복 (30fps 상한) ===================== */
-let lastFrame = 0, raf = 0, hudTick = 0;
+/* ===================== 반복 — 11/19 보스 "배터리에 민감": 필요한 만큼만 그림 =====================
+   · 걷기·러닝머신(시속 12km 아래) = 초당 15번 (1초에 1.7m 움직이는 화면이라 30번은 낭비) · 빠른 자전거 = 20번
+   · 바깥 GPS = 10번 (위치가 1초에 한 번 옴) · 일시정지·멈춤 = 5번 · 배터리 20% 아래 = 10번
+   · 화면을 만지는 동안(확대·밀기)과 그 뒤 1.5초는 30번 — 손가락 따라가는 맛은 그대로 */
+let lastFrame = 0, raf = 0, hudTick = 0, touchT = 0, FPS_T = 30;
+['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => addEventListener(ev, () => { touchT = performance.now(); }, { passive: true, capture: true }));
+function frameGap(now){
+  if (!S.running || now - touchT < 1500) return 31;
+  if (S.paused) return 200;
+  if (LOWP) return 100;
+  if (S.gps) return 100;
+  const sp = isClimb() ? 0 : effSpeed();
+  return sp >= 20 ? 50 : 66;
+}
 function loop(now){
   raf = requestAnimationFrame(loop);
-  if (now - lastFrame < (LOWP ? 66 : 31)) return;   // 11/17: 배터리 20% 아래면 초당 15번
+  const gap = frameGap(now); FPS_T = Math.round(1000 / gap);
+  if (now - lastFrame < gap - 2) return;
   const wallNow = Date.now(), dt = Math.min((wallNow - S.lastT) / 1000, 6 * 3600); S.lastT = wallNow; lastFrame = now;
   if (S.free){   // 일반: 목표 링 화면
     if (!S.paused){ S.elapsed += dt; if (isClimb()){ if (!autoActive()) advanceClimb(climbMpm() / 60 * dt); } else if (!autoActive() && !S.gps) advance(effSpeed() / 3.6 * dt); }
@@ -3078,7 +3091,7 @@ function meterFrame(dt){   // 그림 한 번마다: 3D/평면 시간 · 3D가 �
   const H = METER.hz, now = Date.now();
   if (!on || document.hidden){ H.t = 0; H.n = 0; H.bad = 0; return; }
   H.n++; if (!H.t) H.t = now;
-  if (now - H.t >= 1000){ const fps = H.n * 1000 / (now - H.t); H.bad = fps < 15 ? H.bad + 1 : 0; H.n = 0; H.t = now;
+  if (now - H.t >= 1000){ const fps = H.n * 1000 / (now - H.t); H.bad = fps < Math.min(15, FPS_T * 0.6) ? H.bad + 1 : 0; H.n = 0; H.t = now;   // 11/19: 일부러 덜 그리는 것(초당 15번)을 '느림'으로 오해하지 않게
     if (H.bad >= 8 && !V3D.lite && V3D.map){ V3D.lite = true; H.bad = 0; try { V3D.map.setPixelRatio(0.8); ['t-tree', 't-trunk', 't-hill'].forEach(id => V3D.map.getLayer(id) && V3D.map.setLayoutProperty(id, 'visibility', 'none')); } catch(e){} }   // 11/18 보스 폰 "중간에 3D가 사라짐" → 먼저 가볍게
     if (H.bad >= 20 && !V3D.hot){ V3D.hot = true; toastMsg('🌡 화면이 느려서 평면 지도로 바꿨어요 · 왼쪽 위 지도 버튼으로 다시 3D'); showViewMode(true); } }
 }
