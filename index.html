@@ -948,7 +948,7 @@
 </div>
 
 <script>
-const BUILD = '202611191400';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611191410';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3066,7 +3066,7 @@ function meterBoxFill(){
 }
 (() => { let n = 0, t = 0; const h = document.querySelector('#recScreen h1'); if (!h) return;
   h.addEventListener('click', () => { const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
-    if (n >= 5){ n = 0; DB.meterShow = !DB.meterShow; saveDB(); meterBoxFill(); toastMsg(DB.meterShow ? '🔧 측정 보기 켬 (이 폰만)' : '🔧 측정 보기 끔'); } }); })();
+    if (n >= 5){ n = 0; DB.meterShow = !DB.meterShow; saveDB(); meterBoxFill(); toastMsg(DB.meterShow ? '🔧 측정 보기 켬 (이 폰만 · 이 폰은 통계에서 빠짐)' : '🔧 측정 보기 끔'); } }); })();
 /* 11/19 보스: 화면 색 고르기 (어두운 / 밝은) — 폰이 기억(bgsj_skin). 처음 그릴 때는 <head>의 한 줄이 먼저 맞춰 둠 */
 function isLight(){ return document.documentElement.dataset.skin === 'light'; }
 function skinBtn(){ document.querySelectorAll('#skinSeg button').forEach(b => b.classList.toggle('on', (b.dataset.skin === 'light') === isLight())); }
@@ -3152,7 +3152,7 @@ setInterval(() => { if (!S.running) preNet().then(preTick); }, 5000);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 function tel(ev, o){
-  if (DB.tel === false || /[?&](debug|notel)/.test(location.search) || location.hostname === '127.0.0.1' || location.hostname === 'localhost') return;
+  if (DB.tel === false || DB.meterShow || /[?&](debug|notel)/.test(location.search) || location.hostname === '127.0.0.1' || location.hostname === 'localhost') return;
   const e = Object.assign({ at: new Date().toISOString(), did: telDid(), ev, plat: CAP ? 'android' : /iPhone|iPad/.test(navigator.userAgent) ? 'ios-web' : /Android/.test(navigator.userAgent) ? 'and-web' : 'pc-web', build: BUILD }, o || {});
   ['course', 'zone', 'act'].forEach(k => { if (e[k] != null) e[k] = String(e[k]).slice(0, k === 'course' ? 60 : 10); });
   let q = []; try { q = JSON.parse(localStorage.getItem('bgsj_telq') || '[]'); } catch(e2){}
