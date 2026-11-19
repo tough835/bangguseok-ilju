@@ -14,4 +14,4 @@
 - `app/` 가 바뀌면 GitHub Actions가 APK를 만들어 Release에 올림
 - 폰에서 받기: https://github.com/tough835/bangguseok-runner/releases/latest/download/bangguseok-runner.apk
 - 화면·코스 수정은 `index.html`만 고치면 앱에도 반영 (앱 재설치 불필요)
-- `keystore/` = 앱 서명 열쇠. 바꾸지 말 것
+- `keystore/re2-release.p12` = 앱 서명 열쇠(11/19 교체). 비밀번호는 GitHub Secrets `KEYSTORE_PASSWORD`에만. 바꾸지 말 것

@@ -16,13 +16,16 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // 매 빌드 같은 열쇠로 서명해야 '덮어쓰기 설치'가 됨 (열쇠가 바뀌면 지우고 다시 깔아야 해서 기록이 사라짐)
+    // 매 빌드 같은 열쇠로 서명해야 '덮어쓰기 설치'가 됨
+    // 11/19 독립 검수: 옛 열쇠·비밀번호가 공개 저장소에 글자 그대로 있었음 → 새 열쇠(keystore/re2-release.p12)로 교체.
+    // 열쇠 파일은 긴 비밀번호로 잠겨 있고, 비밀번호는 GitHub Secrets 'KEYSTORE_PASSWORD'에만 있음 (저장소에 적지 말 것)
     signingConfigs {
         fixed {
-            storeFile file('../../../keystore/bangguseok.keystore')
-            storePassword 'bangguseok-app'
-            keyAlias 'bangguseok'
-            keyPassword 'bangguseok-app'
+            storeFile file('../../../keystore/re2-release.p12')
+            storeType 'pkcs12'
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
+            keyAlias 're2'
+            keyPassword System.getenv('KEYSTORE_PASSWORD') ?: ''
         }
     }
     buildTypes {
