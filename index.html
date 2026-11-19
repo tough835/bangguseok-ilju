@@ -258,6 +258,7 @@
   .sum4 div{background:rgba(var(--ink),.08);border-radius:14px;padding:10px 12px}
   .sum4 .kc{grid-column:span 2}
   .kcday{background:rgba(var(--ink),.08);border-radius:14px;padding:10px 14px;margin:12px 0 4px}.kcday .kt{display:flex;justify-content:space-between;font-weight:800;font-size:17px;margin-bottom:4px}.kcday .kl{display:flex;justify-content:space-between;font-size:14px;opacity:.85;padding:3px 0}.kcday .kl b{font-weight:700}
+  #tGoal{margin:4px 0 10px}#tGoal .tgl{font-size:14px;font-weight:800;margin-bottom:6px}#tGoal .tgn{font-size:13px;margin-top:6px;line-height:1.5}
   .kbasis{margin-top:10px;font-size:13.5px;line-height:1.6;word-break:keep-all}.kbasis summary{cursor:pointer;padding:8px 0;font-weight:700;color:var(--vtx)}.kbasis p{margin:8px 0;color:var(--tx2)}.kbasis b{color:var(--tx)}
   #bodyBox .sb{max-height:88vh;overflow:auto}
   .bodyrow{display:flex;align-items:center;gap:8px;margin:6px 0}.bodyrow label{width:44px}.bodyrow input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;font-size:17px}
@@ -820,6 +821,11 @@
 
   <div id="liveBox">
     <div id="autoNote" class="hidden"></div>
+    <div id="tGoal" class="hidden">   <!-- 11/20 보스 "30분도 힘들다 — 10분·20분 하는 경우도": 테마 등산·계단의 오늘 목표 시간 -->
+      <div class="tgl">⏱ 오늘은 얼마나?</div>
+      <div class="seg" id="tGoalSeg"><button data-g="10">10분</button><button data-g="20">20분</button><button data-g="30">30분</button><button data-g="0">끝까지</button></div>
+      <div class="muted tgn" id="tGoalNote"></div>
+    </div>
     <div id="speedArea">
     <h2 id="speedTitle"></h2>
     <div class="speedRow">
@@ -1012,7 +1018,7 @@
 </div>
 
 <script>
-const BUILD = '202611200817';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611200840';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1031,6 +1037,8 @@ const WORLD = {
     { id: 'kr', name: { ko: '대한민국' }, children: [
       { id: 'seoul-si',  name: { ko: '서울특별시' }, children: [ { id: 'seoul',   name: { ko: '서울' } } ] },
       { id: 'busan-si',  name: { ko: '부산광역시' }, children: [ { id: 'busan',   name: { ko: '부산' } } ] },
+      { id: 'daegu-si',  name: { ko: '대구광역시' }, children: [ { id: 'daegu',   name: { ko: '대구' } } ] },
+      { id: 'gyeongbuk', name: { ko: '경상북도' },   children: [ { id: 'gyeongju', name: { ko: '경주시' } } ] },
       { id: 'jeonnam',   name: { ko: '전라남도' },   children: [ { id: 'gurye', name: { ko: '구례군' } } ] },
       { id: 'gyeongnam', name: { ko: '경상남도' },   children: [ { id: 'sancheong', name: { ko: '산청군' } }, { id: 'hamyang', name: { ko: '함양군' } } ] },
       { id: 'gyeonggi-do', name: { ko: '경기도' }, children: [ { id: 'gapyeong', name: { ko: '가평·남양주' } } ] },
@@ -1041,7 +1049,9 @@ const WORLD = {
     { id: 'jp', name: { ko: '일본' },         children: [ { id: 'tokyo-to', name: { ko: '도쿄도' }, children: [ { id: 'tokyo', name: { ko: '도쿄' } } ] },
                                                         { id: 'yamanashi', name: { ko: '야마나시현' }, children: [ { id: 'fuji', name: { ko: '후지산' } } ] } ] },
     { id: 'hk', name: { ko: '홍콩' },         children: [ { id: 'hk-island', name: { ko: '홍콩섬' }, children: [ { id: 'hongkong', name: { ko: '홍콩' } } ] } ] },
-    { id: 'ae', name: { ko: '아랍에미리트' }, children: [ { id: 'dubai-e', name: { ko: '두바이' }, children: [ { id: 'dubai',   name: { ko: '두바이' } } ] } ] }
+    { id: 'ae', name: { ko: '아랍에미리트' }, children: [ { id: 'dubai-e', name: { ko: '두바이' }, children: [ { id: 'dubai',   name: { ko: '두바이' } } ] } ] },
+    { id: 'fr', name: { ko: '프랑스' },       children: [ { id: 'idf',     name: { ko: '일드프랑스' }, children: [ { id: 'paris', name: { ko: '파리' } } ] } ] },
+    { id: 'it', name: { ko: '이탈리아' },     children: [ { id: 'toscana', name: { ko: '토스카나' }, children: [ { id: 'pisa',  name: { ko: '피사' } } ] } ] }
   ],
   cities: {
     hamyang: {
@@ -1352,7 +1362,10 @@ const WORLD = {
       { id: 'lotte', name: { ko: '롯데월드타워' }, short: { ko: '롯데타워' }, summit: 555, floors: 123, steps: 2917, photo: null,
         desc: { ko: '스카이런 대회 코스 1→123층, 2,917계단' } },
       { id: 'b63', name: { ko: '63빌딩' }, short: { ko: '63빌딩' }, summit: 249, floors: 60, steps: 1251, photo: null,
-        desc: { ko: '63RUN 대회 코스 1→60층, 1,251계단' } }
+        desc: { ko: '63RUN 대회 코스 1→60층, 1,251계단' } },
+      /* 11/20 짧은 계단(10~20분): eq = 실제 층이 없는 탑 → 층수는 3m를 1층으로 친 값이라 목록에는 높이·계단 수만 보임 */
+      { id: 'nseoul', name: { ko: 'N서울타워 (남산타워)' }, short: { ko: 'N서울타워' }, summit: 237, floors: 79, eq: true, peak: [37.5514, 126.9880], photo: null,
+        desc: { ko: '남산 꼭대기에 선 탑 높이 236.7m' } }
     ] } } },
     busan: { id: 'busan', name: { ko: '부산' }, country: 'KR', courses: {
         'greenrail-5k': {"id": "greenrail-5k", "official": "data/route/greenrail-5k.json", "seaSide": 1, "name": {"ko": "해운대 그린레일웨이 (미포→청사포→송정)"}, "short": {"ko": "그린레일웨이"}, "kind": "해안길", "mode": "distance", "lengthM": 4800, "loop": false, "elev": [[0, 8], [800, 15], [2300, 12], [2900, 20], [3400, 12], [4800, 6]], "note": "전체 4.8km와 정거장 위치는 해변열차 안내 기준", "source": "미포~송정 해변열차 옆 데크 산책로 4.8km", "segments": [{"from": 0, "to": 4800, "scene": "coast"}], "landmarks": [{"id": "mipo", "name": {"ko": "미포"}, "at": 300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "해변열차 출발, 와우산 꼬리"}}, {"id": "dalmaji", "name": {"ko": "달맞이터널"}, "at": 800, "side": -1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "cheongsapo", "name": {"ko": "청사포"}, "at": 2300, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "빨강·하양 쌍둥이 등대"}, "hub": true}, {"id": "daritdol", "name": {"ko": "다릿돌전망대"}, "at": 2900, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "바다 위로 뻗은 스카이워크"}}, {"id": "gudeokpo", "name": {"ko": "구덕포"}, "at": 3400, "side": 1, "art": "village", "photo": null, "desc": {"ko": "작은 포구"}}, {"id": "songjeong", "name": {"ko": "송정해수욕장"}, "at": 4750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "1.2km 백사장"}, "hub": true}], "path": [[35.1588, 129.17], [35.1597, 129.176], [35.1603, 129.183], [35.161, 129.1905], [35.1622, 129.1955], [35.166, 129.1985], [35.172, 129.1995], [35.178, 129.2]]},
@@ -1365,7 +1378,17 @@ const WORLD = {
         'gwangalli-3k': {"id": "gwangalli-3k", "official": "data/route/gwangalli-3k.json", "seaSide": 1, "name": {"ko": "광안리 해변 왕복"}, "short": {"ko": "광안리"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 3000, "loop": true, "elev": [[0, 5], [3000, 5]], "note": "거리·위치 추정 (해변 길이 약 1.4km)", "source": "광안리 해변 끝↔끝 왕복 약 3km (추정)", "segments": [{"from": 0, "to": 3000, "scene": "beach"}], "landmarks": [{"id": "namcheon", "name": {"ko": "해변 남쪽 끝"}, "at": 50, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}}, {"id": "gwangan", "name": {"ko": "광안리해수욕장 중앙"}, "at": 700, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "광안대교 정면"}, "hub": true}, {"id": "millak", "name": {"ko": "민락 끝 (반환)"}, "at": 1500, "side": 1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "back", "name": {"ko": "해변 돌아오기"}, "at": 2300, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}}], "path": [[35.149, 129.116], [35.152, 129.1185], [35.1545, 129.1215], [35.156, 129.125], [35.1548, 129.1222], [35.1525, 129.1192], [35.149, 129.116]]},
       towers: { id: 'busan-towers', mode: 'climb', kind: 'tower', segments: [
       { id: 'lct', name: { ko: '엘시티 랜드마크타워' }, short: { ko: '엘시티' }, summit: 411, floors: 101, steps: 2372, photo: null,
-        desc: { ko: '1→101층, 2,372계단' } }
+        desc: { ko: '1→101층, 2,372계단' } },
+      { id: 'busantower', name: { ko: '부산타워' }, short: { ko: '부산타워' }, summit: 120, floors: 40, eq: true, peak: [35.1007, 129.0325], photo: null,
+        desc: { ko: '용두산공원 위 높이 120m 전망 탑' } }
+    ] } } },
+    daegu: { id: 'daegu', name: { ko: '대구' }, country: 'KR', courses: { towers: { id: 'daegu-towers', mode: 'climb', kind: 'tower', segments: [
+      { id: 't83', name: { ko: '대구 83타워' }, short: { ko: '83타워' }, summit: 202, floors: 83, peak: [35.8533, 128.5665], photo: null,
+        desc: { ko: '두류공원 · 높이 202m, 83층으로 표기하는 전망 탑' } }
+    ] } } },
+    gyeongju: { id: 'gyeongju', name: { ko: '경주' }, country: 'KR', courses: { towers: { id: 'gyeongju-towers', mode: 'climb', kind: 'tower', segments: [
+      { id: 'gjtower', name: { ko: '경주타워' }, short: { ko: '경주타워' }, summit: 82, floors: 17, peak: [35.8331, 129.2942], photo: null,
+        desc: { ko: '황룡사 9층 목탑 모양을 새긴 높이 82m 전망 탑 (보문단지)' } }
     ] } } },
     gapyeong: { id: 'gapyeong', name: { ko: '가평·남양주' }, country: 'KR', courses: {
         'gyeongchun-bike-24k': {"id": "gyeongchun-bike-24k", "official": "data/route/gyeongchun-bike-24k.json", "name": {"ko": "경춘선 자전거길 (마석 → 대성리 → 청평 → 가평)"}, "short": {"ko": "경춘선 자전거길"}, "kind": "자전거·조깅", "mode": "distance", "lengthM": 29800, "loop": false, "elev": [[0, 60], [29800, 60]], "note": "노선 = 오픈스트리트맵 자전거 길 찾기 (옛 경춘선 철길을 자전거길로)", "source": "마석역~대성리~청평~가평역", "segments": [{"from": 0, "to": 29800, "scene": "river"}], "landmarks": [{"id": "gc-maseok", "name": {"ko": "마석 (출발)"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "옛 경춘선 철길 자전거길"}, "hub": true}, {"id": "gc-daeseong", "name": {"ko": "대성리"}, "at": 8110, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "북한강 강변 유원지"}, "hub": true}, {"id": "gc-cheongpyeong", "name": {"ko": "청평"}, "at": 16160, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "gc-gapyeong", "name": {"ko": "가평 (도착)"}, "at": 29750, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "남이섬·자라섬 가는 길"}, "hub": true}], "path": [[37.6512, 127.311], [37.6532, 127.3276], [37.6588, 127.3506], [37.6657, 127.3718], [37.6802, 127.3776], [37.6983, 127.3846], [37.721, 127.4045], [37.7328, 127.4136], [37.7349, 127.4267], [37.7457, 127.4275], [37.7641, 127.4436], [37.7763, 127.4624], [37.793, 127.4677], [37.8067, 127.4962], [37.815, 127.5089], [37.814, 127.5106]]},
@@ -1377,6 +1400,10 @@ const WORLD = {
         'saryeoni-10k': {"id": "saryeoni-10k", "name": {"ko": "사려니숲길 (비자림로→물찻오름→붉은오름)"}, "short": {"ko": "사려니숲길"}, "kind": "도보", "mode": "distance", "lengthM": 10000, "loop": false, "elev": [[0, 520], [3500, 600], [6000, 560], [10000, 420]], "note": "전체 약 10km는 자료 기준, 중간 위치·고도는 추정", "source": "한라산둘레길 7구간, 평균 고도 약 550m 삼나무 숲", "segments": [{"from": 0, "to": 10000, "scene": "forest"}], "landmarks": [{"id": "bijarim", "name": {"ko": "비자림로 입구"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "mulchat", "name": {"ko": "물찻오름 갈림길"}, "at": 3500, "side": -1, "art": "sign", "photo": null, "desc": {"ko": "호수를 품은 오름"}, "hub": true}, {"id": "cheonmi", "name": {"ko": "천미천"}, "at": 5000, "side": 1, "art": "bridge", "photo": null, "desc": {"ko": "제주에서 가장 긴 하천"}}, {"id": "saryeonioreum", "name": {"ko": "사려니오름 갈림길"}, "at": 7000, "side": -1, "art": "sign", "photo": null, "desc": {"ko": ""}, "hub": true}, {"id": "bulgeun", "name": {"ko": "붉은오름 입구"}, "at": 9950, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "무장애나눔길"}, "hub": true}], "path": [[33.4372, 126.629], [33.428, 126.64], [33.418, 126.65], [33.408, 126.66], [33.4, 126.672], [33.394, 126.685], [33.392, 126.69]]},
         'jeju-oreum': { id: 'jeju-oreum', name: { ko: '제주 오름·한라산' }, mode: 'climb', kind: 'mountain',
           note: '정상 높이는 공개 자료, 출발 높이는 추정', segments: [
+            {"id": "abu", "name": {"ko": "아부오름"}, "summit": 301, "base": 250, "baseName": {"ko": "건영목장 입구"}, "trail": {"ko": "입구→분화구 능선 (오를 높이 51m · 분화구 둘레길 약 1.5km)"}, "photo": null},
+            {"id": "yongnuni", "name": {"ko": "용눈이오름"}, "summit": 248, "base": 160, "baseName": {"ko": "오름 기슭"}, "trail": {"ko": "기슭→능선→정상 (오름 자체 높이 88m)"}, "photo": null},
+            {"id": "geumoreum", "name": {"ko": "금오름"}, "summit": 428, "base": 250, "baseName": {"ko": "오름 기슭"}, "trail": {"ko": "기슭→분화구 둘레 (오름 자체 높이 178m)"}, "photo": null},
+            {"id": "darangswi", "name": {"ko": "다랑쉬오름"}, "summit": 382, "base": 155, "baseName": {"ko": "오름 기슭"}, "trail": {"ko": "기슭→분화구 둘레 (오름 자체 높이 227m · 가파른 오르막)"}, "photo": null},
             {"id": "saebyeol", "name": {"ko": "새별오름"}, "summit": 519, "base": 400, "baseName": {"ko": "새별오름 주차장(추정)"}, "trail": {"ko": "주차장→정상 (가파른 오르막)"}, "photo": null},
             {"id": "seongsan", "name": {"ko": "성산일출봉"}, "summit": 182, "base": 10, "baseName": {"ko": "성산일출봉 매표소(추정)"}, "trail": {"ko": "매표소→분화구 정상"}, "photo": null},
             {"id": "halla", "geo": "data/mtn/halla.json", "name": {"ko": "한라산 백록담"}, "summit": 1947, "base": 750, "baseName": {"ko": "성판악 탐방안내소"}, "trail": {"ko": "성판악→속밭→사라오름 입구→진달래밭→정상 (9.6km)"}, "photo": null, "waypoints": [{"name": {"ko": "속밭대피소"}, "elev": 1100}, {"name": {"ko": "사라오름 입구"}, "elev": 1300}, {"name": {"ko": "진달래밭 대피소"}, "elev": 1500}]}
@@ -1395,7 +1422,11 @@ const WORLD = {
         desc: { ko: 'Run-Up 대회 코스 로비→86층 전망대, 1,576계단' } }
     ] } } },
     tokyo: { id: 'tokyo', name: { ko: '도쿄' }, country: 'JP', courses: {
-        'kokyo-5k': {"id": "kokyo-5k", "official": "data/route/kokyo-5k.json", "name": {"ko": "도쿄 황거 한 바퀴 (고쿄 런)"}, "short": {"ko": "고쿄 런"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 5000, "loop": true, "elev": [[0, 30], [1500, 10], [2600, 8], [3600, 25], [4200, 36], [5000, 30]], "note": "한 바퀴 약 5km·신호등 없음·높이 차 약 26m는 소개 자료 기준", "source": "반시계 방향: 사쿠라다몬~다케바시 평지, 다케바시~지도리가후치 오르막, 한조몬~사쿠라다몬 내리막", "segments": [{"from": 0, "to": 5000, "scene": "city"}], "landmarks": [{"id": "kk-sakurada", "name": {"ko": "사쿠라다몬"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "출발 · 러너들이 많이 모이는 곳"}, "hub": true}, {"id": "kk-niju", "name": {"ko": "니주바시"}, "at": 900, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "황거 정문 다리"}}, {"id": "kk-ote", "name": {"ko": "오테몬"}, "at": 2000, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "kk-takebashi", "name": {"ko": "다케바시"}, "at": 2700, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "여기부터 오르막"}, "hub": true}, {"id": "kk-chidori", "name": {"ko": "지도리가후치"}, "at": 3600, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "벚꽃 명소"}}, {"id": "kk-hanzo", "name": {"ko": "한조몬"}, "at": 4200, "side": -1, "art": "gate", "photo": null, "desc": {"ko": "코스에서 가장 높은 곳"}, "hub": true}], "path": [[35.6772, 139.7527], [35.68, 139.759], [35.685, 139.762], [35.69, 139.759], [35.6915, 139.7545], [35.6905, 139.748], [35.686, 139.7455], [35.682, 139.746], [35.6772, 139.7527]]} } },
+        'kokyo-5k': {"id": "kokyo-5k", "official": "data/route/kokyo-5k.json", "name": {"ko": "도쿄 황거 한 바퀴 (고쿄 런)"}, "short": {"ko": "고쿄 런"}, "kind": "도보·조깅", "mode": "distance", "lengthM": 5000, "loop": true, "elev": [[0, 30], [1500, 10], [2600, 8], [3600, 25], [4200, 36], [5000, 30]], "note": "한 바퀴 약 5km·신호등 없음·높이 차 약 26m는 소개 자료 기준", "source": "반시계 방향: 사쿠라다몬~다케바시 평지, 다케바시~지도리가후치 오르막, 한조몬~사쿠라다몬 내리막", "segments": [{"from": 0, "to": 5000, "scene": "city"}], "landmarks": [{"id": "kk-sakurada", "name": {"ko": "사쿠라다몬"}, "at": 50, "side": 1, "art": "gate", "photo": null, "desc": {"ko": "출발 · 러너들이 많이 모이는 곳"}, "hub": true}, {"id": "kk-niju", "name": {"ko": "니주바시"}, "at": 900, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "황거 정문 다리"}}, {"id": "kk-ote", "name": {"ko": "오테몬"}, "at": 2000, "side": 1, "art": "gate", "photo": null, "desc": {"ko": ""}}, {"id": "kk-takebashi", "name": {"ko": "다케바시"}, "at": 2700, "side": -1, "art": "bridge", "photo": null, "desc": {"ko": "여기부터 오르막"}, "hub": true}, {"id": "kk-chidori", "name": {"ko": "지도리가후치"}, "at": 3600, "side": 1, "art": "sign", "photo": null, "desc": {"ko": "벚꽃 명소"}}, {"id": "kk-hanzo", "name": {"ko": "한조몬"}, "at": 4200, "side": -1, "art": "gate", "photo": null, "desc": {"ko": "코스에서 가장 높은 곳"}, "hub": true}], "path": [[35.6772, 139.7527], [35.68, 139.759], [35.685, 139.762], [35.69, 139.759], [35.6915, 139.7545], [35.6905, 139.748], [35.686, 139.7455], [35.682, 139.746], [35.6772, 139.7527]]},
+      towers: { id: 'tokyo-towers', mode: 'climb', kind: 'tower', segments: [
+      { id: 'tokyotower', name: { ko: '도쿄타워 (메인데크까지)' }, short: { ko: '도쿄타워' }, summit: 150, floors: 50, steps: 600, eq: true, peak: [35.6586, 139.7454], photo: null,
+        desc: { ko: '바깥 계단 600개로 높이 150m 메인데크까지 실제로 걸어 오를 수 있어요' } }
+    ] } } },
     fuji: { id: 'fuji', name: { ko: '후지산' }, country: 'JP', courses: {
         'fuji-mtn': { id: 'fuji-mtn', name: { ko: '후지산' }, mode: 'climb', kind: 'mountain',
           note: '5합목 2,305m · 정상 3,776m · 중간 합목 높이는 등산 지도 기준', segments: [ {"id": "fuji-yoshida", "name": {"ko": "후지산 (요시다 루트)"}, "short": {"ko": "후지산"}, "summit": 3776, "base": 2305, "baseName": {"ko": "후지 스바루라인 5합목"}, "trail": {"ko": "5합목→6합목→7합목→8합목→본8합목→정상 (오르막 약 6.8km)"}, "photo": null, "desc": {"ko": "일본 최고봉, 해마다 여름에만 등산"}, "waypoints": [{"name": {"ko": "6합목"}, "elev": 2390}, {"name": {"ko": "7합목"}, "elev": 2700}, {"name": {"ko": "8합목"}, "elev": 3020}, {"name": {"ko": "본8합목"}, "elev": 3360}]} ] } } },
@@ -1404,6 +1435,14 @@ const WORLD = {
     dubai: { id: 'dubai', name: { ko: '두바이' }, country: 'AE', courses: { towers: { id: 'dubai-towers', mode: 'climb', kind: 'tower', segments: [
       { id: 'burj', name: { ko: '부르즈 할리파' }, short: { ko: '부르즈' }, summit: 555, floors: 148, photo: null,
         desc: { ko: '148층 전망대(약 555m)까지' } }
+    ] } } },
+    paris: { id: 'paris', name: { ko: '파리' }, country: 'FR', courses: { towers: { id: 'paris-towers', mode: 'climb', kind: 'tower', segments: [
+      { id: 'eiffel', name: { ko: '에펠탑 (2층까지)' }, short: { ko: '에펠탑' }, summit: 115, floors: 38, steps: 674, eq: true, peak: [48.8584, 2.2945], photo: null,
+        desc: { ko: '계단 674개로 높이 115m 2층까지 실제로 걸어 오를 수 있어요 (탑 전체 330m)' } }
+    ] } } },
+    pisa: { id: 'pisa', name: { ko: '피사' }, country: 'IT', courses: { towers: { id: 'pisa-towers', mode: 'climb', kind: 'tower', segments: [
+      { id: 'pisatower', name: { ko: '피사의 사탑' }, short: { ko: '피사의 사탑' }, summit: 56, floors: 19, steps: 294, eq: true, peak: [43.7230, 10.3966], photo: null,
+        desc: { ko: '기울어진 종탑 꼭대기까지 계단 294개, 높이 약 56m' } }
     ] } } }
   }
 };
@@ -2288,7 +2327,7 @@ function climbPassed(m, before, after){
     (m.waypoints || []).forEach(w => { const at = k * m.gain + wpAt(m, w); if (at > before && at <= after){ const wk = WIKI[w.wiki || ('ko:' + tr(w.name).replace(/^\d+층 /, ''))]; out.push({ name: tr(w.name), tw: m.kind === 'tower', desc: (m.kind === 'tower' ? '지상 ' + w.elev.toLocaleString() + 'm' : T.elevAt.replace('{e}', w.elev.toLocaleString())) + (m.kind !== 'tower' ? ' · 🌡 ' + T.tempLow.replace('{t}', Math.round((w.elev - m.base) * 0.006)) : ''), photo: wk && wk.u ? (PHOTO_CREDIT[wk.u] = wk.c, PHOTO_LINK[wk.u] = wk.l, wk.u) : undefined }); } });
     const top = (k + 1) * m.gain;
     if (top > before && top <= after) out.push({ name: tr(m.name) + ' ' + T.summit, short: tr(m.name), photo: m.photo || true,
-      desc: (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : T.elevAt.replace('{e}', m.summit.toLocaleString())) + ' · ' + tr(m.desc || m.trail) });
+      desc: (m.kind === 'tower' ? towerSize(m) : T.elevAt.replace('{e}', m.summit.toLocaleString())) + ' · ' + tr(m.desc || m.trail) });
   }
   return out;
 }
@@ -2523,10 +2562,11 @@ function hudClimb(st){
   if (autoActive()) autoSpeedTick();
   const tower = st.m.kind === 'tower';
   $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (tower ? '' : ' ' + st.m.summit.toLocaleString() + 'm') + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');   // 11/19 보스 "정상 높이가 잘 안 보임" → 이름 옆에 정상 높이
-  $('altiPill').textContent = tower ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
+  $('altiPill').textContent = tower ? (st.m.eq ? Math.round(st.climbed) + 'm' : st.floor + T.floorUnit) : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
   $('sNextLabel').textContent = tower ? T.toTop : T.toSummit;
   $('sNextDist').textContent = Math.round(st.left).toLocaleString() + ' m'; $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
-  $('sNextName').textContent = (tower ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%') + ' · ' + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
+  $('sNextName').textContent = goalOn() && !S.goalHit ? '🎯 목표까지 ' + Math.max(1, Math.ceil((S.goalSec - S.elapsed) / 60)) + T.min + ' · ' + (tower && !st.m.eq ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%')
+    : (tower && !st.m.eq ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%') + ' · ' + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
   /* 11/19 보스 폰 "좌우 정보 산만 · 오른쪽은 시간을 크게": 왼쪽 = 남은 높이(줄어듦) / 오른쪽 = 운동 시간(크게) + 오늘 오른 높이(작게) */
   $('sTodayLabel').textContent = T.runTime;
   $('sToday').textContent = fmtTime(S.elapsed);
@@ -2590,18 +2630,51 @@ function cheerHide(){ const el = $('cheer'); clearTimeout(MTC.t); if (el.classLi
 $('chRest').onclick = () => { cheerHide(); if (S.running && !S.paused) togglePause(); };
 function mtnStart(){   // 출발: 어디서 어디까지 오르는지(코스 높이 근거) + 긴 산은 나눠 오르기 권유
   MTC.seen.clear(); MTC.q = []; MTC.last = 0; MTC.min = 0; MTC.alt = null; mtnClear();
+  S.goalSec = isClimb() && !S.free ? ((DB.climb && DB.climb.goal) || 0) * 60 : 0; S.goalHit = false; S.goalHalf = false;
   if (!mtnRun()) return;
   const st = climbState(), m = st.m, mins = Math.max(1, Math.round(st.remain / climbMpm()));
   MTC.ratio = st.ratio;
   const head = st.climbed >= 3 ? '해발 ' + Math.round(st.elev).toLocaleString() + 'm에서 이어 올라요 · 정상까지 ' + Math.round(st.left).toLocaleString() + 'm'
     : tr(m.baseName || { ko: '출발 지점' }) + '(해발 ' + m.base.toLocaleString() + 'm)에서 출발 · 정상까지 ' + m.gain.toLocaleString() + 'm 올라요';
-  showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n지금 레벨로 약 ' + mins + '분' + (mins >= 45 ? ' · 길면 나눠 오르세요. 멈춘 높이에서 다음에 이어져요' : ''), false);
+  const gm = Math.round(S.goalSec / 60);
+  showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n' + (gm && gm < mins ? '🎯 오늘 목표 ' + gm + '분 (약 ' + Math.round(gm * climbMpm()) + 'm) · 끝까지는 약 ' + mins + '분'
+    : '지금 레벨로 약 ' + mins + '분' + (mins >= 45 ? ' · 길면 나눠 오르세요. 멈춘 높이에서 다음에 이어져요' : '')), false);
 }
 function mtnClear(){ clearTimeout(MTC.t); clearTimeout(MTC.t2); $('cheer').classList.add('hidden'); $('cheerFx').classList.add('hidden'); $('restBox').classList.add('hidden'); }
+/* ---- 11/20 보스 "천국의 계단 30분 하기도 힘들다 — 10분·20분 하는 경우도": 오늘 목표(분) ----
+   · 테마 등산·계단 출발 화면에서 10·20·30분·끝까지 고름 (기본 끝까지). 산은 멈춘 높이에서 다음에 이어 오르므로 긴 산도 나눠 오르기 좋음
+   · 목표 절반 = 작은 응원 / 목표 달성 = 큰 응원 → '쉬어가기' 버튼이 달린 작은 글. 운동은 멈추지 않음(계속 올라도 됨) */
+const goalOn = () => S.running && isClimb() && !S.free && S.goalSec > 0;
+function tGoalUI(){
+  const on = !isFree() && isClimb() && !S.running, box = $('tGoal'); if (!box) return;
+  box.classList.toggle('hidden', !on); if (!on) return;
+  const g = (DB.climb && DB.climb.goal) || 0;
+  $('tGoalSeg').querySelectorAll('[data-g]').forEach(b => b.classList.toggle('on', +b.dataset.g === g));
+  let m = null; try { m = TGT(DB.climb.sel); } catch(e){}
+  const all = m ? Math.max(1, Math.round(Math.max(1, m.gain - (climbTotal(m.id) % m.gain)) / climbMpm())) : 0, up = Math.round(g * climbMpm());
+  $('tGoalNote').textContent = !m ? '' : g ? '약 ' + up + 'm 오르면 끝' + (m.kind !== 'tower' && all > g ? ' · 남은 길은 다음에 이어서 (끝까지는 약 ' + all + '분)' : '') : '끝까지 약 ' + all + '분' + (all >= 45 ? ' · 길면 10~30분만 골라 나눠 오르세요' : '');
+}
+$('tGoalSeg').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { DB.climb = DB.climb || {}; DB.climb.goal = +b.dataset.g; saveDB(); tGoalUI(); });
+function goalTick(st){
+  if (!goalOn() || S.goalHit) return;
+  const g = S.goalSec, min = Math.round(g / 60);
+  if (!S.goalHalf && g >= 600 && S.elapsed >= g / 2){ S.goalHalf = true; MTC.q.push({ emo: '🎯', tx: '목표 절반! ' + Math.round(g / 120) + '분만 더 가면 돼요', rest: false, say: '목표 절반 왔습니다.', at: Date.now() }); }
+  if (S.elapsed >= g){ S.goalHit = true;
+    const up = Math.round(S.sessionM), more = st.m.kind !== 'tower' && st.remain > 5;
+    MTC.q = [{ emo: '🎯', tx: '오늘 ' + min + '분, ' + up + 'm 올랐어요' + (more ? '. 다음에 이 높이에서 이어 올라요' : ''), big: '목표 달성!', bits: ['🎯', '🎉', '👏', '✨', '💪'], say: '오늘 목표 ' + min + '분 달성했습니다.', force: true, at: Date.now() },
+             { emo: '🏁', tx: '목표 ' + min + '분 끝! 여기서 쉬거나 끝내도 좋아요', rest: true, say: '', force: true, at: Date.now() }];
+  }
+}
 function mtnTick(st){   // 운동 화면 숫자를 고칠 때마다(1초에 두세 번)
   restSync(st);
-  if (st.m.kind === 'tower' || S.paused || !S.running) return;
+  if (S.paused || !S.running) return;
   if (!$('popup').classList.contains('hidden')){ cheerHide(); cheerFxHide(); }   // 거점 알림이 뜨면 응원은 비켜 줌
+  goalTick(st);
+  if (st.m.kind !== 'tower') mtnCheers(st);
+  const now = Date.now(); MTC.q = MTC.q.filter(c => c.force || now - c.at < 240000);
+  if (MTC.q.length && (MTC.q[0].force || now - MTC.last > 200000) && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden')){ const c = MTC.q.shift(); c.big ? cheerFx(c) : cheerShow(c); }
+}
+function mtnCheers(st){   // 산 코스 고비 응원 (빌딩은 층 알림이 따로 있음)
   const r = st.ratio, big = st.m.gain >= 300, lap = ':' + st.done;
   /* 고비: 이번 운동에서 그 지점을 지나갈 때만 (70%에서 이어 오르면 25·50%는 안 뜸) · 낮은 산은 절반·코앞만 */
   [[0.25, 'p25', 0, big], [0.5, 'p50', 1, true], [0.75, 'p75', 0, big], [0.9, 'p90', 0, true]]
@@ -2611,9 +2684,7 @@ function mtnTick(st){   // 운동 화면 숫자를 고칠 때마다(1초에 두�
   if (MTC.alt != null && ak > MTC.alt && ak * 1000 < st.m.summit - 30 && !MTC.q.length && Date.now() - MTC.last > 300000){ const td = Math.round((ak * 1000 - st.m.base) * 0.006); cheerPush('a' + ak + lap, td >= 1 ? 'alt' : 'alt0', 0, { a: (ak * 1000).toLocaleString(), t: td }); }
   MTC.alt = ak;
   const k = Math.floor(S.elapsed / 1200);
-  if (k > MTC.min){ MTC.min = k; const mn = k * 20; if (st.remain / climbMpm() > 4) cheerPush('t' + mn, mn % 60 === 0 ? 't60' : mn % 40 === 0 ? 't40' : 't20', mn >= 40, { m: mn }); }
-  const now = Date.now(); MTC.q = MTC.q.filter(c => now - c.at < 240000);
-  if (MTC.q.length && now - MTC.last > 200000 && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden')){ const c = MTC.q.shift(); c.big ? cheerFx(c) : cheerShow(c); }
+  if (k > MTC.min){ MTC.min = k; const mn = k * 20; if (st.remain / climbMpm() > 4 && !(goalOn() && Math.abs(mn * 60 - S.goalSec) < 300)) cheerPush('t' + mn, mn % 60 === 0 ? 't60' : mn % 40 === 0 ? 't40' : 't20', mn >= 40, { m: mn }); }   // 목표 시각과 겹치는 시간 글은 뺌
 }
 function restSync(st){   // 산 코스에서 일시정지 = 쉬어가기 카드 (끝내기 확인 창이 떠 있으면 숨김)
   const on = !!st && S.running && S.paused && !S.free && st.m.kind !== 'tower' && $('confirmBox').classList.contains('hidden');
@@ -2660,6 +2731,7 @@ function setSpeed(v, flash){
   if (isClimb()){ S.level = Math.max(1, Math.min(LV_MAX, Math.round(v))); $('speedVal').textContent = S.level; }
   else { S.speed = Math.max(0, Math.min(S.act === 'bike' ? 60 : 25, Math.round(v*10)/10)); S.spd[S.act] = S.speed; $('speedVal').textContent = S.speed.toFixed(1); }
   refreshSpeedBox(flash); hudTick = 5;
+  if (!S.running){ try { tGoalUI(); } catch(e){} }   // 레벨을 바꾸면 '약 N m 오르면 끝' 안내도 고침
 }
 const stepSize = () => (isClimb() || S.act === 'bike') ? 1 : 0.5, curSpeed = () => isClimb() ? S.level : S.speed;
 function makePresets(list){
@@ -2847,9 +2919,12 @@ function roadRow(c, o){
     (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (o.place ? o.place + ' · ' : '') + (o.extra ? o.extra : T.hubsN.replace('{n}', hubs)) + '</span><span class="tag">' + kindIcon(c) + c.kind + '</span></div>' +
     '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (laps ? '<br>✅ ' + laps + T.times : '') + '</div></div>';
 }
+const flTx = (st, f) => st.m.eq ? Math.round(f === undefined ? st.climbed : f / st.m.floors * st.m.gain) + 'm' : (f === undefined ? st.floor : f) + 'F';   // eq 탑은 층 대신 높이
+const towerSize = m => m.eq ? m.summit + 'm' + (m.steps ? ' · 계단 ' + m.steps.toLocaleString() + '개' : '') : m.floors + T.floorUnit + ' · ' + m.summit + 'm';   // eq = 층이 없는 탑(층수는 3m 환산)
 function climbRow(m, o){
   const total = climbTotal(m.id), done = Math.floor(total / m.gain), pct = Math.floor((total % m.gain) / m.gain * 100), real = realOf(m.id);
-  const info = (o.place ? o.place + ' · ' : '') + (m.kind === 'tower' ? m.floors + T.floorUnit + ' · ' + m.summit + 'm' : m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm && !o.extra ? ' · ' + m.distKm + 'km' : '')) + (o.extra ? ' · ' + o.extra : '');
+  const info = (o.place ? o.place + ' · ' : '') + (m.kind === 'tower' ? towerSize(m) : m.summit.toLocaleString() + 'm · ' + T.gain + ' ' + m.gain + 'm' + (m.distKm && !o.extra ? ' · ' + m.distKm + 'km' : '')) +
+    ' · <b class="km">' + T.approx + ' ' + Math.max(1, Math.round(m.gain / climbMpm())) + T.min + '</b>' + (o.extra ? ' · ' + o.extra : '');   // 11/20 보스 "10분·20분 하는 경우도": 지금 레벨로 걸리는 시간
   const sibs = peakTrails(m).filter(t => t.id !== m.id), showSibs = o.sel && o.open && sibs.length;   // 11/18 A10: '다른 길' 버튼은 목록을 펼쳤을 때만
   const others = showSibs ? '<div class="sibs">' + T.otherTrails + ' ' + sibs.map(t => '<button data-jump="' + t.id + '">🥾 ' + tr(t.trailName) + ' · ' + regionName(t.cityId) + (climbTotal(t.id) >= t.gain ? ' ✅' : '') + '</button>').join('') + '</div>' : '';
   return '<div class="mrow' + (o.sel ? ' sel' : '') + '" ' + o.attr + '><div><b>' + (o.icon ? (m.kind === 'tower' ? '🏢 ' : '⛰ ') : '') + tr(m.name) + '</b>' + (m.trailName ? ' <span class="trl">' + tr(m.trailName) + '</span>' : '') +
@@ -2862,7 +2937,7 @@ function climbRow(m, o){
    · 내 주변 = 폰 위치에서 가까운 순 (장거리는 길 중 가장 가까운 지점 기준) */
 const MF = { rq: '', bq: '', zone: 'all', rMore: false, bMore: false, nMore: false, rKey: '' }, MF_N = 8;
 const MF_ZONES = [['all', '전체'], ['sudo', '수도권'], ['gangwon', '강원'], ['chung', '충청'], ['jeolla', '전라'], ['gyeong', '경상'], ['jeju', '제주'], ['abroad', '해외']];
-const mtnZone = m => m.cityId.indexOf('m100-') === 0 ? m.cityId.slice(5) : ({ hamyang: 'gyeong', sancheong: 'gyeong', gurye: 'jeolla', jeju: 'jeju' })[m.cityId] || 'abroad';
+const mtnZone = m => m.cityId.indexOf('m100-') === 0 ? m.cityId.slice(5) : ({ hamyang: 'gyeong', sancheong: 'gyeong', gurye: 'jeolla', jeju: 'jeju', seoul: 'sudo', busan: 'gyeong', daegu: 'gyeong', gyeongju: 'gyeong' })[m.cityId] || 'abroad';
 $('rFind').oninput = () => { MF.rq = $('rFind').value; refreshCourses(); };
 $('bFind').oninput = () => { MF.bq = $('bFind').value; refreshBrowse(); };
 const TOPICS = [
@@ -2996,8 +3071,8 @@ const mineC = c => !!c && c.kind === '내 코스';   // 직접 다닌 길 = 걷�
 const bikeList = c => bikeOK(c) || mineC(c);
 const actGrp = a => a === 'bike' ? 'bike' : (ACTS[a] && ACTS[a].kind === 'up') ? 'up' : 'foot';   // 걷기·조깅 / 자전거 / 등산·계단
 const GRP_NAME = { foot: '걷기·조깅', bike: '자전거', up: '등산·계단' };
-const DIST = [['all', '전체'], ['s', '5km 이하'], ['m', '5~10km'], ['l', '10km 이상']];
-const distOK = c => { const d = DB.dist || 'all', L0 = c.lengthM; return d === 'all' || (d === 's' ? L0 <= 5000 : d === 'm' ? L0 > 5000 && L0 <= 10000 : L0 > 10000); };
+const DIST = [['all', '전체'], ['xs', '3km 이하'], ['s', '3~5km'], ['m', '5~10km'], ['l', '10km 이상']];   // 11/20 보스 "조깅은 2~3km 단위로": 짧은 것부터 고르기 쉽게 한 칸 더
+const distOK = c => { const d = DB.dist || 'all', L0 = c.lengthM; return d === 'all' || (d === 'xs' ? L0 <= 3000 : d === 's' ? L0 > 3000 && L0 <= 5000 : d === 'm' ? L0 > 5000 && L0 <= 10000 : L0 > 10000); };
 const bikeOnly = c => bikeOK(c) && !/조깅|도보|걷기/.test(c.kind || '');   // 차와 함께 쓰는 고갯길 등
 const kindIcon = c => mineC(c) ? '⭐ ' : bikeOK(c) ? (bikeOnly(c) ? '🚲 ' : '🏃🚲 ') : '🚶 ';
 function distChips(){
@@ -3063,6 +3138,7 @@ function setAct(a){
   if (!free && !pickOK()) $('bStart').classList.add('need');
   $('goalBox').classList.add('hidden');   // 오늘 목표는 없앰: 다음 거점이 자동 목표
   actNote(); distChips();
+  tGoalUI();
   $('speedTitle').textContent = a === 'stair' ? T.levelTitle : a === 'bike' ? T.speedBike : T.speedKmh;
   $('speedVal').parentNode.dataset.l = $('speedTitle').textContent;   // 11/18 A5: 제목 줄 대신 숫자 앞 작은 글씨
   $('speedUnit').textContent = up ? '' : 'km/h';
@@ -3499,6 +3575,7 @@ function refreshStart(){
     const cs = climbState();
     $('sumPickName').textContent = (cs.m.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(cs.m.name) + ' · ' + (cs.m.trailName ? tr(cs.m.trailName) : tr(cs.m.cityName));
     $('sumPick').textContent = Math.floor(cs.ratio * 100) + '% · ' + Math.round(cs.left) + 'm ' + T.left + (cs.done ? ' · ✅ ' + cs.done + T.times : '');
+    try { tGoalUI(); } catch(e){}   // 산·레벨이 바뀌면 오늘 목표 안내 글도 고침
   } else {
     const wt = walkTotal();
     $('sumPickName').textContent = '🛣 ' + tr(COURSE.short || COURSE.name) + ' · ' + tr(CITY.name);
@@ -3638,7 +3715,7 @@ function renderTower(st, bob, sway){
     if (sw > 6){
       ctx.fillStyle = '#1f6b45'; ctx.fillRect(sx, s1.y, sw, sh);
       ctx.fillStyle = '#fff'; ctx.font = '800 ' + Math.round(sh * 0.62) + 'px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(nextFloor + 'F', sx + sw/2, s1.y + sh * 0.76); ctx.textAlign = 'left';
+      ctx.fillText(flTx(st, nextFloor), sx + sw/2, s1.y + sh * 0.76); ctx.textAlign = 'left';
     }
   }
   // 층참 바닥
@@ -3682,7 +3759,7 @@ function drawMapClimb(st){
     const py = bot - (bot - top) * st.ratio;
     g.fillStyle = '#e8574a'; g.strokeStyle = '#fff'; g.lineWidth = 2*d; g.beginPath(); g.arc(sz/2, py, 5*d, 0, 7); g.fill(); g.stroke();
     g.fillStyle = '#333'; g.font = '700 ' + (10*d) + 'px sans-serif'; g.textAlign = 'right';
-    g.fillText(st.m.floors + 'F', sz - 8*d, top + 4*d); g.font = (10*d) + 'px sans-serif';
+    g.fillText(st.m.eq ? st.m.gain + 'm' : st.m.floors + 'F', sz - 8*d, top + 4*d); g.font = (10*d) + 'px sans-serif';
     g.fillText(st.m.summit + 'm', sz - 8*d, top + 17*d);
     g.textAlign = 'center'; g.fillText(tr(st.m.short || st.m.name), sz/2, sz - 7*d); g.textAlign = 'left';
     return;
@@ -4301,7 +4378,7 @@ function askResume(){   // 물었으면 true (11/16 보스: 완주 안 한 코�
     const st = climbState(); if (st.climbed < 3) return false;
     key = 'c:' + st.m.id;
     body = (st.m.kind === 'tower' ? '🏙 ' : '⛰ ') + tr(st.m.name) + ' · ' + Math.floor(st.ratio * 100) + '%\n' +
-      (st.m.kind === 'tower' ? st.floor + T.floorUnit : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + (st.m.kind === 'tower' ? T.toTop : T.toSummit) + ' ' + Math.round(st.left) + 'm';
+      (st.m.kind === 'tower' ? (st.m.eq ? Math.round(st.climbed) + 'm' : st.floor + T.floorUnit) : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + (st.m.kind === 'tower' ? T.toTop : T.toSummit) + ' ' + Math.round(st.left) + 'm';
   } else {
     const pos = walkTotal() % L; if (pos < 30) return false;
     key = COURSE.id;
@@ -4571,15 +4648,15 @@ function drawClimbView(st){
     ctx.beginPath(); ctx.moveTo(mid - bw0 * towerW(m, 0) / 2, bot); for (let i = 0; i <= N; i++){ const t = i / N; ctx.lineTo(mid - bw0 * towerW(m, t) / 2, yAt(t)); } for (let i = N; i >= 0; i--){ const t = i / N; ctx.lineTo(mid + bw0 * towerW(m, t) / 2, yAt(t)); } ctx.closePath();
     ctx.fillStyle = tx.glass || '#c3cfdb'; ctx.fill(); ctx.save(); ctx.clip(); ctx.fillStyle = 'rgba(63,154,82,.55)'; ctx.fillRect(0, yAt(st.ratio), W, bot - yAt(st.ratio)); ctx.restore();
     ctx.font = '700 ' + Math.round(11 * DPR) + 'px sans-serif'; ctx.fillStyle = night ? 'rgba(255,255,255,.7)' : '#556677';
-    const stepF = m.floors > 80 ? 20 : 10; for (let f = stepF; f < m.floors; f += stepF){ const y = yAt(f / m.floors); ctx.fillText(f + 'F', mid + bw0 / 2 + 8 * DPR, y + 4 * DPR); }
+    const stepF = m.floors > 80 ? 20 : 10; for (let f = stepF; f < m.floors; f += stepF){ const y = yAt(f / m.floors); ctx.fillText(m.eq ? Math.round(f / m.floors * m.gain) + 'm' : f + 'F', mid + bw0 / 2 + 8 * DPR, y + 4 * DPR); }
     let lastY = top + 4 * DPR;   // 이정표 글자: 위에서부터 차례로, 겹치면 아래로 내림 (제목과도 안 겹치게)
     (m.waypoints || []).slice().sort((a, b) => b.at - a.at).forEach(w => { const y0 = yAt(w.at), y = Math.max(y0, lastY + 22 * DPR); lastY = y;
       ctx.font = '800 ' + Math.round(12 * DPR) + 'px sans-serif'; const lb = '⭐ ' + tr(w.name), tw = ctx.measureText(lb).width, ex = mid - bw0 * towerW(m, w.at) / 2, lx = Math.max(6 * DPR, ex - tw - 22 * DPR);
       ctx.fillStyle = 'rgba(255,255,255,.93)'; ctx.fillRect(lx - 4 * DPR, y - 15 * DPR, tw + 8 * DPR, 20 * DPR); ctx.fillStyle = '#7a4e0a'; ctx.fillText(lb, lx, y);
       ctx.strokeStyle = '#d4a017'; ctx.lineWidth = 2 * DPR; ctx.beginPath(); ctx.moveTo(lx + tw + 4 * DPR, y - 4 * DPR); ctx.lineTo(ex, y0); ctx.stroke(); });
-    ctx.fillStyle = night ? '#fff' : '#24332a'; ctx.font = '800 ' + fs + 'px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🏙 ' + tr(m.name) + ' · ' + m.floors + 'F · ' + m.summit + 'm', W / 2, top - 12 * DPR); ctx.textAlign = 'left';
+    ctx.fillStyle = night ? '#fff' : '#24332a'; ctx.font = '800 ' + fs + 'px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🏙 ' + tr(m.name) + (m.eq ? '' : ' · ' + m.floors + 'F') + ' · ' + m.summit + 'm', W / 2, top - 12 * DPR); ctx.textAlign = 'left';
     const y = yAt(st.ratio), wc = bw0 * towerW(m, st.ratio); ctx.fillStyle = '#e8574a'; ctx.fillRect(mid - wc / 2 - 12 * DPR, y - 2 * DPR, wc + 24 * DPR, 4 * DPR);
-    ctx.font = '900 ' + Math.round(18 * DPR) + 'px sans-serif'; ctx.fillText(st.floor + 'F', mid + wc / 2 + 16 * DPR, y + 6 * DPR);
+    ctx.font = '900 ' + Math.round(18 * DPR) + 'px sans-serif'; ctx.fillText(flTx(st), mid + wc / 2 + 16 * DPR, y + 6 * DPR);
     return;
   }
   if (st.geo){ drawGeoProfile(ctx, W * 0.08, W * 0.92, top, bot, st, false); return; }
@@ -4648,9 +4725,9 @@ function updateInfoClimb(st){
   g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(0, h * 0.35, w, h * 0.3);
   g.fillStyle = '#7fd18a'; g.fillRect(0, h * 0.35, w * st.ratio, h * 0.3);
   g.fillStyle = '#e8574a'; g.beginPath(); g.arc(w * st.ratio, h / 2, 5 * DPR, 0, 7); g.fill();
-  $('ipGrade').textContent = (tower ? st.floor + T.floorUnit + ' · ' + Math.round(st.elev) + 'm' : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + Math.floor(st.ratio * 100) + '%';
+  $('ipGrade').textContent = (tower ? (st.m.eq ? '' : st.floor + T.floorUnit + ' · ') + Math.round(st.elev) + 'm' : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm') + ' · ' + Math.floor(st.ratio * 100) + '%';
   const cn = climbNote(st); $('ipNote').textContent = cn[0]; $('ipNote').classList.toggle('ok', cn[1]);
-  $('ipCourse').textContent = tr(m.cityName) + ' · ' + m.base.toLocaleString() + ' → ' + m.summit.toLocaleString() + 'm' + (tower ? ' · ' + m.floors + T.floorUnit : '') + (st.done ? ' · ✅ ' + st.done + T.times : '') + (m.desc ? ' · ' + tr(m.desc) : '');
+  $('ipCourse').textContent = tr(m.cityName) + ' · ' + m.base.toLocaleString() + ' → ' + m.summit.toLocaleString() + 'm' + (tower && !m.eq ? ' · ' + m.floors + T.floorUnit : '') + (st.done ? ' · ✅ ' + st.done + T.times : '') + (m.desc ? ' · ' + tr(m.desc) : '');
 }
 $('courseToggle').onclick = () => { listOpen = !listOpen; refreshCourses(); };
 function showHome(){
@@ -5948,7 +6025,7 @@ function drawClimbNav(g, x, y, vw, vh, st, mini){
         for (let i = 0; i < nw; i++){ const lit = night ? rnd(k * 31 + i) > 0.4 : false; g.fillStyle = lit ? 'rgba(255,220,140,.85)' : night ? 'rgba(20,30,50,.5)' : 'rgba(255,255,255,.35)';
           g.fillRect(mid - wa / 2 + wa * (i + 0.2) / nw, yb + (ya - yb) * 0.25, wa / nw * 0.6, wh); } }
       g.strokeStyle = night ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.6)'; g.lineWidth = 1 * DPR; g.beginPath(); g.moveTo(mid - wa / 2, ya); g.lineTo(mid + wa / 2, ya); g.stroke();
-      if (!mini && k > 0 && ya < vh && ya > 0){ g.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif'; g.fillStyle = night ? (k % 5 === 0 ? '#fff' : 'rgba(255,255,255,.55)') : (k % 5 === 0 ? '#24332a' : 'rgba(36,51,42,.5)'); g.fillText(k + 'F', mid + bw0 / 2 + 9 * DPR, ya + 4 * DPR); }
+      if (!mini && k > 0 && ya < vh && ya > 0){ g.font = '700 ' + Math.round(12 * DPR) + 'px sans-serif'; g.fillStyle = night ? (k % 5 === 0 ? '#fff' : 'rgba(255,255,255,.55)') : (k % 5 === 0 ? '#24332a' : 'rgba(36,51,42,.5)'); g.fillText(st.m.eq ? Math.round(k / m.floors * m.gain) + 'm' : k + 'F', mid + bw0 / 2 + 9 * DPR, ya + 4 * DPR); }
     }
     if (!mini) (m.waypoints || []).forEach(w => { const yy = yOf(w.at * m.gain); if (yy < 10 * DPR || yy > vh) return;   // 유명 층 이정표
       g.font = '800 ' + Math.round(13 * DPR) + 'px sans-serif'; const lb = '⭐ ' + tr(w.name), tw = g.measureText(lb).width;
@@ -6029,7 +6106,7 @@ function drawClimbMini(st){   // 작은 칸: 산·빌딩 전체에서 어디쯤�
     g.beginPath(); for (let i = 0; i <= N; i++) g.lineTo(mid - bw * towerW(m, i / N) / 2, bot - hh * i / N); for (let i = N; i >= 0; i--) g.lineTo(mid + bw * towerW(m, i / N) / 2, bot - hh * i / N); g.closePath();
     g.fillStyle = (TOWER_X[m.id] || {}).glass || '#c3cfdb'; g.fill(); g.save(); g.clip(); g.fillStyle = 'rgba(63,154,82,.6)'; g.fillRect(0, bot - fh, sz, fh); g.restore();
     const wc = bw * towerW(m, st.ratio); g.fillStyle = '#e8574a'; g.fillRect(mid - wc / 2 - 8 * DPR, bot - fh - 2 * DPR, wc + 16 * DPR, 4 * DPR);
-    miniTag(T.tagAll, st.floor + ' / ' + m.floors + 'F'); return;
+    miniTag(T.tagAll, m.eq ? Math.round(st.climbed) + ' / ' + m.gain + 'm' : st.floor + ' / ' + m.floors + 'F'); return;
   }
   if (st.geo){ g.fillStyle = '#eef2ea'; g.fillRect(0, 0, sz, sz); drawGeoProfile(g, 12 * DPR, sz - 12 * DPR, top, bot, st, true); miniTag(T.tagAll, '지금 ' + Math.round(st.elev).toLocaleString() + 'm'); return; }
   const x0 = 12 * DPR, x1 = sz - 12 * DPR, X = t => x0 + (x1 - x0) * t, Y = t => bot - (bot - top) * climbCurve(t);
