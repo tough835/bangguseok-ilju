@@ -241,6 +241,8 @@
   .sum4 div{background:rgba(var(--ink),.08);border-radius:14px;padding:10px 12px}
   .sum4 .kc{grid-column:span 2}
   .kcday{background:rgba(var(--ink),.08);border-radius:14px;padding:10px 14px;margin:12px 0 4px}.kcday .kt{display:flex;justify-content:space-between;font-weight:800;font-size:17px;margin-bottom:4px}.kcday .kl{display:flex;justify-content:space-between;font-size:14px;opacity:.85;padding:3px 0}.kcday .kl b{font-weight:700}
+  .kbasis{margin-top:10px;font-size:13.5px;line-height:1.6;word-break:keep-all}.kbasis summary{cursor:pointer;padding:8px 0;font-weight:700;color:var(--vtx)}.kbasis p{margin:8px 0;color:var(--tx2)}.kbasis b{color:var(--tx)}
+  #bodyBox .sb{max-height:88vh;overflow:auto}
   .bodyrow{display:flex;align-items:center;gap:8px;margin:6px 0}.bodyrow label{width:44px}.bodyrow input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;font-size:17px}
   .sum4 span{display:block;font-size:12px;opacity:.7}
   .sum4 b{font-size:22px}
@@ -868,12 +870,22 @@
 <div id="bodyBox" class="modal hidden">
   <div class="sb">
     <div class="st">⚖️ 내 몸 정보 (칼로리 계산용)</div>
-    <div class="muted" style="line-height:1.5;margin-bottom:10px">넣을수록 정확해져요. 비워 두면 기본값(체중 65kg)으로 계산해요.<br>이 정보는 내 폰에만 저장돼요.</div>
+    <div class="muted" style="line-height:1.5;margin-bottom:10px"><b>체중이 가장 중요해요</b> — 칼로리는 체중에 비례해요. 비워 두면 65kg으로 계산해요.<br>이 정보는 내 폰에만 저장돼요.</div>
     <div class="bodyrow"><label>체중</label><input id="bdKg" type="number" inputmode="decimal" min="20" max="250" step="0.1" placeholder="예: 70"><span>kg</span></div>
     <div class="bodyrow"><label>키</label><input id="bdCm" type="number" inputmode="decimal" min="100" max="230" step="0.1" placeholder="예: 172"><span>cm</span></div>
     <div class="bodyrow"><label>나이</label><input id="bdAge" type="number" inputmode="numeric" min="10" max="100" placeholder="예: 45"><span>세</span></div>
     <div class="seg" id="bdSex" style="margin-top:8px"><button data-sex="m">남</button><button data-sex="f">여</button><button data-sex="">선택 안 함</button></div>
     <div class="muted" id="bdNote" style="margin-top:8px;line-height:1.5"></div>
+    <details class="kbasis"><summary>📐 계산 기준 보기</summary>
+      <div>
+        <p><b>공통 식</b> 1분 칼로리 = 산소 사용량 × 체중 ÷ 200<br>미국스포츠의학회(ACSM) 방식이고, 헬스장 기계들도 이 틀을 써요.</p>
+        <p><b>걷기·달리기</b> ACSM 속도 공식 (러닝머신과 같은 식)</p>
+        <p><b>천국의 계단</b> 오른 높이 1m마다 산소 2ml/kg.<br>실제로 재 본 연구 3건과 10% 안에서 맞는 식이에요.</p>
+        <p><b>자전거·바깥 등산</b> 2024 신체활동 강도표(Compendium)</p>
+        <p><b>키·나이·성별</b> 쉬는 동안 쓰는 열량(해리스-베네딕트 식)에만 반영돼요. 그래서 차이는 1~3%예요.</p>
+        <p><b>기계 숫자와 다른 이유</b> 기계마다 식이 다르고, 체중을 넣지 않으면 기계의 기본 체중으로 계산해요. 기계에도 내 체중을 넣어 보세요.</p>
+      </div>
+    </details>
     <div class="mbtn"><button id="bdClear">지우기</button><button id="bdSave" class="go">저장</button></div>
     <button id="bdClose" style="display:block;margin:10px auto 0;background:none;border:0;color:inherit;opacity:.6">닫기</button>
   </div>
@@ -982,7 +994,7 @@
 </div>
 
 <script>
-const BUILD = '202611192036';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611192051';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3090,7 +3102,7 @@ function saveManual(amt, min, act){
 $('bAdd').onclick = openAdd;
 let bdSex = '';
 function bodyNote(){ const n = [$('bdKg').value, $('bdCm').value, $('bdAge').value].filter(v => v).length;
-  $('bdNote').textContent = !$('bdKg').value ? T.kcalLv0 + ' — 체중만 넣어도 훨씬 정확해져요' : (n === 3 && bdSex) ? T.kcalLv2 + ' — 기초대사량까지 반영해요' : T.kcalLv1 + ' — 키·나이·성별까지 넣으면 개인 맞춤'; }
+  $('bdNote').textContent = !$('bdKg').value ? T.kcalLv0 + ' — 체중만 넣어도 훨씬 정확해져요' : (n === 3 && bdSex) ? T.kcalLv2 + ' — 쉬는 대사량까지 반영해요' : T.kcalLv1 + ' — 키·나이·성별을 넣으면 쉬는 대사량까지 반영(차이 1~3%)'; }
 function bodySexBtns(){ $('bdSex').querySelectorAll('[data-sex]').forEach(b => b.classList.toggle('on', b.dataset.sex === bdSex)); bodyNote(); }
 $('bBody').onclick = () => { const b = DB.body || {}; $('bdKg').value = b.kg || ''; $('bdCm').value = b.cm || ''; $('bdAge').value = b.age || ''; bdSex = b.sex || ''; bodySexBtns(); $('bodyBox').classList.remove('hidden'); };
 $('bdSex').querySelectorAll('[data-sex]').forEach(b => b.onclick = () => { bdSex = b.dataset.sex; bodySexBtns(); });
@@ -3135,7 +3147,8 @@ $('bStart').onclick = () => {
   showRun(true); resize(); keepAwake(); hudTick = 5; refreshSpeedBox(false); mtnStart();
   lastFrame = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 };
-function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted">(' + T['kcalLv' + bodyFix()[2]] + ')</span>' : ''; }
+function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted" data-kb style="text-decoration:underline;text-underline-offset:3px">(' + T['kcalLv' + bodyFix()[2]] + ' · 계산 기준)</span>' : ''; }
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-kb]')) $('bBody').click(); });
 function fillEnd(){
   if (S.hikeGps) return fillHike();
   setTimeout(endAlt, 0);
@@ -4291,38 +4304,48 @@ $('bReset').onclick = () => {
    (고치면 credit도 같이 바뀌어 코스 진행이 자동으로 맞춰짐)
    ===================================================================== */
 const REC = { per: 'week', f: 'all', edit: null, delArm: false, day: '', mon: null };
-/* ---- 칼로리 (11/16) — 운동 강도(MET) × 체중 × 시간
-   · 걷기·달리기: 미국스포츠의학회(ACSM) 속도 공식 (분당 100m 미만 = 걷기 / 이상 = 달리기)
-   · 자전거: 속도별 MET (운동강도 표 기준) / 계단·등산: 시간 있으면 MET, 없으면 오른 높이로 일량 계산
-   · 몸 정보: 체중만 = 체중 반영 / 키·나이·성별까지 = 기초대사량(미플린 공식)으로 개인 보정. 비우면 65kg 기본값
-   · 기록에 저장하지 않고 볼 때마다 계산 → 몸 정보를 바꾸면 지난 기록도 같이 바뀜 */
-const BODY_KG0 = 65;
-function bodyFix(){   // [체중, 보정 배수, 정확도 단계]
+/* ---- 칼로리 — 11/19 밤 보스 "결과 수치는 객관적이어야 · 기계 계산법과 표준 기준을 참고" → 근거를 다시 맞춤 ----
+   틀 (기계·교과서 공통): 분당 kcal = 산소 사용량 VO2(ml/kg/분) × 체중(kg) ÷ 200   — 산소 1L ≈ 5kcal
+       · 미국스포츠의학회(ACSM) 방식. 운동기구 회사 Life Fitness의 계산 문서(M1057A)도 같은 식(Kcal/min = VO2 × 체중 / 200)
+   VO2 = 운동 몫 + 쉬는 몫
+   · 걷기·달리기(러닝머신·바깥): ACSM 속도 공식 — 걷기 0.1 × 분속(m) / 달리기 0.2 × 분속 (경사 0). 러닝머신 회사 공식과 같음. 분속 100m 미만 = 걷기
+   · 천국의 계단: 오른 높이 1m마다 2.0 ml/kg (Holland 1990 식)
+       실측 연구와 ±10% 안에서 맞음 — Bassett 1997(분당 70걸음·단 높이 20cm → 8.6 MET), Teh·Aziz 2002(9.6 MET), Matrix 계단 기계 2022(5.3~7.7 MET)
+       2024 신체활동 목록(Adult Compendium) '계단 기계 일반' 9.3 MET과도 같은 크기(분당 14m에서 9.0)
+       * ACSM '계단 공식'(0.2f + 1.33×1.8×H×f)은 분당 12~30걸음용 — 계단 기계 빠르기(50~110걸음)에 그대로 쓰면 실측보다 20~70% 높게 나와 쓰지 않음
+   · 자전거: 2024 Compendium 속도별 강도 (코드 01010~01050 = 4.0 / 6.8 / 8.0 / 10.0 / 12.0 MET)
+   · 바깥 등산(GPS): 2024 Compendium 17080 '등산' 6.0 MET
+   · 쉬는 몫: 기본 3.5 (1 MET). 키·나이·성별까지 넣으면 해리스-베네딕트 식으로 내 쉬는 대사량을 구해 그 값으로 (Compendium '보정 MET'과 같은 식·계수)
+       * 체중을 싣고 움직이는 운동은 산소 사용량이 체중에 비례 → 체중이 숫자를 거의 다 정함. 키·나이·성별은 쉬는 몫만 바꿔 차이 1~3%
+       * 11/19 이전에는 전체에 기초대사 비율(0.75~1.25)을 곱했음 — 표준에 근거가 없어 없앰 (그때 숫자와 달라짐)
+   · 기록에 저장하지 않고 볼 때마다 계산 → 몸 정보·계산식을 바꾸면 지난 기록 숫자도 같이 바뀜 */
+const BODY_KG0 = 65, STAIR_ML_M = 2.0, STAIR_MPM0 = 14;   // 시간을 모르는 계단 기록 = 분당 14m(70걸음 × 20cm)로 가정
+function bodyFix(){   // [체중, 쉬는 대사량(ml/kg/분), 정확도 단계]
   const b = DB.body || {}, kg = b.kg > 20 ? b.kg : BODY_KG0;
   if (b.kg > 20 && b.cm > 100 && b.age > 9 && (b.sex === 'm' || b.sex === 'f')){
-    const bmr = 10 * b.kg + 6.25 * b.cm - 5 * b.age + (b.sex === 'm' ? 5 : -161);   // 하루 기초대사량(kcal)
-    return [kg, Math.max(0.75, Math.min(1.25, bmr / 24 / b.kg)), 2];   // 표준 = 체중 1kg당 시간당 1kcal
+    const day = b.sex === 'm' ? 66.4730 + 5.0033 * b.cm + 13.7516 * b.kg - 6.7550 * b.age : 655.0955 + 1.8496 * b.cm + 9.5634 * b.kg - 4.6756 * b.age;   // 해리스-베네딕트: 하루 쉬는 대사량(kcal)
+    return [kg, Math.max(2.2, Math.min(4.5, day / 1440 / 5 / b.kg * 1000)), 2];   // kcal/일 → ml/kg/분
   }
-  return [kg, 1, b.kg > 20 ? 1 : 0];
+  return [kg, 3.5, b.kg > 20 ? 1 : 0];
 }
 function kcalOf(r){
-  const [kg, k] = bodyFix(), a = ACTS[r.act] || ACTS.tread;
-  let sec = r.sec || 0, met;
+  const [kg, rest] = bodyFix(), a = ACTS[r.act] || ACTS.tread;
+  let sec = r.sec || 0, act;   // act = 운동 몫(ml/kg/분)
   if (a.kind === 'up'){
-    const up = r.upM || 0;
-    if (sec >= 60) met = r.act === 'hike' ? 6.5 : 9;   // 등산 / 천국의 계단
-    else return Math.round(up * kg * 9.81 / 4184 / 0.2 * 1.3 * k);   // 시간 없으면: 오른 높이 일량 (몸 효율 20%) + 걷는 몫
+    const up = r.upM || 0; if (!up && sec < 60) return 0;
+    if (r.act === 'hike'){ if (sec < 60) sec = up / 5 * 60; act = (6.0 - 1) * 3.5; }   // 바깥 등산 (시간 모르면 분당 5m 오름으로)
+    else { if (sec < 60) sec = up / STAIR_MPM0 * 60; act = STAIR_ML_M * Math.min(30, up / (sec / 60)); }   // 천국의 계단: 분당 오른 높이로
   } else {
     const d = r.distM || 0; if (!d) return 0;
     if (r.act === 'bike'){
       if (sec < 60) sec = d / (18 / 3.6);
-      const v = d / sec * 3.6; met = v < 16 ? 4 : v < 19 ? 6.8 : v < 22 ? 8 : v < 25 ? 10 : 12;
+      const v = d / sec * 3.6; act = ((v < 16 ? 4 : v < 19 ? 6.8 : v < 22 ? 8 : v < 25 ? 10 : 12) - 1) * 3.5;
     } else {
       if (sec < 60 || r.src === 'steps') sec = d / (5 / 3.6);   // 시간 모르면 시속 5km 걷기로
-      const v = Math.min(400, d / sec * 60); met = (v < 100 ? 0.1 * v + 3.5 : 0.2 * v + 3.5) / 3.5;
+      const v = Math.min(400, d / sec * 60); act = v < 100 ? 0.1 * v : 0.2 * v;
     }
   }
-  return Math.round(met * kg * sec / 3600 * k);
+  return Math.round((act + rest) * kg / 200 * sec / 60);
 }
 const kcalTxt = n => n.toLocaleString() + ' kcal';
 /* 오늘 총 칼로리 = 생활 걸음(운동 밖 걸음) + 운동 기록(종류별). 걸음을 코스에 반영한 기록(src steps)은 생활 걸음과 같은 것이라 빼고 셈 */
