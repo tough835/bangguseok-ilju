@@ -155,7 +155,7 @@ def route(cid, pts, bike):   # (방법, 거리 m, [[위도, 경도] …]) 또는
         except Exception as e2: log.append(cid + ' Valhalla ' + str(e2)[:80])
     return None
 def heights(co, cum):   # 길 따라 높이 [[m 지점, 해발 m] …] (Open-Meteo, 열쇠 없음)
-    n = max(6, min(60, int(cum[-1] / 300) + 2))
+    n = max(8, min(100, int(cum[-1] / 110) + 2))   # 11/20: 약 110m마다(최대 100곳) — 300m 간격은 언덕 꼭대기를 놓침
     idx = sorted(set(min(bisect.bisect_left(cum, cum[-1] * k / (n - 1)), len(co) - 1) for k in range(n)))
     for k in range(3):
         try:
@@ -170,9 +170,9 @@ for c in src:
         if c.get('ring') or c.get('via'):   # 높이만 빠진 파일은 길은 그대로 두고 높이만 채움
             try:
                 o = json.load(open('data/route/%s.json' % c['id'], encoding='utf-8'))
-                if 'elev' not in o:
+                if 'elev' not in o or o.get('ev') != 2:
                     el = heights(o['p'], cumdist(o['p']))
-                    if el: o['elev'] = el; json.dump(o, open('data/route/%s.json' % c['id'], 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False); log.append(c['id'] + ' 높이만 채움')
+                    if el: o['elev'] = el; o['ev'] = 2; json.dump(o, open('data/route/%s.json' % c['id'], 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False); log.append(c['id'] + ' 높이만 채움')
             except Exception as e: log.append(c['id'] + ' 높이 채우기 실패 ' + str(e)[:60])
         continue
     bike = c.get('mode') == 'bike'; extra = {}; named = []; res = None
@@ -219,7 +219,7 @@ for c in src:
                 if c.get('via'): i0 = i
             out['marks'] = marks; out.update(extra)
             el = heights(co, cum)
-            if el: out['elev'] = el
+            if el: out['elev'] = el; out['ev'] = 2
         json.dump(out, open('data/route/%s.json' % c['id'], 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False)
         log.append('%s %s %.2fkm / 공식 %.2fkm (x%.2f) %d점%s' % (c['id'], how, dist / 1000, c['lengthM'] / 1000, dist / c['lengthM'], len(co), ' 거점 %d' % len(out.get('marks', [])) if 'marks' in out else ''))
     time.sleep(1.5)
