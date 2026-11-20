@@ -126,3 +126,9 @@ namhangang-bike 높이만 채움
 yeongsan-bike 높이만 채움
 dalseong-bike 높이만 채움
 tangeum-bike 높이만 채움
+hwaseong-gil 높이만 채움
+jeonjuhanok-gil 높이만 채움
+sorigil-gil 높이만 채움
+dumulmeori-gil 높이만 채움
+seomjin-bike 높이만 채움
+daecheong-bike 높이만 채움
