@@ -70,3 +70,21 @@ dalseong-bike OSRM 19.89km / 공식 22.00km (x0.90) 285점 거점 3
 tangeum-bike OSRM 19.27km / 공식 18.00km (x1.07) 557점 거점 3
 seomjin-bike OSRM 34.30km / 공식 27.00km (x1.27) 859점 거점 3
 daecheong-bike OSRM 23.83km / 공식 22.00km (x1.08) 759점 거점 3
+suseongmot-gil OSRM 1.93km / 공식 2.00km (x0.96) 46점 거점 3
+uirimji-gil OSRM 1.98km / 공식 1.90km (x1.04) 77점 거점 1
+sejonglake-gil OSRM 4.05km / 공식 4.40km (x0.92) 409점 거점 0
+ilsanlake-gil OSRM 4.43km / 공식 4.70km (x0.94) 263점 거점 2
+pungam-gil OSRM 1.84km / 공식 2.20km (x0.84) 70점 거점 0
+bomun-gil OSRM 7.43km / 공식 7.00km (x1.06) 351점 거점 2
+hoamji-gil OSRM 2.91km / 공식 3.20km (x0.91) 148점 거점 2
+geumoji-gil OSRM 2.37km / 공식 2.40km (x0.99) 88점 거점 4
+cheonhoji-gil OSRM 2.33km / 공식 2.30km (x1.01) 75점 거점 1
+tapjeong-gil OSRM 17.42km / 공식 19.00km (x0.92) 932점 거점 2
+hwaseong-gil OSRM 5.16km / 공식 5.70km (x0.90) 424점 거점 8
+pureungil-gil 높이만 채움
+saejae-gil OSRM 6.11km / 공식 6.50km (x0.94) 535점 거점 3
+dumulmeori-gil 높이만 채움
+naejang-gil 높이만 채움
+yeongsan-bike 높이만 채움
+tangeum-bike 높이만 채움
+daecheong-bike 높이만 채움
