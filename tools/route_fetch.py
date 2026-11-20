@@ -88,30 +88,43 @@ def stitch(ws):   # 조각 길들을 끝점끼리 이어 가장 긴 고리 하�
                 if w[0] == r[0]: r = w[::-1][:-1] + r; ws.pop(i); grew = True; break
         if perim(r) > perim(best): best = r
     return best
+OVP = ('https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter')
+def overpass(ql):
+    for host in OVP:
+        try: time.sleep(2); return get(host, ('data=' + urllib.parse.quote(ql)).encode())
+        except Exception as e: glog.append('  overpass 실패 %s: %s' % (host[8:30], str(e)[:60]))
+    return None
+def el_ring(el):
+    if el.get('type') == 'way': return [[g['lat'], g['lon']] for g in el.get('geometry') or []]
+    return stitch([[[g['lat'], g['lon']] for g in m.get('geometry') or []] for m in el.get('members') or [] if m.get('type') == 'way' and m.get('role') in ('outer', '')])
+WATER = ('["natural"="water"]', '["landuse"="reservoir"]', '["natural"="wetland"]')
 def lake(names, near, box, want):   # 호수 윤곽 (고리, 둘레 m, 출처)
-    best = None; ok = lambda pm: want * 0.4 <= pm <= want * 2.5
-    for q in names.split('|'):
+    best = None; park = None; ok = lambda pm: want * 0.4 <= pm <= want * 2.5
+    closer = lambda pm, b: b is None or abs(pm - want) < abs(b[1] - want)
+    for q in names.split('|'):   # 1) 이름으로 찾은 물(호수·저수지)
         try: res = nomi(q.strip(), near, box, poly=True)
         except Exception as e: glog.append('  nominatim(윤곽) 실패 %s: %s' % (q, str(e)[:70])); res = []
         for it in res:
             for r in rings_of(it.get('geojson') or {}):
-                pm = perim(r); glog.append('  윤곽 후보 %s %s %s 둘레 %.0fm' % (q, it.get('category', ''), it.get('type', ''), pm))
-                if ok(pm) and (best is None or abs(pm - want) < abs(best[1] - want)): best = (r, pm, 'Nominatim ' + (it.get('display_name') or '')[:50])
+                pm = perim(r); wet = it.get('category') in ('water', 'natural', 'waterway') or it.get('type') in ('water', 'reservoir', 'lake', 'pond', 'wetland', 'basin')
+                glog.append('  윤곽 후보 %s %s %s 둘레 %.0fm' % (q, it.get('category', ''), it.get('type', ''), pm))
+                if not ok(pm): continue
+                if wet and closer(pm, best): best = (r, pm, 'Nominatim ' + (it.get('display_name') or '')[:50])
+                if not wet and closer(pm, park): park = (r, pm, 'Nominatim(공원) ' + (it.get('display_name') or '')[:50])
         if best: return best
-    for q in names.split('|'):
+    for q in names.split('|'):   # 2) Overpass 이름
         f = '["name"~"%s"](around:%d,%.5f,%.5f);' % (q.strip(), int(box * 111000), near[0], near[1])
-        ql = '[out:json][timeout:50];(' + ''.join(t + k + f for t in ('way', 'relation') for k in ('["natural"="water"]', '["landuse"="reservoir"]', '["natural"="wetland"]')) + ');out geom;'
-        j = None
-        for host in ('https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'):
-            try: time.sleep(2); j = get(host, ('data=' + urllib.parse.quote(ql)).encode()); break
-            except Exception as e: glog.append('  overpass 실패 %s: %s' % (q, str(e)[:70]))
+        j = overpass('[out:json][timeout:50];(' + ''.join(t + k + f for t in ('way', 'relation') for k in WATER) + ');out geom;')
         for el in (j or {}).get('elements', []):
-            if el.get('type') == 'way': r = [[g['lat'], g['lon']] for g in el.get('geometry') or []]
-            else: r = stitch([[[g['lat'], g['lon']] for g in m.get('geometry') or []] for m in el.get('members') or [] if m.get('type') == 'way' and m.get('role') in ('outer', '')])
-            pm = perim(r); glog.append('  윤곽 후보(overpass) %s 둘레 %.0fm' % ((el.get('tags') or {}).get('name', ''), pm))
-            if ok(pm) and (best is None or abs(pm - want) < abs(best[1] - want)): best = (r, pm, 'Overpass ' + (el.get('tags') or {}).get('name', ''))
+            r = el_ring(el); pm = perim(r); glog.append('  윤곽 후보(overpass 이름) %s 둘레 %.0fm' % ((el.get('tags') or {}).get('name', ''), pm))
+            if ok(pm) and closer(pm, best): best = (r, pm, 'Overpass ' + (el.get('tags') or {}).get('name', ''))
         if best: return best
-    return None
+    f = '(around:%d,%.5f,%.5f);' % (max(600, int(want * 0.35)), near[0], near[1])   # 3) 이름 없이: 이 근처 물 가운데 둘레가 가장 비슷한 것
+    j = overpass('[out:json][timeout:50];(' + ''.join(t + k + f for t in ('way', 'relation') for k in WATER[:2]) + ');out geom;')
+    for el in (j or {}).get('elements', []):
+        r = el_ring(el); pm = perim(r); glog.append('  윤곽 후보(overpass 근처 물) %s 둘레 %.0fm' % ((el.get('tags') or {}).get('name', '-'), pm))
+        if want * 0.5 <= pm <= want * 2.0 and closer(pm, best): best = (r, pm, 'Overpass 근처 물 ' + (el.get('tags') or {}).get('name', ''))
+    return best or park
 def sample(r, n, start):   # 고리 위에 n개 점을 고르게 (start에 가장 가까운 곳부터)
     if r[0] != r[-1]: r = r + [r[0]]
     cum = cumdist(r); tot = cum[-1]
@@ -122,6 +135,12 @@ def sample(r, n, start):   # 고리 위에 n개 점을 고르게 (start에 가�
         out.append([round(r[j][0] + (r[j + 1][0] - r[j][0]) * t, 6), round(r[j][1] + (r[j + 1][1] - r[j][1]) * t, 6)])
     return out
 
+def prune(co):   # 갔다가 같은 점으로 되돌아오는 곁가지를 잘라냄 (한 바퀴 코스용)
+    st = []
+    for p in co:
+        if len(st) >= 2 and st[-2] == p: st.pop()
+        elif not st or st[-1] != p: st.append(p)
+    return st
 def route(cid, pts, bike):   # (방법, 거리 m, [[위도, 경도] …]) 또는 None
     try:
         u = 'https://routing.openstreetmap.de/' + ('routed-bike' if bike else 'routed-foot') + '/route/v1/driving/' + ';'.join('%.5f,%.5f' % (q[1], q[0]) for q in pts) + '?overview=full&geometries=geojson'
@@ -138,25 +157,41 @@ def route(cid, pts, bike):   # (방법, 거리 m, [[위도, 경도] …]) 또는
 def heights(co, cum):   # 길 따라 높이 [[m 지점, 해발 m] …] (Open-Meteo, 열쇠 없음)
     n = max(6, min(60, int(cum[-1] / 300) + 2))
     idx = sorted(set(min(bisect.bisect_left(cum, cum[-1] * k / (n - 1)), len(co) - 1) for k in range(n)))
-    try:
-        time.sleep(0.6)
-        j = get('https://api.open-meteo.com/v1/elevation?latitude=' + ','.join('%.5f' % co[i][0] for i in idx) + '&longitude=' + ','.join('%.5f' % co[i][1] for i in idx))
-        return [[round(cum[i]), round(h)] for i, h in zip(idx, j['elevation'])]
-    except Exception as e: glog.append('  높이 실패: ' + str(e)[:70]); return None
+    for k in range(3):
+        try:
+            time.sleep(1.5 + 4 * k)
+            j = get('https://api.open-meteo.com/v1/elevation?latitude=' + ','.join('%.5f' % co[i][0] for i in idx) + '&longitude=' + ','.join('%.5f' % co[i][1] for i in idx))
+            return [[round(cum[i]), round(h)] for i, h in zip(idx, j['elevation'])]
+        except Exception as e: glog.append('  높이 실패: ' + str(e)[:70])
+    return None
 
 for c in src:
-    if os.path.exists('data/route/%s.json' % c['id']) and not c.get('force'): continue
+    if os.path.exists('data/route/%s.json' % c['id']) and not c.get('force'):
+        if c.get('ring') or c.get('via'):   # 높이만 빠진 파일은 길은 그대로 두고 높이만 채움
+            try:
+                o = json.load(open('data/route/%s.json' % c['id'], encoding='utf-8'))
+                if 'elev' not in o:
+                    el = heights(o['p'], cumdist(o['p']))
+                    if el: o['elev'] = el; json.dump(o, open('data/route/%s.json' % c['id'], 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False); log.append(c['id'] + ' 높이만 채움')
+            except Exception as e: log.append(c['id'] + ' 높이 채우기 실패 ' + str(e)[:60])
+        continue
     bike = c.get('mode') == 'bike'; extra = {}; named = []; res = None
     near = c.get('near'); box = c.get('box', 0.1)
     if c.get('ring') or c.get('via'): glog.append('[%s]' % c['id'])
     if c.get('ring'):
         lk = lake(c['ring'], near, box, c['lengthM'])
         if not lk: log.append(c['id'] + ' 호수 윤곽을 못 찾음'); continue
-        ring, pm, how_ring = lk; n1 = max(8, min(36, round(pm / 250)))
-        for n in (n1, max(6, n1 // 2)):
-            r2 = route(c['id'], sample(ring, n, c.get('start') or near) + sample(ring, n, c.get('start') or near)[:1], bike); time.sleep(1.5)
-            if r2 and (res is None or r2[1] < res[1]): res = r2; extra['ring'] = {'from': how_ring, 'perim': round(pm), 'n': n}
+        ring, pm, how_ring = lk; n1 = max(8, min(36, round(pm / 250))); tries = []
         named = [m for m in ((find(nm, near, box) or [None, None, nm]) for nm in c.get('marks', [])) if m[0] is not None]
+        start = c.get('start') or next((m[:2] for m in named if min(hav(m[:2], q) for q in ring) < 300), near)   # 물가에서 가까운 첫 거점에서 출발
+        for n in sorted(set([n1, 16, 12, 8, 6, 5, 4]), reverse=True):
+            sp = sample(ring, n, start); r2 = route(c['id'], sp + sp[:1], bike); time.sleep(1.3)
+            if not r2: continue
+            co2 = prune(r2[2]); raw = cumdist(r2[2])[-1] or 1; d2 = r2[1] * cumdist(co2)[-1] / raw
+            tries.append((d2, n, r2[0], co2)); glog.append('  점 %d개 → %.2fkm (곁가지 빼기 전 %.2fkm)' % (n, d2 / 1000, r2[1] / 1000))
+        good = [x for x in tries if x[0] >= pm * 0.9]
+        pick = min(good) if good else (max(tries) if tries else None)
+        if pick: res = (pick[2], pick[0], pick[3]); extra['ring'] = {'from': how_ring, 'perim': round(pm), 'n': pick[1]}
     elif c.get('via'):
         pts = []
         for v in c['via']:
