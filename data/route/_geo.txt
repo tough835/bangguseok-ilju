@@ -405,3 +405,25 @@
   높이 실패: <urlopen error _ssl.c:994: The handshake operation timed out>
 [saejae-gil]
   높이 실패: <urlopen error _ssl.c:994: The handshake operation timed out>
+  높이 실패: <urlopen error _ssl.c:994: The handshake operation timed out>
+  높이 실패: <urlopen error _ssl.c:994: The handshake operation timed out>
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
+  높이 실패: HTTP Error 429: Too Many Requests
