@@ -320,6 +320,7 @@
   .lpc canvas{display:block;width:100%;height:170px}
   .lpc .row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px}
   .lpc .row button{border:0;border-radius:10px;padding:9px 12px;background:#d7f548;color:#1b1c1f;font-weight:800;font-size:14px;white-space:nowrap}
+  #panBack{position:fixed;left:50%;transform:translateX(-50%);z-index:6;height:40px;padding:0 16px;border-radius:20px;border:1px solid rgba(255,255,255,.28);background:rgba(27,28,31,.9);color:#fff;font-size:14px;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.35)}
   #zoomTag{position:fixed;left:50%;top:46%;transform:translateX(-50%);z-index:6;padding:6px 12px;border-radius:12px;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:800;pointer-events:none}
   .rgh{display:flex;align-items:center;justify-content:space-between}
   .promobtn{position:relative;border:0;border-radius:12px;padding:7px 12px;background:rgba(255,210,122,.18);color:#ffd27a;font-size:14px;font-weight:800}
@@ -585,6 +586,7 @@
 <div id="map3d" class="hidden"><canvas id="v3dRib"></canvas><div id="v3dCredit"></div></div>   <!-- 11/17 길·산 3D 큰 화면 (눌림은 아래 캔버스로 통과) -->
 <canvas id="map" class="hidden"></canvas>
 <div id="zoomTag" class="hidden"></div>
+<button id="panBack" class="hidden">◎ 내 위치로</button>   <!-- 11/20 지도를 끌어 옮겼을 때만 보임 -->
 <div id="infoPanel" class="hidden">
   <div class="ip-top">
     <div class="ip-ph" id="ipPhoto"></div>
@@ -886,6 +888,15 @@
   <button id="bBody" class="toggle" style="margin-top:10px"></button>
   <button id="bBackup" class="toggle" data-t="bkBtn" style="margin-top:10px"></button>
   <button id="bSaver" class="toggle" style="margin-top:10px"></button>
+  <details class="kbasis"><summary>⛰ 산 코스 숫자 읽는 법</summary>
+    <div>
+      <p><b>기계는 '높이'만 알아요</b> 천국의 계단은 위로만 가요. 그래서 앱은 <b>기계로 오른 높이</b>만큼 실제 산길 위의 내 위치를 옮겨요.</p>
+      <p><b>남은 오르막</b> 정상까지 기계로 더 올라야 할 높이예요. 줄어들기만 해요.</p>
+      <p><b>길 1.2/3.8km</b> 실제 산길로는 몇 km째인지예요. 실제 산길은 비스듬히 돌아가서, 오르는 높이보다 걷는 거리가 훨씬 길어요.</p>
+      <p><b>지금 해발</b> 산길 위 그 자리의 실제 높이예요. 실제 산길은 중간에 잠깐 내려가기도 해서, 해발이 잠깐 줄 수 있어요. 그 구간은 기계로 조금만 올라도 빨리 지나가요.</p>
+      <p><b>한계</b> 평지·내리막은 계단 기계로 흉내 낼 수 없어서 짧게 지나가도록 맞춘 값이에요. 실제 등산 시간과는 달라요.</p>
+    </div>
+  </details>
   <button id="bTel" class="toggle" style="margin-top:10px"></button>
   </div>
   <a href="privacy.html" target="_blank" style="display:block;text-align:center;margin-top:10px;font-size:13px;color:var(--mut)">개인정보처리방침</a>
@@ -1018,7 +1029,7 @@
 </div>
 
 <script>
-const BUILD = '202611201059';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611201824';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1616,7 +1627,7 @@ const TEXT = {
     end: '종료', paused: '일시정지', resume: '다시',
     endTitle: '오늘 운동 끝 👏', passedTitle: '지나온 길', home: '코스 화면으로',
     fixBtn: '맞추기', fixFloors: '기계에 찍힌 층수', fixKm: '기계에 찍힌 거리 (km)', fixGps: '실제 거리로 고치기 (km)', fixOk: '맞췄습니다', badNum: '숫자를 넣어 주세요',
-    today: '오늘', todayUp: '오늘 오른 높이', toSummit: '정상까지', toTop: '꼭대기까지', runTime: '운동 시간',
+    today: '오늘', todayUp: '오늘 오른 높이', toSummit: '정상까지', upLeft: '남은 오르막', toTop: '꼭대기까지', runTime: '운동 시간',
     alti: '해발', floorUnit: '층', machineFloors: '🏢 {n}층 높이', machineLv: '기계 {n}층', summit: '정상!', elevAt: '해발 {e}m',
     done: '🎉 {course} 완주!', doneN: '누적 {n}회째', photoSlot: '사진 자리', approx: '약', min: '분', times: '회',
     goal: '오늘 목표', gNext: '다음 거점', gSpot: '거점 고르기', gDist: '거리', toGoal: '🎯', nextHub: '다음 거점',
@@ -2408,7 +2419,8 @@ function climbState(){
            done: Math.floor(total / m.gain), floor: m.floors ? Math.max(1, Math.round(climbed / m.gain * m.floors)) : 0 };
   const G = mtnGeo(m); if (G){ st.geo = G; st.gp = geoLerp(G, G.w, st.ratio * G.Wt); st.elev = Math.round(st.gp.ele); }   // 실제 등산로 위 위치·높이
   /* 11/19 보스 폰 "정상 높이가 안 보임·숫자가 안 맞음": 화면의 '정상까지' = 정상 해발 − 지금 해발 (지금 해발 + 정상까지 = 정상 높이). 남은 시간은 남은 운동량(remain)으로 셈 */
-  st.left = m.kind === 'tower' ? st.remain : Math.max(0, m.summit - st.elev);
+  /* 11/20 보스 폰 "내리막에서 정상까지 거리가 줄다가 늘어남": 산길은 중간에 내려가기도 해서 '정상 − 지금 해발'은 다시 늘어남 → 화면 숫자는 '남은 오르막'(기계로 더 올라야 할 높이, 줄기만 함)으로 */
+  st.left = st.remain;
   return st;
 }
 const wpAt = (m, w) => w.at != null ? w.at * m.gain : (w.elev - m.base);   // 이정표가 오른 높이 몇 m 지점인지
@@ -2563,16 +2575,16 @@ function loop(now){
     if (NAV.full){ drawMapView(pos); if (outTheme()) drawTrackMini(); else { drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); } }
     else if (S.gps){   $('map').classList.add('big');   /* 11/16 보스: 바깥 = 큰 화면 실제 지도 + 오른쪽 위 '테마 그림 지도'(가상 위치 확대). 누르면 서로 바뀜 */
       if (NAV.alt){   // 큰 화면 = 테마 길 확대, 작은 칸 = 다음 화면(전체 경로) 미리보기
-        drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false);
+        drawNav(ctx, W, AREA.bot, W / 2 + NAV.px * DPR, AREA.bot * 0.66 + NAV.py * DPR, (far ? 600 : 220) * (NAV.zoom || 1), pos, false);
         drawMiniOverview(pos);
       } else {
         drawRealMap(null, false);
         drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true);
         miniTag(T.tagTheme, (pos / 1000).toFixed(1) + ' / ' + (L / 1000).toFixed(L % 1000 ? 1 : 0) + 'km');
       }
-    } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2, AREA.bot * 0.66, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
+    } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2 + NAV.px * DPR, AREA.bot * 0.66 + NAV.py * DPR, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
-  meterFrame(dt); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); wkTick(); }
+  meterFrame(dt); panTick(); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); wkTick(); }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2675,10 +2687,11 @@ function hudClimb(st){
   const tower = st.m.kind === 'tower';
   $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (tower ? '' : ' ' + st.m.summit.toLocaleString() + 'm') + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');   // 11/19 보스 "정상 높이가 잘 안 보임" → 이름 옆에 정상 높이
   $('altiPill').textContent = tower ? (st.m.eq ? Math.round(st.climbed) + 'm' : st.floor + T.floorUnit) : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
-  $('sNextLabel').textContent = tower ? T.toTop : T.toSummit;
+  $('sNextLabel').textContent = tower ? T.toTop : T.upLeft;
   $('sNextDist').textContent = Math.round(st.left).toLocaleString() + ' m'; $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
   $('sNextName').textContent = goalOn() && !S.goalHit ? '🎯 목표까지 ' + Math.max(1, Math.ceil((S.goalSec - S.elapsed) / 60)) + T.min   /* 11/20 보스 폰(폭 360): 뒤에 %·층을 붙이면 잘림 → 목표 시간만 */
-    : (tower && !st.m.eq ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%') + ' · ' + T.approx + ' ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
+    : (st.geo ? '길 ' + (st.gp.dist / 1000).toFixed(1) + '/' + (st.geo.D / 1000).toFixed(1) + 'km'   /* 11/20: 실제 산길로는 몇 km째인지 (오르는 높이와 걷는 거리가 다름) */
+      : tower && !st.m.eq ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%') + ' · ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
   /* 11/19 보스 폰 "좌우 정보 산만 · 오른쪽은 시간을 크게": 왼쪽 = 남은 높이(줄어듦) / 오른쪽 = 운동 시간(크게) + 오늘 오른 높이(작게) */
   $('sTodayLabel').textContent = T.runTime;
   $('sToday').textContent = fmtTime(S.elapsed);
@@ -2746,8 +2759,8 @@ function mtnStart(){   // 출발: 어디서 어디까지 오르는지(코스 높
   if (!mtnRun()) return;
   const st = climbState(), m = st.m, mins = Math.max(1, Math.round(st.remain / climbMpm()));
   MTC.ratio = st.ratio;
-  const head = st.climbed >= 3 ? '해발 ' + Math.round(st.elev).toLocaleString() + 'm에서 이어 올라요 · 정상까지 ' + Math.round(st.left).toLocaleString() + 'm'
-    : tr(m.baseName || { ko: '출발 지점' }) + '(해발 ' + m.base.toLocaleString() + 'm)에서 출발 · 정상까지 ' + m.gain.toLocaleString() + 'm 올라요';
+  const head = st.climbed >= 3 ? '해발 ' + Math.round(st.elev).toLocaleString() + 'm에서 이어 올라요 · 남은 오르막 ' + Math.round(st.left).toLocaleString() + 'm'
+    : tr(m.baseName || { ko: '출발 지점' }) + '(해발 ' + m.base.toLocaleString() + 'm)에서 출발 · 정상까지 ' + m.gain.toLocaleString() + 'm 올라요' + (st.geo ? ' (산길 ' + (st.geo.D / 1000).toFixed(1) + 'km)' : '');
   const gm = Math.round(S.goalSec / 60);
   showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n' + (gm && gm < mins ? '🎯 오늘 목표 ' + gm + '분 (약 ' + Math.round(gm * climbMpm()) + 'm) · 끝까지는 약 ' + mins + '분'
     : '지금 레벨로 약 ' + mins + '분' + (mins >= 45 ? ' · 길면 나눠 오르세요. 멈춘 높이에서 다음에 이어져요' : '')), false);
@@ -2808,7 +2821,7 @@ function restFill(st){
   const m = st.m, mpm = climbMpm(), num = v => Math.round(v).toLocaleString();
   $('restName').textContent = '⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm';
   const grid = $('restGrid'); grid.textContent = '';
-  [['지금 해발', num(st.elev) + ' m'], [T.toSummit, num(st.left) + ' m'], [T.runTime, fmtTime(S.elapsed)], [T.todayUp, num(S.sessionM) + ' m']].forEach(([a, b]) => {
+  [['지금 해발', num(st.elev) + ' m'], [T.upLeft, num(st.left) + ' m'], [T.runTime, fmtTime(S.elapsed)], [T.todayUp, num(S.sessionM) + ' m']].forEach(([a, b]) => {
     const d = document.createElement('div'), s = document.createElement('span'), v = document.createElement('b'); s.textContent = a; v.textContent = b; d.append(s, v); grid.append(d); });
   const L = ['🥾 ' + tr(m.baseName || { ko: '출발 지점' }) + ' ' + m.base.toLocaleString() + 'm → 정상 ' + m.summit.toLocaleString() + 'm · 오를 높이 ' + m.gain.toLocaleString() + 'm'];
   if (m.trail) L.push('🗺 ' + tr(m.trail));
@@ -3358,7 +3371,7 @@ $('bStart').onclick = () => {
   if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
   S.gps = DB.zone === 'out'; GPS.track = [];
-  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false;
+  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false;
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
@@ -3602,7 +3615,7 @@ $('bTel').onclick = () => { DB.tel = DB.tel === false ? true : false; saveDB(); 
 setTimeout(() => { telBtn(); tel('open', { zone: DB.zone || null }); }, 1500);
 window.addEventListener('online', telFlush);
 function doEnd(){
-  meterEnd();
+  meterEnd(); try { panReset(); } catch(e){}
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
   S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
   zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); altStop(); wkStop(); autosave(true);
@@ -4456,21 +4469,47 @@ $('map').onclick = () => {
 (() => {
   let d0 = 0, z0 = 1, lastTap = 0;
   const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-  let pan = null;
+  let pan = null, drag = null;   // pan = 전체 경로 화면 끌기 · drag = 따라가는 지도(3D·위성·지도) 끌기 (11/20)
   const fullOn = () => NAV.full && S.running && !isClimb();   // 전체 경로 화면(큰 화면)인지
   const setFz = z => { const was = NAV.fz; NAV.fz = Math.max(1, Math.min(30, z)); if (was <= 1 && NAV.fz > 1){ NAV.fa = Math.round(((totalNow() % L) + L) % L); NAV.fx = NAV.fy = 0; NAV.ipWas = !!DB.ipMini; ipFold(true); } if (NAV.fz <= 1){ NAV.fx = NAV.fy = 0; } zoomTag(); };
   /* 11/17 보스: 바깥 일반에서 확대 안 됨 → 지도가 화면 위쪽 절반뿐이라 손가락이 아래 숫자 칸·알약 위에 놓이면 안 먹었음.
      운동 중에는 화면 어디서 두 손가락을 벌려도 확대 (창·입력칸 위 제외). 한 손가락(두 번 톡·끌기)은 지도 위에서만 */
   const runTouch = e => S.running && e.target.closest && !e.target.closest('.modal,input,select,textarea');
   const ZMIN = 1 / 16;
-  document.addEventListener('touchstart', e => { if (!runTouch(e)) return; if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; e.preventDefault(); }
-    else if (e.touches.length === 1 && e.target === cv){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else NAV.zoom = 1; zoomTag(); } lastTap = n;
-      if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; } } }, { passive: false });
+  document.addEventListener('touchstart', e => { if (!runTouch(e)) return; if (e.touches.length === 2){ d0 = dist(e.touches); z0 = fullOn() ? NAV.fz : NAV.zoom; pan = null; drag = null; NAV.drag = false; e.preventDefault(); }
+    else if (e.touches.length === 1 && e.target === cv){ const n = Date.now(); if (n - lastTap < 300){ if (fullOn()){ NAV.fz = 1; NAV.fx = NAV.fy = 0; if (NAV.ipWas !== undefined){ ipFold(NAV.ipWas); NAV.ipWas = undefined; } } else { NAV.zoom = 1; panReset(); } zoomTag(); } lastTap = n;
+      if (fullOn() && NAV.fz > 1){ const t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, fx: NAV.fx, fy: NAV.fy }; }
+      else if (panOK()){ const t = e.touches[0]; drag = { x: t.clientX, y: t.clientY, px: NAV.px, py: NAV.py, on: false }; } } }, { passive: false });
   document.addEventListener('touchmove', e => { if (!S.running) return; if (e.touches.length === 2 && d0){ if (fullOn()) setFz(z0 * dist(e.touches) / d0); else { NAV.zoom = Math.max(ZMIN, Math.min(5, z0 * d0 / dist(e.touches))); zoomTag(); } e.preventDefault(); }
-    else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); } }, { passive: false });
-  document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length) pan = null; });
+    else if (e.touches.length === 1 && pan){ const t = e.touches[0]; NAV.fx = Math.round(pan.fx + (t.clientX - pan.x) * DPR); NAV.fy = Math.round(pan.fy + (t.clientY - pan.y) * DPR); e.preventDefault(); }
+    else if (e.touches.length === 1 && drag){ const t = e.touches[0], dx = t.clientX - drag.x, dy = t.clientY - drag.y;
+      if (!drag.on && Math.hypot(dx, dy) < 10) return;   // 살짝 닿은 것은 끌기로 안 봄
+      drag.on = NAV.drag = true; panSet(drag.px + dx, drag.py + dy); e.preventDefault(); } }, { passive: false });
+  document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length){ pan = null; if (drag && drag.on) NAV.pt = performance.now(); drag = null; NAV.drag = false; } });
+  document.addEventListener('touchcancel', () => { d0 = 0; pan = null; drag = null; NAV.drag = false; });
   cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(ZMIN, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
+/* 11/20 보스 폰 "지도를 손으로 좌우로 이동이 안 됨": 한 손가락으로 끌면 지도가 따라 움직임 (3D · 위성 · 지도 · 바깥 실제 지도 · 산 실제 지도).
+   NAV.px·py = 끌어 옮긴 양(화면 px). 7초 동안 손을 안 대면 내 위치로 돌아옴 · '◎ 내 위치로' 또는 두 번 톡 = 바로 돌아옴. 전체 경로 화면은 예전 방식(확대한 뒤 끌기) 그대로 */
+function panOK(){
+  if (!S.running || NAV.full) return false;
+  if (S.free) return !!S.gps && !isClimb();                    // 일반: 바깥 실제 지도만 (목표 링 화면은 지도가 아님)
+  if (isClimb()){ try { return !!climbState().geo; } catch(e){ return false; } }   // 산: 실제 등산로가 있는 산만 (빌딩·그림 산 제외)
+  return true;
+}
+function panSet(x, y){ const mx = innerWidth * 1.2, my = innerHeight * 0.9; NAV.px = Math.max(-mx, Math.min(mx, x)); NAV.py = Math.max(-my, Math.min(my, y)); NAV.pt = performance.now(); panTag(); }
+function panReset(){ NAV.px = NAV.py = 0; NAV.drag = false; panTag(); }
+function panTag(){ const b = $('panBack'); if (!b) return; const on = !!(NAV.px || NAV.py) && panOK(); b.classList.toggle('hidden', !on);
+  if (on) b.style.bottom = Math.round(innerHeight - (AREA ? AREA.bot / DPR : innerHeight * 0.62) + 12) + 'px'; }
+function panTick(){
+  if (!NAV.px && !NAV.py) return;
+  if (!panOK()){ panReset(); return; }
+  if (NAV.drag || performance.now() - NAV.pt < 7000) return;
+  NAV.px *= 0.55; NAV.py *= 0.55; touchT = performance.now();   // 돌아오는 동안은 화면을 자주 그림
+  if (Math.hypot(NAV.px, NAV.py) < 2) NAV.px = NAV.py = 0;
+  panTag();
+}
+$('panBack').onclick = () => panReset();
 function zoomTag(){ const t = $('zoomTag'); if (!t) return;
   if (!S.running){ t.classList.add('hidden'); return; }   // 시작 화면에 배율 안내가 남지 않게
   if (NAV.full && S.running && !isClimb()){ t.textContent = NAV.fz > 1 ? '🔍 ' + NAV.fz.toFixed(1) + '배 · 끌어서 이동' : ''; t.classList.toggle('hidden', NAV.fz <= 1); clearTimeout(t._t); if (NAV.fz > 1) t._t = setTimeout(() => t.classList.add('hidden'), 2500); return; }
@@ -4974,7 +5013,7 @@ function drawRealMap(rt, ring){
   const viewM = 420 * (NAV.zoom || 1), pxPerM = W / viewM, cl = Math.cos(here[0] * Math.PI / 180);
   const z = Math.max(3, Math.min(MAPSTY[mapSty()].max, Math.ceil(Math.log2(156543.03 * cl * pxPerM) - 0.2)) - saverZ()), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;   // k = 화면 px / 타일 px
   const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
-  const cx = W / 2, cy = bot * 0.55, hx = X(here[1]), hy = Y(here[0]);
+  const cx = W / 2 + NAV.px * DPR, cy = bot * 0.55 + NAV.py * DPR, hx = X(here[1]), hy = Y(here[0]);
   const sx = lo => cx + (X(lo) - hx) * k, sy = la => cy + (Y(la) - hy) * k;
   {
     const t0x = Math.floor((hx - cx / k) / 256), t1x = Math.floor((hx + (W - cx) / k) / 256), t0y = Math.floor((hy - cy / k) / 256), t1y = Math.floor((hy + (H - cy) / k) / 256);
@@ -5258,7 +5297,7 @@ function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GP
    · 큰 화면 = 현위치 확대 지도 (가는 방향이 위, 앞길 색 = 오르막 주황·빨강 / 내리막 파랑)
    · 오른쪽 위 작은 칸 = 코스 전체 + 진행 거리. 누르면 서로 바뀌고 사진·고도·코스 정보가 나옴
    ===================================================================== */
-var NAV = { full: false, zoom: 1, alt: false, fz: 1, fx: 0, fy: 0, fa: 0 }   /* fz = 전체 경로 확대 배율, fx·fy = 끌어 옮긴 양, fa = 확대 중심(진행 거리) */, AREA = null;
+var NAV = { full: false, zoom: 1, alt: false, fz: 1, fx: 0, fy: 0, fa: 0, px: 0, py: 0, pt: 0, drag: false }   /* fz = 전체 경로 확대 배율, fx·fy = 끌어 옮긴 양, fa = 확대 중심(진행 거리) */, AREA = null;
 function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위
   const hb = $('hudBottom').offsetHeight || innerHeight * 0.4, ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
   return { top: Math.round(ip * DPR), bot: Math.round((innerHeight - hb + 36) * DPR) };
@@ -5648,7 +5687,7 @@ function drawSat(g, tf, c, R, sc){
 function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
   const sc = vw / viewM, c = pointAt(pos), h = headingAt(pos), ch = Math.cos(h), sh = Math.sin(h);
   const tf = p => { const vx = (p.x - c.x) * sc, vy = -(p.y - c.y) * sc; return [ax + vx * ch + vy * sh, ay - vx * sh + vy * ch]; };
-  const R = Math.hypot(vw, vh) / sc;
+  const R = (Math.hypot(vw, vh) + (mini ? 0 : Math.hypot(NAV.px, NAV.py) * DPR)) / sc;   // 끌어 옮긴 만큼 더 넓게 그림
   g.fillStyle = '#e6ecdf'; g.fillRect(0, 0, g.canvas.width, g.canvas.height);
   const sat = !mini && satOn(); if (sat) drawSat(g, tf, c, R, sc);
   if (!mini && !sat){   // 바닥 격자: 움직임이 보이게
@@ -5753,7 +5792,7 @@ function drawClimbMap(g, vw, vh, st, mini){
   const viewM = (mini ? 520 : 640) * (mini ? 1 : (NAV.zoom || 1)), pxPerM = vw / viewM;
   const z = Math.max(3, Math.min(17, Math.floor(Math.log2(156543.03 * cl * pxPerM))) - saverZ()), n = 256 * 2 ** z, k = pxPerM * 156543.03 * cl / 2 ** z;
   const X = lo => (lo + 180) / 360 * n, Y = la => { const r = la * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n; };
-  const ax = vw / 2, ay = vh * 0.62, hx = X(q.lon), hy = Y(q.lat), ch = Math.cos(hd), sh = Math.sin(hd);
+  const ax = vw / 2 + (mini ? 0 : NAV.px * DPR), ay = vh * 0.62 + (mini ? 0 : NAV.py * DPR), hx = X(q.lon), hy = Y(q.lat), ch = Math.cos(hd), sh = Math.sin(hd);
   const scr = (la, lo) => { const dx = (X(lo) - hx) * k, dy = (Y(la) - hy) * k; return [ax + dx * ch + dy * sh, ay - dx * sh + dy * ch]; };
   g.save(); g.translate(ax, ay); g.rotate(-hd); g.scale(k, k);
   geoTiles(g, z, hx, hy, Math.hypot(Math.max(ax, vw - ax), Math.max(ay, chh - ay)) / k + 8);
@@ -5990,19 +6029,25 @@ function v3dDraw(lat, lon, hd, prog, zoom, pitch, ahead){
   V3D.brg = V3D.brg == null || Math.abs(dh) > 50 ? hd : V3D.brg + dh * kf(V3D.sty === 'toon' ? 0.06 : 0.08);   // 크게 꺾이거나 순간 이동하면 바로 맞춤
   if (V3D.sty === 'toon' && V3D_EYE) return v3dEye(lat, lon);   // 1인칭(보류)
   if (V3D.sty === 'toon'){ zoom += 1.1; pitch = Math.min(72, pitch + 6); }   // 그림 3D = 드론 높이 (11/18 22:57 보스: 1인칭은 끊기고 가까운 것만 보여 해운대인지 모름 → 되돌림)
-  m.jumpTo({ center: [lon, lat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
+  let cLon = lon, cLat = lat;
+  if (NAV.px || NAV.py){   // 11/20 손가락으로 끌어 옮긴 만큼 화면 가운데를 옮김 (화면 오른쪽·앞쪽 방향을 지도 방향으로 바꿔 계산)
+    const pp = (pitch - (saverZ() ? 12 : 0)) * Math.PI / 180, cl = Math.cos(lat * Math.PI / 180), mpp = 78271.517 * cl / Math.pow(2, zoom - Math.log2(NAV.zoom || 1)), B = V3D.brg * Math.PI / 180;
+    const rt = -NAV.px * mpp, fw = NAV.py * mpp / Math.max(0.3, Math.cos(pp)), ee = rt * Math.cos(B) + fw * Math.sin(B), nn = -rt * Math.sin(B) + fw * Math.cos(B);
+    cLon = lon + ee / (111320 * cl); cLat = lat + nn / 110540;
+  }
+  m.jumpTo({ center: [cLon, cLat], bearing: V3D.brg, pitch: pitch - (saverZ() ? 12 : 0), zoom: zoom - Math.log2(NAV.zoom || 1), padding: { top: Math.round(bot * 0.28), bottom: Math.max(0, Math.round(innerHeight - bot)), left: 0, right: 0 } });
   try { const g = m.queryTerrainElevation([lon, lat]); if (g != null && isFinite(g)){ V3D.el = V3D.el == null || Math.abs(g - V3D.el) > 400 ? g : V3D.el + (g - V3D.el) * kf(0.04); m.setCenterElevation(V3D.el); } } catch(e){}   // 땅 높이를 천천히 따라감
   V3D.me.setLngLat([lon, lat]); v3dProps(); if (V3D_TOON) v3dRibbon(V3D.pos);
   /* 11/19 보스 폰 "3D 화살표가 길을 안 따라가고 늘 위쪽만 봄(확대하면 더 뚜렷)": 화면에 그려진 길 방향(지금 위치 → 30m 앞 · 확대하면 더 가까이)으로 화살표를 돌림 */
   if (ahead){ try { const a = m.project([lon, lat]), b = m.project([ahead[1], ahead[0]]), dx = b.x - a.x, dy = b.y - a.y;
     if (dx * dx + dy * dy > 9){ const ang = Math.atan2(dx, -dy) * 180 / Math.PI, d = (((ang - (V3D.rot == null ? ang : V3D.rot)) % 360) + 540) % 360 - 180;
-      V3D.rot = V3D.rot == null || Math.abs(d) > 100 ? ang : V3D.rot + d * kf(0.3); V3D.me.setRotation(V3D.rot); } } catch(e){} }
+      V3D.rot = V3D.rot == null || Math.abs(d) > 100 ? ang : V3D.rot + d * kf(isClimb() ? 0.12 : 0.3); V3D.me.setRotation(V3D.rot); } } catch(e){} }
   const now = performance.now();
   if (now - V3D.last > 400){ V3D.last = now; v3dTrees(); const k = Math.max(0.0001, Math.min(0.9999, prog));
     if (V3D.gk == null || Math.abs(k - V3D.gk) >= 0.0015){ V3D.gk = k; try { m.setPaintProperty('route', 'line-gradient', ['step', ['line-progress'], '#3f9a52', k, '#ffffff']); } catch(e){} }   // 조금 움직였을 때만 (고칠 때마다 지도가 다시 그림)
     $('v3dCredit').style.bottom = Math.round(innerHeight - bot + 8) + 'px'; }
 }
-const v3dAhead = () => Math.max(8, Math.min(120, 30 * (NAV.zoom || 1)));   // 화살표가 바라볼 앞길 거리: 보통 30m · 확대하면 가까이(8m까지) · 축소하면 멀리
+const v3dAhead = () => Math.max(25, Math.min(120, 30 * (NAV.zoom || 1)));   /* 11/20 보스 폰 "화살표가 같은 자리에서 맴돎": 확대했을 때 8m 앞만 보면 구불구불한 산길에서 좌우로 흔들림 → 최소 25m 앞 */   // 화살표가 바라볼 앞길 거리: 보통 30m · 확대하면 가까이(8m까지) · 축소하면 멀리
 function v3dRoad(pos){
   if (V3D.key !== 'r:' + COURSE.id){
     /* 지나온 길 색 경계 = 지도 위 길이 비율. 위도에 따라 지도 축척이 달라지므로(긴 남북 코스) 지도 길이로 따로 셈 */
@@ -6025,7 +6070,7 @@ function v3dClimb(st){
   const b = geoLerp(G, G.d, q.dist - 45), f = geoLerp(G, G.d, q.dist + 45), cl = Math.cos(q.lat * Math.PI / 180);
   V3D.pos = null;   // 산: 길 코스 위치를 쓰지 않음
   const a20 = q.dist + v3dAhead() < G.D ? geoLerp(G, G.d, q.dist + v3dAhead()) : null;
-  v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 70, a20 && [a20.lat, a20.lon]);
+  v3dDraw(q.lat, q.lon, Math.atan2((f.lon - b.lon) * cl, f.lat - b.lat) * 180 / Math.PI, q.dist / G.D, 15.5, 58, a20 && [a20.lat, a20.lon]);   /* 11/20 보스 폰 "3D 사진이 코스를 가림": 70° → 58° (위에서 더 내려다봄) */
 }
 function v3dRibbon(pos){   // 앞길 350m를 화면 맨 위에 그림(건물·언덕에 가려도 보이게) · 멀수록 옅게
   const cv = $('v3dRib'), m = V3D.map; if (!cv || !m) return;
