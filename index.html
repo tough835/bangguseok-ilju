@@ -64,6 +64,25 @@
   @keyframes chIn{from{opacity:0;transform:translateX(-50%) scale(.6)}to{opacity:1;transform:translateX(-50%) scale(1)}}
   @keyframes chBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(6deg)}}
   /* 11/20 큰 응원 효과 — 움직임은 transform·opacity만 써서 가볍게 */
+  #fxWin{position:fixed;left:0;right:0;top:44%;z-index:9999;pointer-events:none;text-align:center;font-size:54px;font-weight:900;color:#d7f548;text-shadow:-3px 0 #1b1c1f,3px 0 #1b1c1f,0 -3px #1b1c1f,0 3px #1b1c1f,0 9px 0 rgba(0,0,0,.4);transition:opacity .5s}#fxWin.out{opacity:0}
+  #fxWin span{display:inline-block;animation:fxWinP .7s cubic-bezier(.2,1.6,.4,1) both}@keyframes fxWinP{0%{transform:translateY(60px) scale(.2) rotate(-18deg);opacity:0}100%{transform:none;opacity:1}}
+  /* 11/20 보스 "문 열고 나와 응원하고 들어가는 컨셉 · 화면 가리지 않게 작게": 왼쪽 아래 작은 문 (눌림 통과) */
+  #doorFx{position:fixed;left:8px;z-index:23;pointer-events:none;width:84px;height:128px;transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .3s}
+  #doorFx.out{transform:translateY(30px) scale(.6);opacity:0}
+  #doorFx .dfr{position:absolute;inset:0;border:5px solid #5b4a3a;border-bottom:none;border-radius:8px 8px 0 0;background:#0d0d0f;overflow:hidden;transition:background .2s}
+  #doorFx.p1 .dfr,#doorFx.p2 .dfr,#doorFx.p3 .dfr{background:#fff3c4;box-shadow:0 0 18px rgba(255,220,120,.5)}
+  #doorFx .dlf{position:absolute;top:5px;bottom:0;left:5px;width:74px;background:linear-gradient(90deg,#8a6a4a,#a47e58);border-radius:3px;transform-origin:left center;transition:transform .28s cubic-bezier(.3,1.5,.5,1)}
+  #doorFx .dlf:before{content:"ㅂ";position:absolute;left:0;right:0;top:14px;text-align:center;color:#d7f548;font-weight:900;font-size:20px}
+  #doorFx .dlf:after{content:"";position:absolute;right:7px;top:52%;width:8px;height:8px;border-radius:50%;background:#d7f548;box-shadow:0 0 0 1.5px #1b1c1f}
+  #doorFx.p1 .dlf{transform:perspective(400px) rotateY(-70deg)}#doorFx.p2 .dlf{transform:perspective(400px) rotateY(-82deg)}#doorFx.p3 .dlf{transform:perspective(400px) rotateY(-66deg)}
+  #doorFx.p0{animation:dfKnock .28s 2}@keyframes dfKnock{50%{transform:translateX(3px) rotate(1.5deg)}}
+  #doorFx svg{position:absolute;left:-2px;bottom:-4px;width:88px;display:none}
+  #doorFx.p1 .dw0,#doorFx.p1b .dw1,#doorFx.p2 .dw2,#doorFx.p3 .dw3{display:block}#doorFx.p1b .dw0,#doorFx.p1b .dw2{display:none}
+  #doorFx.p1b svg{animation:dfShake .12s 6}@keyframes dfShake{50%{transform:translateX(2px)}}
+  #doorFx.p2 svg{animation:dfHop .4s 4}@keyframes dfHop{50%{transform:translateY(-6px)}}
+  #doorBub{position:fixed;left:98px;z-index:23;pointer-events:none;max-width:min(210px,calc(100vw - 112px));background:#fff;color:#111;border:2.5px solid #111;border-radius:16px;padding:8px 12px;font-size:17px;font-weight:900;line-height:1.3;word-break:keep-all;transform-origin:left bottom;animation:dfBub .25s cubic-bezier(.2,1.6,.4,1)}
+  #doorBub.bang{background:none;border:none;color:#d7f548;font-size:32px;text-shadow:-2px 0 #111,2px 0 #111,0 -2px #111,0 2px #111;transform:rotate(6deg)}
+  @keyframes dfBub{0%{transform:scale(.2)}100%{transform:none}}
   #cheerFx{position:fixed;inset:0;z-index:24;pointer-events:none;overflow:hidden}
   #cheerFx.out{opacity:0;transition:opacity .5s}
   #cheerFx .fxRing{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(215,245,72,0) 52%,rgba(215,245,72,.7) 100%);opacity:0;animation:fxFlash 1s ease-out 3}
@@ -634,6 +653,7 @@
 
 <div id="pauseBadge" class="hidden"></div>
 <div id="cheer" class="hidden"><i id="chEmo"></i><b id="chTx"></b><button id="chRest" class="hidden">☕ 쉬어가기</button></div>   <!-- 11/19 산 코스 고비 응원 (잠깐 떴다 사라짐) -->
+<div id="doorFx" class="hidden out" aria-hidden="true"><div class="dfr"><span id="doorWho"></span></div><div class="dlf"></div></div><div id="doorBub" class="hidden" aria-hidden="true"></div>
 <div id="cheerFx" class="hidden" aria-hidden="true"><div class="fxRing"></div><div id="fxBits"></div><div class="fxBody" id="fxBody"><i id="fxEmo"></i><b id="fxBig"></b></div><span id="fxSub"></span></div>   <!-- 11/20 산 코스 큰 응원 (1/4·3/4 지점, 나타났다 사라짐) -->
 <div id="restBox" class="hidden">   <!-- 11/19 산 코스 쉬어가기 카드 (일시정지 때) -->
   <div class="rst-in">
@@ -1029,7 +1049,7 @@
 </div>
 
 <script>
-const BUILD = '202611201824';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611201852';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2456,15 +2476,16 @@ function climbPassed(m, before, after){
   return out;
 }
 /* 11/18 보스 "완주 때 축포·도착 축하" — 완주·정상 도착·일반 목표 달성: 축포 3발 + 꽃가루 4초 + 짧은 진동. 화면을 막지 않음(눌림 통과) */
-function celebrate(){
+function celebrate(label){   // 11/20 보스 "코스 모두 결승점은 같은 완주 축포": 길 완주 · 산 정상 · 빌딩 꼭대기 · 목표 달성 모두 같은 축포 + 큰 글자
   if ($('fx')) return;
+  if (label){ const b = document.createElement('div'); b.id = 'fxWin'; b.innerHTML = [...label].map((ch, i) => '<span style="animation-delay:' + i * 70 + 'ms">' + (ch === ' ' ? '&nbsp;' : ch) + '</span>').join(''); document.body.appendChild(b); setTimeout(() => b.classList.add('out'), 2800); setTimeout(() => b.remove(), 3400); }
   const c = document.createElement('canvas'); c.id = 'fx'; c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999';
   document.body.appendChild(c);
   const d = Math.min(2, devicePixelRatio || 1), w = c.width = innerWidth * d, h = c.height = innerHeight * d, g = c.getContext('2d');
   const col = ['#d7f548', '#ffffff', '#ffb547', '#6fd3ff', '#ff6b8b'], P = [];
   const burst = (x, y) => { for (let i = 0; i < 70; i++){ const a = Math.random() * Math.PI * 2, v = (0.4 + Math.random()) * 7 * d;
     P.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2 * d, c: col[i % 5], s: (3 + Math.random() * 4) * d, r: 0, vr: 0, life: 1, conf: false }); } };
-  [[0.25, 0.3, 0], [0.75, 0.25, 350], [0.5, 0.18, 700]].forEach(([fx, fy, t]) => setTimeout(() => burst(w * fx, h * fy), t));
+  [[0.25, 0.3, 0], [0.75, 0.25, 350], [0.5, 0.18, 700], [0.2, 0.45, 1100], [0.8, 0.42, 1450]].forEach(([fx, fy, t]) => setTimeout(() => burst(w * fx, h * fy), t));
   for (let i = 0; i < 90; i++) P.push({ x: Math.random() * w, y: -Math.random() * h * 0.5, vx: (Math.random() - 0.5) * 1.5 * d, vy: (1.5 + Math.random() * 2) * d, c: col[i % 5], s: (4 + Math.random() * 4) * d, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, life: 1, conf: true });
   const t0 = performance.now();
   (function f(now){ const el = now - t0; g.clearRect(0, 0, w, h);
@@ -2480,7 +2501,7 @@ function lapDone(p){
   say('완주했습니다. ' + sayM(S.sessionM) + ', ' + sayDur(elapsedNow()) + '.');
   if (!S.running){ showPopup(p.name, p.desc, false); return; }
   $('lapTitle').textContent = p.name; $('lapBody').textContent = p.desc + ' · 오늘 ' + (S.sessionM / 1000).toFixed(2) + 'km · ' + fmtTime(S.elapsed);
-  $('lapBox').classList.remove('hidden'); shown(); celebrate();
+  $('lapBox').classList.remove('hidden'); shown(); celebrate('🏁 완주!');
   clearTimeout(lapDone.t); lapDone.t = setTimeout(() => { if (!$('lapBox').classList.contains('hidden')) $('lapMore').click(); }, 25000);
 }
 $('lapMore').onclick = () => { clearTimeout(lapDone.t); S.lapHold = null; $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
@@ -2493,6 +2514,7 @@ function nextTarget(total){
 function advance(dm){
   if (S.free){ freeAdvance(dm); return; }
   const before = totalNow(); S.sessionM += dm;
+  if (L >= 2000 && !S.doorHalf && (before % L) < L / 2 && (totalNow() % L) >= L / 2 && $('popup').classList.contains('hidden')){ S.doorHalf = true; doorFx(DOOR_TX.half[0]); }   // 11/20 길 코스 절반: 문 열고 응원
   walkPassed(before, totalNow()).forEach(p => {
     if (p.lap){ lapDone(p); return; }
     S.passed.push(p.name);
@@ -2510,7 +2532,7 @@ function advanceClimb(dm){
   const m = TGT(DB.climb.sel), before = S.startTotal + S.sessionM; S.sessionM += dm;
   if (m.kind === 'tower'){ const fh = m.gain / m.floors, f0 = Math.floor((before % m.gain) / fh) + 1, f1 = Math.floor(((S.startTotal + S.sessionM) % m.gain) / fh) + 1;
     void f0; void f1; }
-  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); say(p.name.replace('!', '') + (p.photo ? ' 도착했습니다.' : '.')); if (p.short) celebrate(); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
+  climbPassed(m, before, S.startTotal + S.sessionM).forEach(p => { S.passed.push(p.short || p.name); say(p.name.replace('!', '') + (p.photo ? ' 도착했습니다.' : '.')); if (p.short) celebrate(m.kind === 'tower' ? '🏙 꼭대기!' : '⛰ 정상!'); showPopup((p.photo ? (m.kind === 'tower' ? '🏙 ' : '⛰ ') : p.tw ? '🏢 ' : '🥾 ') + p.name, p.desc, p.photo); });
 }
 
 /* ---- 운동 기록 저장 (실시간) ---- */
@@ -2725,7 +2747,8 @@ const mtnRun = () => S.running && isClimb() && !S.free && TGT(DB.climb.sel).kind
 function cheerPush(id, grp, rest, vars){
   if (MTC.seen.has(id)) return; MTC.seen.add(id);
   const l = MTC_TX[grp], x = l[Math.floor(Math.random() * l.length)], fill = s => Object.keys(vars || {}).reduce((a, k) => a.replace('{' + k + '}', vars[k]), s);
-  MTC.q.push({ emo: x[0], tx: fill(x[1]), big: x[2] || '', bits: MTC_BITS[grp], rest: !!rest, say: MTC_SAY[grp] ? fill(MTC_SAY[grp]) : '', at: Date.now() });
+  const dl = DOOR_TX[grp];
+  MTC.q.push({ door: dl ? dl[Math.floor(Math.random() * dl.length)] : null, emo: x[0], tx: fill(x[1]), big: x[2] || '', bits: MTC_BITS[grp], rest: !!rest, say: MTC_SAY[grp] ? fill(MTC_SAY[grp]) : '', at: Date.now() });
 }
 function cheerFx(c){   // 큰 응원: 테두리 번쩍 + 그림문자가 아래에서 솟아오름 + 큰 글씨가 한 글자씩 통통 → 4.5초 뒤 스르륵 사라짐 (화면을 막지 않음)
   const el = $('cheerFx'), big = $('fxBig'), bits = $('fxBits'); cheerHide();   // 작은 응원 글과 겹치지 않게
@@ -2742,6 +2765,43 @@ function cheerFx(c){   // 큰 응원: 테두리 번쩍 + 그림문자가 아래�
   if (c.say) say(c.say);
   clearTimeout(MTC.t2); MTC.t2 = setTimeout(cheerFxHide, 4500); MTC.last = Date.now();
 }
+/* ---- 문 열고 응원 (11/20) ----
+   쿵쿵 소리에 자다 깬 방구석 주인(런닝셔츠 바람)이 문을 열고 한소리 → 운동인 걸 알고 응원 → 하품하며 들어감 · 약 7초 · 작게(84×128) · 눌림은 그대로 통과
+   ⚠️ 캐릭터 그림은 임시(아미가 그린 선 그림). 아리가 만든 그림이 오면 doorWho() 안의 표정 4개(졸림·버럭·응원·하품)만 바꾸면 됨 */
+const DOOR_TX = {
+  p25: [['…누고?', '아 쿵쿵쿵!<br>잠 좀 자자!!', '…운동이가?<br>그라모 화이링~!!', '난 더 잔다…'], ['…몇 시고?', '방에서 산을 타나!!', '4분의 1 왔다꼬?<br>오~ 쫌 치네!', '깨우지 마래이…']],
+  p75: [['또 쿵쿵…', '아직도 하나!!', '다 왔네!<br>쪼매만 더 해라~', '꿈에서 응원할게…'], ['…누고 또?', '잠 다 깼다 아이가!!', '4분의 3? 진짜 다 왔다~<br>(이번엔 진짜)', '정상 찍으면 깨워라…']],
+  half: [['…뭔 소리고?', '방에서 뛰나!!', '절반 왔다꼬?<br>잘한다 잘한다~!!', '치킨은 내 꺼… 쿨']],
+};
+function doorWho(){
+  const S5 = 'stroke="#111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
+  const body = '<path d="M38 232 Q30 170 62 158 L118 158 Q150 170 142 232 Z" fill="#fff" ' + S5 + '/><path d="M70 160 Q90 186 110 160" fill="#ffe1c2" ' + S5 + '/><path d="M52 176 Q62 196 50 214 M128 176 Q118 196 130 214" fill="none" stroke="#111" stroke-width="3"/>';
+  const head = '<path d="M34 92 Q28 26 92 24 Q156 26 148 98 Q144 164 90 166 Q40 164 34 92 Z" fill="#fff" ' + S5 + '/><path d="M54 36 l-9 -17 M72 28 l-2 -19 M92 26 l7 -18 M112 30 l12 -14" fill="none" ' + S5 + '/>';
+  const F = [
+    '<path d="M54 92 q12 9 24 0 M100 92 q12 9 24 0" fill="none" ' + S5 + '/><ellipse cx="90" cy="134" rx="9" ry="12" fill="#111"/><text x="150" y="40" font-size="22" font-weight="900">z</text><text x="164" y="24" font-size="15" font-weight="900">z</text>',
+    '<path d="M48 72 L80 88 M132 72 L100 88" fill="none" ' + S5 + '/><circle cx="66" cy="98" r="5.5" fill="#111"/><circle cx="114" cy="98" r="5.5" fill="#111"/><path d="M56 120 Q90 104 124 120 Q126 154 90 156 Q54 154 56 120 Z" fill="#111" ' + S5 + '/><path d="M64 122 H116 M68 146 H112" stroke="#fff" stroke-width="8"/><path d="M26 56 l-11 -6 M22 72 l-13 0 M152 58 l11 -6" stroke="#e33" stroke-width="5" stroke-linecap="round"/>',
+    '<path d="M52 92 q13 -16 26 0 M102 92 q13 -16 26 0" fill="none" ' + S5 + '/><path d="M54 114 Q90 108 126 114 Q122 158 90 158 Q58 158 54 114 Z" fill="#111" ' + S5 + '/><path d="M62 117 H118" stroke="#fff" stroke-width="10"/><path d="M72 152 q18 -11 36 0" fill="#e77"/><path d="M140 178 Q172 150 162 112" fill="none" ' + S5 + '/><path d="M152 112 q0 -22 10 -26 q8 4 4 20 l12 0 q6 10 -4 16 l-18 2 Z" fill="#fff" ' + S5 + '/>',
+    '<path d="M54 96 q11 -8 22 0 M104 96 q11 -8 22 0" fill="none" ' + S5 + '/><ellipse cx="90" cy="132" rx="17" ry="21" fill="#111"/><ellipse cx="90" cy="143" rx="9" ry="7" fill="#e77"/>',
+  ];
+  return F.map((f, i) => '<svg viewBox="0 0 180 236" class="dw' + i + '">' + body + head + f + '</svg>').join('');
+}
+const DOOR = { t: [], on: false };
+function doorFx(lines){
+  const el = $('doorFx'), bub = $('doorBub'); if (DOOR.on || !lines) return; DOOR.on = true;
+  if (!$('doorWho').firstChild) $('doorWho').innerHTML = doorWho();
+  const bot = Math.round(innerHeight - (AREA ? AREA.bot / DPR : innerHeight * 0.62) + 2); el.style.bottom = bot + 'px';
+  const say = (tx, bang) => { bub.className = bang ? 'bang' : ''; bub.innerHTML = tx; bub.style.bottom = (bot + (bang ? 44 : 78)) + 'px'; bub.style.animation = 'none'; void bub.offsetWidth; bub.style.animation = ''; };
+  const at = (ms, f) => DOOR.t.push(setTimeout(f, ms));
+  el.className = 'out'; bub.className = 'hidden'; void el.offsetWidth; el.className = 'p0';
+  at(650, () => { el.className = 'p1'; say(lines[0]); });
+  at(1900, () => { el.className = 'p2 p1b'; say(lines[1]); try { navigator.vibrate && navigator.vibrate(60); } catch(e){} });
+  at(3500, () => { el.className = 'p2'; say(lines[2]); });
+  at(5900, () => { el.className = 'p3'; say(lines[3]); });
+  at(6900, () => { el.className = ''; say('쾅!', true); });
+  at(7700, () => { el.className = 'out'; bub.className = 'hidden'; });
+  at(8100, doorFxHide);
+}
+function doorFxHide(){ DOOR.t.forEach(clearTimeout); DOOR.t = []; DOOR.on = false; $('doorFx').className = 'hidden out'; $('doorBub').className = 'hidden'; }
 function cheerFxHide(){ const el = $('cheerFx'); clearTimeout(MTC.t2); if (el.classList.contains('hidden')) return; el.classList.add('out'); setTimeout(() => el.classList.add('hidden'), 500); }
 function cheerShow(c){
   const el = $('cheer'); cheerFxHide(); $('chEmo').textContent = c.emo; $('chTx').textContent = c.tx; $('chRest').classList.toggle('hidden', !c.rest);
@@ -2765,7 +2825,7 @@ function mtnStart(){   // 출발: 어디서 어디까지 오르는지(코스 높
   showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n' + (gm && gm < mins ? '🎯 오늘 목표 ' + gm + '분 (약 ' + Math.round(gm * climbMpm()) + 'm) · 끝까지는 약 ' + mins + '분'
     : '지금 레벨로 약 ' + mins + '분' + (mins >= 45 ? ' · 길면 나눠 오르세요. 멈춘 높이에서 다음에 이어져요' : '')), false);
 }
-function mtnClear(){ clearTimeout(MTC.t); clearTimeout(MTC.t2); $('cheer').classList.add('hidden'); $('cheerFx').classList.add('hidden'); $('restBox').classList.add('hidden'); }
+function mtnClear(){ try { doorFxHide(); } catch(e){} clearTimeout(MTC.t); clearTimeout(MTC.t2); $('cheer').classList.add('hidden'); $('cheerFx').classList.add('hidden'); $('restBox').classList.add('hidden'); }
 /* ---- 11/20 보스 "천국의 계단 30분 하기도 힘들다 — 10분·20분 하는 경우도": 오늘 목표(분) ----
    · 테마 등산·계단 출발 화면에서 10·20·30분·끝까지 고름 (기본 끝까지). 산은 멈춘 높이에서 다음에 이어 오르므로 긴 산도 나눠 오르기 좋음
    · 목표 절반 = 작은 응원 / 목표 달성 = 큰 응원 → '쉬어가기' 버튼이 달린 작은 글. 운동은 멈추지 않음(계속 올라도 됨) */
@@ -2797,7 +2857,7 @@ function mtnTick(st){   // 운동 화면 숫자를 고칠 때마다(1초에 두�
   goalTick(st);
   if (st.m.kind !== 'tower') mtnCheers(st);
   const now = Date.now(); MTC.q = MTC.q.filter(c => c.force || now - c.at < 240000);
-  if (MTC.q.length && (MTC.q[0].force || now - MTC.last > 200000) && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden')){ const c = MTC.q.shift(); c.big ? cheerFx(c) : cheerShow(c); }
+  if (MTC.q.length && (MTC.q[0].force || now - MTC.last > 200000) && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden') && !DOOR.on){ const c = MTC.q.shift(); if (c.door){ MTC.last = now; doorFx(c.door); if (c.say) say(c.say); } else c.big ? cheerFx(c) : cheerShow(c); }
 }
 function mtnCheers(st){   // 산 코스 고비 응원 (빌딩은 층 알림이 따로 있음)
   const r = st.ratio, big = st.m.gain >= 300, lap = ':' + st.done;
@@ -3371,7 +3431,7 @@ $('bStart').onclick = () => {
   if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
   S.gps = DB.zone === 'out'; GPS.track = [];
-  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false;
+  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false;
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
@@ -4955,7 +5015,7 @@ function freeCredit(){ const prev = DB.records.find(r => r.id === S.sessionId); 
 function freeGoalM(){ return isClimb() ? S.freeGoal * FLOOR_M : S.freeGoal * 1000; }
 function freeAdvance(dm){
   S.sessionM += dm;
-  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; celebrate(); say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
+  if (S.freeGoal && !S.freeHit && S.sessionM >= freeGoalM()){ S.freeHit = true; celebrate('🎯 목표 달성!'); say('목표 ' + freeGoalText(S.freeGoal, isClimb()) + ' 달성했습니다.'); showPopup(T.freeDone.replace('{g}', freeGoalText(S.freeGoal, isClimb())), T.freeDoneSub, false); }
 }
 function hudFree(){
   altChip();
