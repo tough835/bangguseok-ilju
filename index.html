@@ -67,20 +67,20 @@
   #fxWin{position:fixed;left:0;right:0;top:44%;z-index:9999;pointer-events:none;text-align:center;font-size:54px;font-weight:900;color:#d7f548;text-shadow:-3px 0 #1b1c1f,3px 0 #1b1c1f,0 -3px #1b1c1f,0 3px #1b1c1f,0 9px 0 rgba(0,0,0,.4);transition:opacity .5s}#fxWin.out{opacity:0}
   #fxWin span{display:inline-block;animation:fxWinP .7s cubic-bezier(.2,1.6,.4,1) both}@keyframes fxWinP{0%{transform:translateY(60px) scale(.2) rotate(-18deg);opacity:0}100%{transform:none;opacity:1}}
   /* 11/20 보스 "문 열고 나와 응원하고 들어가는 컨셉 · 화면 가리지 않게 작게": 왼쪽 아래 작은 문 (눌림 통과) */
-  #doorFx{position:fixed;left:8px;z-index:23;pointer-events:none;width:84px;height:128px;transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .3s}
+  #doorFx{position:fixed;left:8px;z-index:23;pointer-events:none;width:96px;height:132px;transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .3s}
   #doorFx.out{transform:translateY(30px) scale(.6);opacity:0}
   #doorFx .dfr{position:absolute;inset:0;border:5px solid #5b4a3a;border-bottom:none;border-radius:8px 8px 0 0;background:#0d0d0f;overflow:hidden;transition:background .2s}
   #doorFx.p1 .dfr,#doorFx.p2 .dfr,#doorFx.p3 .dfr{background:#fff3c4;box-shadow:0 0 18px rgba(255,220,120,.5)}
-  #doorFx .dlf{position:absolute;top:5px;bottom:0;left:5px;width:74px;background:linear-gradient(90deg,#8a6a4a,#a47e58);border-radius:3px;transform-origin:left center;transition:transform .28s cubic-bezier(.3,1.5,.5,1)}
+  #doorFx .dlf{position:absolute;top:5px;bottom:0;left:5px;width:86px;background:linear-gradient(90deg,#8a6a4a,#a47e58);border-radius:3px;transform-origin:left center;transition:transform .28s cubic-bezier(.3,1.5,.5,1)}
   #doorFx .dlf:before{content:"ㅂ";position:absolute;left:0;right:0;top:14px;text-align:center;color:#d7f548;font-weight:900;font-size:20px}
   #doorFx .dlf:after{content:"";position:absolute;right:7px;top:52%;width:8px;height:8px;border-radius:50%;background:#d7f548;box-shadow:0 0 0 1.5px #1b1c1f}
-  #doorFx.p1 .dlf{transform:perspective(400px) rotateY(-70deg)}#doorFx.p2 .dlf{transform:perspective(400px) rotateY(-82deg)}#doorFx.p3 .dlf{transform:perspective(400px) rotateY(-66deg)}
+  #doorFx.p1 .dlf,#doorFx.p2 .dlf,#doorFx.p3 .dlf{transform:perspective(400px) rotateY(-84deg)}#doorFx img{left:2px}
   #doorFx.p0{animation:dfKnock .28s 2}@keyframes dfKnock{50%{transform:translateX(3px) rotate(1.5deg)}}
-  #doorFx svg{position:absolute;left:-2px;bottom:-4px;width:88px;display:none}
+  #doorFx img{position:absolute;left:-4px;bottom:-2px;width:96px;display:none;user-select:none}
   #doorFx.p1 .dw0,#doorFx.p1b .dw1,#doorFx.p2 .dw2,#doorFx.p3 .dw3{display:block}#doorFx.p1b .dw0,#doorFx.p1b .dw2{display:none}
-  #doorFx.p1b svg{animation:dfShake .12s 6}@keyframes dfShake{50%{transform:translateX(2px)}}
-  #doorFx.p2 svg{animation:dfHop .4s 4}@keyframes dfHop{50%{transform:translateY(-6px)}}
-  #doorBub{position:fixed;left:98px;z-index:23;pointer-events:none;max-width:min(210px,calc(100vw - 112px));background:#fff;color:#111;border:2.5px solid #111;border-radius:16px;padding:8px 12px;font-size:17px;font-weight:900;line-height:1.3;word-break:keep-all;transform-origin:left bottom;animation:dfBub .25s cubic-bezier(.2,1.6,.4,1)}
+  #doorFx.p1b img{animation:dfShake .12s 6}@keyframes dfShake{50%{transform:translateX(2px)}}
+  #doorFx.p2 img{animation:dfHop .4s 4}@keyframes dfHop{50%{transform:translateY(-6px)}}
+  #doorBub{position:fixed;left:110px;z-index:23;pointer-events:none;max-width:min(210px,calc(100vw - 124px));background:#fff;color:#111;border:2.5px solid #111;border-radius:16px;padding:8px 12px;font-size:17px;font-weight:900;line-height:1.3;word-break:keep-all;transform-origin:left bottom;animation:dfBub .25s cubic-bezier(.2,1.6,.4,1)}
   #doorBub.bang{background:none;border:none;color:#d7f548;font-size:32px;text-shadow:-2px 0 #111,2px 0 #111,0 -2px #111,0 2px #111;transform:rotate(6deg)}
   @keyframes dfBub{0%{transform:scale(.2)}100%{transform:none}}
   #cheerFx{position:fixed;inset:0;z-index:24;pointer-events:none;overflow:hidden}
@@ -1049,7 +1049,7 @@
 </div>
 
 <script>
-const BUILD = '202611201852';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611201937';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2767,13 +2767,15 @@ function cheerFx(c){   // 큰 응원: 테두리 번쩍 + 그림문자가 아래�
 }
 /* ---- 문 열고 응원 (11/20) ----
    쿵쿵 소리에 자다 깬 방구석 주인(런닝셔츠 바람)이 문을 열고 한소리 → 운동인 걸 알고 응원 → 하품하며 들어감 · 약 7초 · 작게(84×128) · 눌림은 그대로 통과
-   ⚠️ 캐릭터 그림은 임시(아미가 그린 선 그림). 아리가 만든 그림이 오면 doorWho() 안의 표정 4개(졸림·버럭·응원·하품)만 바꾸면 됨 */
+   캐릭터 그림 = 아리 v2(11/20, img/who/). 향후 교체 예정 — WHO_IMG의 4장만 바꾸면 됨 */
 const DOOR_TX = {
   p25: [['…누고?', '아 쿵쿵쿵!<br>잠 좀 자자!!', '…운동이가?<br>그라모 화이링~!!', '난 더 잔다…'], ['…몇 시고?', '방에서 산을 타나!!', '4분의 1 왔다꼬?<br>오~ 쫌 치네!', '깨우지 마래이…']],
   p75: [['또 쿵쿵…', '아직도 하나!!', '다 왔네!<br>쪼매만 더 해라~', '꿈에서 응원할게…'], ['…누고 또?', '잠 다 깼다 아이가!!', '4분의 3? 진짜 다 왔다~<br>(이번엔 진짜)', '정상 찍으면 깨워라…']],
   half: [['…뭔 소리고?', '방에서 뛰나!!', '절반 왔다꼬?<br>잘한다 잘한다~!!', '치킨은 내 꺼… 쿨']],
 };
-function doorWho(){
+const WHO_IMG = ['sleepy', 'angry', 'cheer', 'yawn'];   // 11/20 아리 그림 v2 (img/who/*.webp, 270×354) — 캐릭터를 바꿀 때는 이 4장만 갈아 끼움
+function doorWho(){ return WHO_IMG.map((k, i) => '<img class="dw' + i + '" src="img/who/' + k + '.webp?v=1" alt="" draggable="false">').join(''); }
+function doorWhoOld(){
   const S5 = 'stroke="#111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
   const body = '<path d="M38 232 Q30 170 62 158 L118 158 Q150 170 142 232 Z" fill="#fff" ' + S5 + '/><path d="M70 160 Q90 186 110 160" fill="#ffe1c2" ' + S5 + '/><path d="M52 176 Q62 196 50 214 M128 176 Q118 196 130 214" fill="none" stroke="#111" stroke-width="3"/>';
   const head = '<path d="M34 92 Q28 26 92 24 Q156 26 148 98 Q144 164 90 166 Q40 164 34 92 Z" fill="#fff" ' + S5 + '/><path d="M54 36 l-9 -17 M72 28 l-2 -19 M92 26 l7 -18 M112 30 l12 -14" fill="none" ' + S5 + '/>';
@@ -2786,6 +2788,7 @@ function doorWho(){
   return F.map((f, i) => '<svg viewBox="0 0 180 236" class="dw' + i + '">' + body + head + f + '</svg>').join('');
 }
 const DOOR = { t: [], on: false };
+function doorPre(){ if (doorPre.d) return; doorPre.d = 1; WHO_IMG.forEach(k => { const i = new Image(); i.src = 'img/who/' + k + '.webp?v=1'; }); }
 function doorFx(lines){
   const el = $('doorFx'), bub = $('doorBub'); if (DOOR.on || !lines) return; DOOR.on = true;
   if (!$('doorWho').firstChild) $('doorWho').innerHTML = doorWho();
@@ -3431,7 +3434,7 @@ $('bStart').onclick = () => {
   if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
   S.gps = DB.zone === 'out'; GPS.track = [];
-  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false;
+  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false; try { doorPre(); } catch(e){}
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
