@@ -938,6 +938,7 @@
         <p><b>천국의 계단</b> 오른 높이 1m마다 산소 2ml/kg.<br>실제로 재 본 연구 3건과 10% 안에서 맞는 식이에요.</p>
         <p><b>자전거·바깥 등산</b> 2024 신체활동 강도표(Compendium)</p>
         <p><b>키·나이·성별</b> 쉬는 동안 쓰는 열량(해리스-베네딕트 식)에만 반영돼요. 그래서 차이는 1~3%예요.</p>
+        <p><b>헬스장 천국의 계단이 더 높게 나오는 이유</b> 많은 기계가 '디딤대 오르내리기' 공식(분당 12~30회용)을 계단 기계에 그대로 써서, 실제로 잰 값보다 약 1.5배 높게 나와요. 앱은 계단 기계에서 실제로 잰 연구 값을 써요.</p>
         <p><b>기계 숫자와 다른 이유</b> 기계마다 식이 다르고, 체중을 넣지 않으면 기계의 기본 체중으로 계산해요. 기계에도 내 체중을 넣어 보세요.</p>
       </div>
     </details>
@@ -1049,7 +1050,7 @@
 </div>
 
 <script>
-const BUILD = '202611201937';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611202058';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -2833,16 +2834,32 @@ function mtnClear(){ try { doorFxHide(); } catch(e){} clearTimeout(MTC.t); clear
    · 테마 등산·계단 출발 화면에서 10·20·30분·끝까지 고름 (기본 끝까지). 산은 멈춘 높이에서 다음에 이어 오르므로 긴 산도 나눠 오르기 좋음
    · 목표 절반 = 작은 응원 / 목표 달성 = 큰 응원 → '쉬어가기' 버튼이 달린 작은 글. 운동은 멈추지 않음(계속 올라도 됨) */
 const goalOn = () => S.running && isClimb() && !S.free && S.goalSec > 0;
+/* 11/20 보스 "조깅은 2km·3km 단위로": 길 코스도 '오늘은 얼마나?' = 2km / 3km / 5km / 끝까지 (DB.roadKm). 남은 길은 다음에 이어서 */
+const RGOAL = [2, 3, 5, 0], CGOAL = [10, 20, 30, 0];
+function tGoalRoad(){
+  const g = DB.roadKm || 0, seg = $('tGoalSeg');
+  if (seg.dataset.mode !== 'road'){ seg.dataset.mode = 'road'; seg.innerHTML = RGOAL.map(k => '<button data-g="' + k + '">' + (k ? k + 'km' : '끝까지') + '</button>').join(''); tGoalBind(); }
+  seg.querySelectorAll('[data-g]').forEach(b => b.classList.toggle('on', +b.dataset.g === g));
+  let left = 0; try { left = L - (((walkTotal() % L) + L) % L); } catch(e){}
+  const sp = Math.max(1, effSpeed() || 6), mm = k => Math.max(1, Math.round(k / sp * 60));
+  $('tGoalNote').textContent = !left ? '' : g ? (g * 1000 < left - 50 ? '지금 속도로 약 ' + mm(g) + '분 · 남은 길 ' + (left / 1000).toFixed(1) + 'km는 다음에 이어서' : '오늘 ' + g + 'km면 코스 끝까지 가요 (' + (left / 1000).toFixed(1) + 'km)')
+    : '끝까지 ' + (left / 1000).toFixed(1) + 'km · 지금 속도로 약 ' + mm(left / 1000) + '분';
+}
+function tGoalBind(){ $('tGoalSeg').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const v = +b.dataset.g;
+  if ($('tGoalSeg').dataset.mode === 'road') DB.roadKm = v; else { DB.climb = DB.climb || {}; DB.climb.goal = v; } saveDB(); tGoalUI(); }); }
 function tGoalUI(){
-  const on = !isFree() && isClimb() && !S.running, box = $('tGoal'); if (!box) return;
-  box.classList.toggle('hidden', !on); if (!on) return;
+  const box = $('tGoal'); if (!box) return;
+  const road = !isFree() && !isClimb() && !S.running && typeof COURSE !== 'undefined' && COURSE && COURSE.mode === 'distance' && !COURSE.long;
+  const on = !isFree() && isClimb() && !S.running;
+  box.classList.toggle('hidden', !on && !road); if (road){ tGoalRoad(); return; } if (!on) return;
+  const seg0 = $('tGoalSeg'); if (seg0.dataset.mode !== 'climb'){ seg0.dataset.mode = 'climb'; seg0.innerHTML = CGOAL.map(k => '<button data-g="' + k + '">' + (k ? k + '분' : '끝까지') + '</button>').join(''); tGoalBind(); }
   const g = (DB.climb && DB.climb.goal) || 0;
   $('tGoalSeg').querySelectorAll('[data-g]').forEach(b => b.classList.toggle('on', +b.dataset.g === g));
   let m = null; try { m = TGT(DB.climb.sel); } catch(e){}
   const all = m ? Math.max(1, Math.round(Math.max(1, m.gain - (climbTotal(m.id) % m.gain)) / climbMpm())) : 0, up = Math.round(g * climbMpm());
   $('tGoalNote').textContent = !m ? '' : g ? '약 ' + up + 'm 오르면 끝' + (m.kind !== 'tower' && all > g ? ' · 남은 길은 다음에 이어서 (끝까지는 약 ' + all + '분)' : '') : '끝까지 약 ' + all + '분' + (all >= 45 ? ' · 길면 10~30분만 골라 나눠 오르세요' : '');
 }
-$('tGoalSeg').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { DB.climb = DB.climb || {}; DB.climb.goal = +b.dataset.g; saveDB(); tGoalUI(); });
+tGoalBind();
 function goalTick(st){
   if (!goalOn() || S.goalHit) return;
   const g = S.goalSec, min = Math.round(g / 60);
@@ -2964,7 +2981,7 @@ function conqLine(){
   el.classList.remove('hidden');
 }
 function checkConquest(){   // 새로 정복한 코스가 있으면 축하 창
-  DB.conq = DB.conq || {}; const now = new Date().toISOString().slice(0, 10), fresh = [];
+  DB.conq = DB.conq || {}; const now = localYmd(), fresh = [];
   Object.keys(WORLD.cities).forEach(cid => conqList(cid).forEach(x => { if (x.done && !DB.conq[x.key]){ DB.conq[x.key] = now; fresh.push({ cid, ...x }); } }));
   if (!fresh.length) return; saveDB();
   try { fresh.forEach(x => tel('conquer', { course: x.name })); } catch(e){}
@@ -2980,7 +2997,9 @@ $('cqOk').onclick = () => { $('conqBox').classList.add('hidden'); conqLine(); };
 const PROMO = {
   // hamyang: [ { title: '…', from: '2027-09-01', to: '2027-09-10', text: '…', link: 'https://…', by: '함양군' } ]
 };
-function promoNow(cid){ const t = new Date().toISOString().slice(0, 10); return (PROMO[cid] || []).filter(p => (!p.from || p.from <= t) && (!p.to || p.to >= t)); }
+/* 11/20: 날짜를 세계 표준시로 계산해 오전 9시 전에는 하루 전 날짜로 찍히던 것 → 폰의 날짜(한국시간) */
+function localYmd(d){ d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function promoNow(cid){ const t = localYmd(); return (PROMO[cid] || []).filter(p => (!p.from || p.from <= t) && (!p.to || p.to >= t)); }
 function promoDot(){ const n = promoNow(DB.region.city).length; $('promoDot').classList.toggle('hidden', !n); }
 $('bPromo').onclick = () => {
   const cid = DB.region.city, nm = WORLD.cities[cid] ? tr(WORLD.cities[cid].name) : '', list = promoNow(cid);
@@ -4049,13 +4068,13 @@ function openSpot(lm){
 $('scClose').onclick = () => $('spotCard').classList.add('hidden');
 
 /* 운동 중 목표 체크 */
-function startGoal(){ const g = goalFrom(S.startTotal); S.goalFin = false;
+function startGoal(){ const km = !S.gps && DB.roadKm > 0 && !COURSE.long ? DB.roadKm : 0, g = km ? { at: S.startTotal + km * 1000, name: km + 'km', dist: true } : goalFrom(S.startTotal); S.goalFin = false;
   if (!g.dist && DB.goal.type !== 'spot'){ const t = nextTarget(S.startTotal); g.at = S.startTotal + t.d; g.name = t.name; S.goalFin = !!t.fin; }
   S.goalAt = g.at; S.goalName = g.name; S.goalStart = S.startTotal; S.goalDist = !!g.dist; }
 function checkGoal(){
   if (totalNow() < S.goalAt) return;
   const n = nextSpotFrom(totalNow());
-  if (S.goalDist) showPopup(T.goalReach + ' ' + S.goalName, n.d <= 1000 ? T.soClose.replace('{s}', tr(n.lm.name)).replace('{d}', fmtM(n.d)) : '', false);
+  if (S.goalDist){ celebrate('🎯 목표 달성!'); say('오늘 목표 ' + S.goalName + ' 달성했습니다.'); showPopup(T.goalReach + ' ' + S.goalName, '여기서 끝내도 좋아요 · 남은 길은 다음에 이어서' + (n.d <= 1000 ? ' · ' + T.soClose.replace('{s}', tr(n.lm.name)).replace('{d}', fmtM(n.d)) : ''), false); }
   // 거점 목표는 도착 알림(🎯)이 이미 떴음 → 다음 거점을 새 목표로
   const t = nextTarget(totalNow()); S.goalStart = totalNow(); S.goalAt = totalNow() + t.d; S.goalName = t.name; S.goalFin = !!t.fin; S.goalDist = false;
 }
@@ -4550,6 +4569,16 @@ $('map').onclick = () => {
       drag.on = NAV.drag = true; panSet(drag.px + dx, drag.py + dy); e.preventDefault(); } }, { passive: false });
   document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; if (!e.touches.length){ pan = null; if (drag && drag.on) NAV.pt = performance.now(); drag = null; NAV.drag = false; } });
   document.addEventListener('touchcancel', () => { d0 = 0; pan = null; drag = null; NAV.drag = false; });
+  /* 11/20 PC: 마우스로 끌어도 지도가 움직임 (손가락 끌기와 같은 규칙) */
+  let md = null;
+  cv.addEventListener('mousedown', e => { if (e.button !== 0 || !S.running) return;
+    if (fullOn() && NAV.fz > 1) md = { full: true, x: e.clientX, y: e.clientY, fx: NAV.fx, fy: NAV.fy };
+    else if (panOK()) md = { x: e.clientX, y: e.clientY, px: NAV.px, py: NAV.py, on: false }; });
+  addEventListener('mousemove', e => { if (!md) return; const dx = e.clientX - md.x, dy = e.clientY - md.y;
+    if (md.full){ NAV.fx = Math.round(md.fx + dx * DPR); NAV.fy = Math.round(md.fy + dy * DPR); return; }
+    if (!md.on && Math.hypot(dx, dy) < 6) return; md.on = NAV.drag = true; panSet(md.px + dx, md.py + dy); });
+  addEventListener('mouseup', () => { if (md && md.on) NAV.pt = performance.now(); md = null; NAV.drag = false; });
+  cv.addEventListener('dblclick', () => { if (S.running && !fullOn()) panReset(); });
   cv.addEventListener('wheel', e => { if (fullOn()) setFz(NAV.fz * (e.deltaY > 0 ? 0.87 : 1.15)); else { NAV.zoom = Math.max(ZMIN, Math.min(5, NAV.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); zoomTag(); } e.preventDefault(); }, { passive: false });
 })();
 /* 11/20 보스 폰 "지도를 손으로 좌우로 이동이 안 됨": 한 손가락으로 끌면 지도가 따라 움직임 (3D · 위성 · 지도 · 바깥 실제 지도 · 산 실제 지도).
