@@ -27,3 +27,46 @@ uiam-bike-25k OSRM 31.00km / 공식 25.00km (x1.24) 872점
 gyeongchun-bike-24k OSRM 29.77km / 공식 24.00km (x1.24) 638점
 suyeong-bike-7k OSRM 4.86km / 공식 7.00km (x0.69) 114점
 
+suseongmot-gil OSRM 4.41km / 공식 2.00km (x2.21) 131점 거점 1
+uirimji-gil OSRM 2.11km / 공식 1.90km (x1.11) 80점 거점 1
+sejonglake-gil OSRM 3.43km / 공식 4.40km (x0.78) 219점 거점 0
+ilsanlake-gil OSRM 7.02km / 공식 4.70km (x1.49) 290점 거점 2
+pungam-gil OSRM 2.39km / 공식 2.20km (x1.09) 99점 거점 0
+woncheon-gil OSRM 2.95km / 공식 3.00km (x0.98) 150점 거점 2
+bomun-gil OSRM 8.53km / 공식 7.00km (x1.22) 426점 거점 2
+hoamji-gil OSRM 4.46km / 공식 2.30km (x1.94) 277점 거점 2
+geumoji-gil 호수 윤곽을 못 찾음
+baegun-gil OSRM 2.90km / 공식 3.00km (x0.97) 227점 거점 2
+giheung-gil OSRM 10.56km / 공식 10.00km (x1.06) 473점 거점 3
+cheonhoji-gil OSRM 2.88km / 공식 2.30km (x1.25) 85점 거점 1
+sanjeong-gil OSRM 2.93km / 공식 3.20km (x0.92) 167점 거점 0
+sinjeong-gil OSRM 4.78km / 공식 4.80km (x1.00) 241점 거점 1
+tapjeong-gil OSRM 21.73km / 공식 19.00km (x1.14) 985점 거점 2
+upo-gil OSRM 7.77km / 공식 8.40km (x0.93) 266점 거점 2
+hwaseong-gil OSRM 6.31km / 공식 5.70km (x1.11) 471점 거점 8
+jeonjuhanok-gil OSRM 3.87km / 공식 4.00km (x0.97) 194점 거점 7
+gyeongjuhist-gil OSRM 6.27km / 공식 4.50km (x1.39) 278점 거점 6
+woryeong-gil OSRM 5.74km / 공식 4.50km (x1.28) 147점 거점 3
+gwanghallu-gil OSRM 2.38km / 공식 3.00km (x0.79) 103점 거점 2
+jinjuseong-gil OSRM 3.39km / 공식 3.50km (x0.97) 112점 거점 5
+expo-gil OSRM 5.52km / 공식 5.00km (x1.10) 222점 거점 5
+musimcheon-gil OSRM 7.19km / 공식 6.00km (x1.20) 183점 거점 5
+gongjicheon-gil OSRM 3.45km / 공식 5.00km (x0.69) 112점 거점 4
+sincheon-gil OSRM 10.26km / 공식 7.50km (x1.37) 289점 거점 7
+pureungil-gil OSRM 6.64km / 공식 6.00km (x1.11) 225점 거점 4
+juknokwon-gil OSRM 2.51km / 공식 3.50km (x0.72) 134점 거점 3
+saejae-gil OSRM 29.70km / 공식 7.50km (x3.96) 1845점 거점 4
+woljeongsa-gil OSRM 8.40km / 공식 9.00km (x0.93) 237점 거점 2
+sorigil-gil OSRM 7.52km / 공식 7.20km (x1.04) 340점 거점 2
+dumulmeori-gil OSRM 4.18km / 공식 4.50km (x0.93) 144점 거점 3
+jando-gil OSRM 4.47km / 공식 4.00km (x1.12) 188점 거점 2
+naejang-gil OSRM 3.81km / 공식 3.50km (x1.09) 216점 거점 3
+gongsanseong-gil OSRM 5.56km / 공식 4.00km (x1.39) 295점 거점 4
+buyeo-gil OSRM 4.40km / 공식 5.00km (x0.88) 198점 거점 4
+geumgang-bike OSRM 21.21km / 공식 20.00km (x1.06) 558점 거점 4
+namhangang-bike OSRM 29.55km / 공식 26.00km (x1.14) 919점 거점 6
+yeongsan-bike OSRM 20.03km / 공식 20.00km (x1.00) 409점 거점 3
+dalseong-bike OSRM 19.89km / 공식 22.00km (x0.90) 285점 거점 3
+tangeum-bike OSRM 19.27km / 공식 18.00km (x1.07) 557점 거점 3
+seomjin-bike OSRM 34.30km / 공식 27.00km (x1.27) 859점 거점 3
+daecheong-bike OSRM 23.83km / 공식 22.00km (x1.08) 759점 거점 3
