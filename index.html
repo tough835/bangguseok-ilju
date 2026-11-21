@@ -1050,7 +1050,7 @@
 </div>
 
 <script>
-const BUILD = '202611202058';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211140';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1146,28 +1146,19 @@ const WORLD = {
          · 전체 거리는 공개 자료 기준, 중간 위치(at)와 지도 모양은 GPX 받기 전 추정 */
       courses: {
         'sangnim-3k': {
-          id: 'sangnim-3k', name: { ko: '상림 숲길' }, short: { ko: '상림' }, kind: '도보',
-          mode: 'distance', lengthM: 3000, loop: true,
-          elev: [[0,165],[3000,165]],   // 고도(m) [거리, 해발] — 추정, 실측 때 보정
-          note: '경로·거리·명소 위치 모두 실측 전 추정', source: '상림 숲 길이 1.6km, 한 바퀴 약 3km (추정)',
-          path: [
-            [35.52350,127.72250],[35.52530,127.72294],[35.52755,127.72316],[35.52981,127.72294],
-            [35.53206,127.72327],[35.53386,127.72305],[35.53431,127.72184],[35.53359,127.72117],
-            [35.53116,127.72128],[35.52891,127.72106],[35.52665,127.72128],[35.52485,127.72150],
-            [35.52395,127.72029],[35.52278,127.71918],[35.52188,127.72029],[35.52242,127.72184],
-            [35.52350,127.72250]
-          ],
-          segments: [ { from: 0, to: 2450, scene: 'forest' }, { from: 2450, to: 3000, scene: 'lotus' } ],
-          landmarks: [
-            { id: 'hamhwaru',  name: { ko: '함화루' },        at: 60,   side:  1, art: 'gate',     photo: null, desc: { ko: '상림 입구의 누각' } },
-            { id: 'sawoon',    name: { ko: '사운정' },        at: 550,  side: -1, art: 'pavilion', photo: null, desc: { ko: '숲속 정자' } },
-            { id: 'choseon',   name: { ko: '초선정' },        at: 1000, side:  1, art: 'pavilion', photo: null, desc: { ko: '숲속 정자' } },
-            { id: 'choichiwon',name: { ko: '최치원 신도비' }, at: 1450, side: -1, art: 'stele',    photo: null, desc: { ko: '상림을 조성한 최치원을 기리는 비' }, hub: true },
-            { id: 'ieunri',    name: { ko: '이은리 석불' },   at: 1900, side:  1, art: 'buddha',   photo: null, desc: { ko: '숲속 돌부처' } },
-            { id: 'cheokhwa',  name: { ko: '척화비' },        at: 2200, side: -1, art: 'stele',    photo: null, desc: { ko: '옛 비석' } },
-            { id: 'mill',      name: { ko: '물레방아' },      at: 2420, side:  1, art: 'mill',     photo: null, desc: { ko: '물레방아' } },
-            { id: 'lotus',     name: { ko: '연꽃단지' },      at: 2600, side: -1, art: 'sign',     photo: null, desc: { ko: '여름 연꽃 군락' } },
-            { id: 'cheonnyeon',name: { ko: '천년교' },        at: 2900, side:  1, art: 'bridge',   photo: null, desc: { ko: '위천을 건너는 다리, 한 바퀴 끝' }, hub: true }
+          id: 'sangnim-3k', official: 'data/route/sangnim-gps1.json', name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          mode: 'distance', lengthM: 2540, loop: true,
+          elev: [[0,170],[2540,170]],   // 상림 숲길은 거의 평지
+          note: '11/21 보스가 직접 걸은 GPS 길 (2.54km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
+          path: [[35.52443,127.71879],[35.5247,127.71839],[35.52641,127.71827],[35.52761,127.71697],[35.52837,127.71504],[35.52992,127.714],[35.53154,127.71314],[35.53248,127.71301],[35.53129,127.71462],[35.53008,127.71601],[35.52876,127.71734],[35.52733,127.71855],[35.52568,127.71916],[35.52443,127.71879]],
+          segments: [ { from: 0, to: 2540, scene: 'forest' } ],
+          landmarks: [   // 11/21 보스 사진 (img/hub/)
+            { id: 'hamhwaru',        name: { ko: '함화루' },            at: 40,   side:  1, art: 'gate',     photo: 'img/hub/hamhwaru.webp',        desc: { ko: '상림 입구의 누각, 옛 함양읍성 남문' }, hub: true },
+            { id: 'sawoon',          name: { ko: '사운정' },            at: 440,  side: -1, art: 'pavilion', photo: null,                            desc: { ko: '숲속 정자' } },
+            { id: 'sangnim-history', name: { ko: '역사인물공원' },      at: 790,  side:  1, art: 'stele',    photo: 'img/hub/sangnim-history.webp', desc: { ko: '최치원 등 함양의 옛 인물 흉상이 줄지어 선 곳' }, hub: true },
+            { id: 'sangnim-mill',    name: { ko: '물레방앗간' },        at: 1320, side: -1, art: 'mill',     photo: 'img/hub/sangnim-mill.webp',    desc: { ko: '숲 북쪽 끝 초가 물레방앗간, 여기서 돌아섬' }, hub: true },
+            { id: 'sangnim-eoksae',  name: { ko: '억새 정원' },         at: 2100, side:  1, art: 'sign',     photo: 'img/hub/sangnim-eoksae.webp',  desc: { ko: '문화예술회관 앞 억새·꽃밭' } },
+            { id: 'hwasujeong',      name: { ko: '파평윤씨 화수정' },   at: 2260, side: -1, art: 'pavilion', photo: 'img/hub/hwasujeong.webp',      desc: { ko: '숲길 남쪽 정자, 한 바퀴 끝이 가까움' }, hub: true }
           ]
         },
         'sangnim-5k': {
