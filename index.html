@@ -57,10 +57,11 @@
   #speedFlash small{font-size:24px}
   /* 11/19 산 코스: 고비 응원(잠깐 떴다 사라짐) · 쉬어가기 카드 */
   #cheer{position:fixed;left:50%;top:calc(184px + env(safe-area-inset-top));transform:translateX(-50%);z-index:24;width:min(90vw,350px);padding:10px 14px 12px;border-radius:18px;background:rgba(var(--pop),.96);color:var(--tx);box-shadow:0 10px 34px rgba(0,0,0,var(--sha));pointer-events:none;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;animation:chIn .45s cubic-bezier(.2,1.4,.4,1)}
-  #cheer i{display:block;font-style:normal;font-size:42px;line-height:1.1;animation:chBob 1.1s ease-in-out infinite}
+  #cheer i{display:block;font-style:normal;font-size:42px;line-height:1.1;animation:chBob 1.1s ease-in-out infinite}#cheer i img{display:block;height:64px;width:auto}
   #cheer b{display:block;font-size:17px;font-weight:800;line-height:1.4;word-break:keep-all}
   #cheer button{grid-column:1 / -1;pointer-events:auto;height:44px;border:0;border-radius:12px;background:var(--vt);color:var(--onv);font-size:16px;font-weight:800}
   #cheer.out{opacity:0;transition:opacity .4s}
+  #sNextDist .hTop{display:inline!important;font-size:.42em;font-weight:700;color:var(--mut);margin-left:2px;white-space:nowrap}#sNextDist{white-space:nowrap}
   @keyframes chIn{from{opacity:0;transform:translateX(-50%) scale(.6)}to{opacity:1;transform:translateX(-50%) scale(1)}}
   @keyframes chBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(6deg)}}
   /* 11/20 큰 응원 효과 — 움직임은 transform·opacity만 써서 가볍게 */
@@ -437,6 +438,11 @@
   #recScreen .chips button.on,#recScreen .lchips button.on{background:var(--vt);color:var(--onv)}
   .rrow{background:var(--ch2);border-radius:12px;padding:10px 12px}
   .rrow .rt{color:var(--mut);opacity:1}
+  .rrow{cursor:pointer}.rrow.on{border-radius:12px 12px 0 0}
+  .rdet{background:var(--ch2);border-radius:0 0 12px 12px;margin-top:1px;padding:8px 12px 12px;font-size:14px;line-height:1.5}
+  .rdet .rb{margin-top:10px;justify-content:flex-end}
+  .rhubs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.rhubs button{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid rgba(var(--ink),.18);background:transparent;color:var(--tx);font-size:14px;font-weight:700}.rhubs button.on{background:var(--vt);color:var(--onv);border-color:var(--vt)}
+  .rhub{margin-top:10px;background:var(--ch3);border-radius:12px;overflow:hidden}.rhub img{display:block;width:100%;max-height:180px;object-fit:cover}.rhub b{display:block;padding:10px 12px 0;font-size:16px}.rhub p{margin:4px 12px 12px;color:var(--tx2);word-break:keep-all}
   .rb button{height:32px;padding:0 10px;border-radius:8px;background:transparent;border:1px solid rgba(var(--ink),.14);color:var(--tx2);font-size:13px;font-weight:600}
   .rb button.arm{background:#e8574a;border-color:#e8574a;color:#fff}
   .stamp{background:var(--ch2)}
@@ -911,9 +917,9 @@
   <details class="kbasis"><summary>⛰ 산 코스 숫자 읽는 법</summary>
     <div>
       <p><b>기계는 '높이'만 알아요</b> 천국의 계단은 위로만 가요. 그래서 앱은 <b>기계로 오른 높이</b>만큼 실제 산길 위의 내 위치를 옮겨요.</p>
-      <p><b>남은 오르막</b> 정상까지 기계로 더 올라야 할 높이예요. 줄어들기만 해요.</p>
+      <p><b>지금 높이 / 정상</b> 출발 높이에서 정상까지, 기계로 오른 만큼 올라가요. 정상 숫자에 닿으면 정상이에요.</p>
       <p><b>길 1.2/3.8km</b> 실제 산길로는 몇 km째인지예요. 실제 산길은 비스듬히 돌아가서, 오르는 높이보다 걷는 거리가 훨씬 길어요.</p>
-      <p><b>지금 해발</b> 산길 위 그 자리의 실제 높이예요. 실제 산길은 중간에 잠깐 내려가기도 해서, 해발이 잠깐 줄 수 있어요. 그 구간은 기계로 조금만 올라도 빨리 지나가요.</p>
+      <p><b>실제 산길 해발과 차이</b> 실제 산길은 중간에 내려가기도 해요. 앱 숫자는 그런 구간을 고르게 펴서 줄지 않게 보여 줘요.</p>
       <p><b>한계</b> 평지·내리막은 계단 기계로 흉내 낼 수 없어서 짧게 지나가도록 맞춘 값이에요. 실제 등산 시간과는 달라요.</p>
     </div>
   </details>
@@ -1050,7 +1056,7 @@
 </div>
 
 <script>
-const BUILD = '202611211155';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211354';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1639,7 +1645,7 @@ const TEXT = {
     end: '종료', paused: '일시정지', resume: '다시',
     endTitle: '오늘 운동 끝 👏', passedTitle: '지나온 길', home: '코스 화면으로',
     fixBtn: '맞추기', fixFloors: '기계에 찍힌 층수', fixKm: '기계에 찍힌 거리 (km)', fixGps: '실제 거리로 고치기 (km)', fixOk: '맞췄습니다', badNum: '숫자를 넣어 주세요',
-    today: '오늘', todayUp: '오늘 오른 높이', toSummit: '정상까지', upLeft: '남은 오르막', toTop: '꼭대기까지', runTime: '운동 시간',
+    today: '오늘', todayUp: '오늘 오른 높이', toSummit: '정상까지', upLeft: '남은 오르막', hNow: '⛰ 지금 높이 / 정상', toTop: '꼭대기까지', runTime: '운동 시간',
     alti: '해발', floorUnit: '층', machineFloors: '🏢 {n}층 높이', machineLv: '기계 {n}층', summit: '정상!', elevAt: '해발 {e}m',
     done: '🎉 {course} 완주!', doneN: '누적 {n}회째', photoSlot: '사진 자리', approx: '약', min: '분', times: '회',
     goal: '오늘 목표', gNext: '다음 거점', gSpot: '거점 고르기', gDist: '거리', toGoal: '🎯', nextHub: '다음 거점',
@@ -1663,7 +1669,7 @@ const TEXT = {
     dupTitle: '방금 운동한 기록이 있어요', dupNew: '새 기록 추가', dupFix: '방금 기록 고치기', dupAsk: '이 숫자로 고칠까요?', fixedTag: '고침',
     tapResume: '화면을 누르면 다시 시작', tapPause: '화면을 누르면 일시정지',
     nSoon: '곧 {s}', nSteepUp: '⚠ 가파른 오르막 · 숨 고르며', nSteepDown: '⚠ 가파른 내리막 · 속도 주의', nUp: '⬆ 오르막 구간', nDown: '⬇ 내리막 구간',
-    nFlat: '➡ 평지 · 페이스 유지', nIncline: '트레드밀 경사 {g}%', nTop: '🔥 정상까지 {d}m!', nHalf: '절반 넘었어요 · 레벨 유지', nKeep: '꾸준히 · 레벨 유지',
+    nFlat: '➡ 평지 · 페이스 유지', nIncline: '트레드밀 경사 {g}%', nTop: '🔥 정상까지 {d}m!', nHalf: '반 넘었다', nKeep: '꾸준히',
     changeCourse: '코스 바꾸기 ▾', closeList: '닫기 ▴',
     stBtn: '걸음수 {n}', stTitle: '👣 오늘 걸음', stSplit: '운동 {w}보 · 그 밖 {o}보', stSubApp: '폰 걸음 센서로 24시간 셉니다 (설치한 때부터) · 매일 0시에 새로', stSubPerm: '걸음을 세려면 \'신체 활동\' 권한이 필요해요. 설정 → 애플리케이션 → 방구석러너 → 권한에서 허용해 주세요.', stSub: '등산·조깅·계단 기록도 합산 (기록은 추정) · 매일 0시에 새로',  stSubNo: '평소 걸음은 이 화면에서 못 셉니다 → 삼성 헬스 숫자로 맞춰 주세요 (운동 기록은 합산됨)',
     stInputL: '삼성 헬스 걸음수로 맞추기', stSet: '맞추기', stApply: '🛣 코스에 반영 · +{n}보 ≈ {d}km', stNone: '새로 반영할 걸음이 없어요',
@@ -2435,6 +2441,8 @@ function climbState(){
   /* 11/19 보스 폰 "정상 높이가 안 보임·숫자가 안 맞음": 화면의 '정상까지' = 정상 해발 − 지금 해발 (지금 해발 + 정상까지 = 정상 높이). 남은 시간은 남은 운동량(remain)으로 셈 */
   /* 11/20 보스 폰 "내리막에서 정상까지 거리가 줄다가 늘어남": 산길은 중간에 내려가기도 해서 '정상 − 지금 해발'은 다시 늘어남 → 화면 숫자는 '남은 오르막'(기계로 더 올라야 할 높이, 줄기만 함)으로 */
   st.left = st.remain;
+  /* 11/21 보스 "'오르막 높이'(남은 오르막)는 정상 높이와 안 이어져 헷갈림": 화면 숫자 = 지금 높이 — 출발 해발에서 정상 해발까지 기계로 오른 만큼 고르게 올라감(줄지 않음). 실제 산길 해발(3D 위치)과는 조금 다를 수 있음 */
+  st.hgt = Math.round(m.base + st.ratio * (m.summit - m.base));
   return st;
 }
 const wpAt = (m, w) => w.at != null ? w.at * m.gain : (w.elev - m.base);   // 이정표가 오른 높이 몇 m 지점인지
@@ -2703,8 +2711,9 @@ function hudClimb(st){
   const tower = st.m.kind === 'tower';
   $('namePill').textContent = (tower ? '🏙 ' : '⛰ ') + tr(st.m.name) + (tower ? '' : ' ' + st.m.summit.toLocaleString() + 'm') + (st.m.trailName ? ' · ' + tr(st.m.trailName) : '');   // 11/19 보스 "정상 높이가 잘 안 보임" → 이름 옆에 정상 높이
   $('altiPill').textContent = tower ? (st.m.eq ? Math.round(st.climbed) + 'm' : st.floor + T.floorUnit) : T.alti + ' ' + Math.round(st.elev).toLocaleString() + 'm' + (tempDrop(st) >= 1 ? ' · 🌡 −' + tempDrop(st) + '℃' : '');
-  $('sNextLabel').textContent = tower ? T.toTop : T.upLeft;
-  $('sNextDist').textContent = Math.round(st.left).toLocaleString() + ' m'; $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
+  $('sNextLabel').textContent = tower ? T.toTop : T.hNow;
+  if (tower) $('sNextDist').textContent = Math.round(st.left).toLocaleString() + ' m';
+  else $('sNextDist').innerHTML = st.hgt.toLocaleString() + '<span class="hTop"> / ' + st.m.summit.toLocaleString() + 'm</span>'; $('sCourseLeft').classList.add('hidden'); $('sCourseLeft').parentElement.classList.remove('hasLeft');
   $('sNextName').textContent = goalOn() && !S.goalHit ? '🎯 목표까지 ' + Math.max(1, Math.ceil((S.goalSec - S.elapsed) / 60)) + T.min   /* 11/20 보스 폰(폭 360): 뒤에 %·층을 붙이면 잘림 → 목표 시간만 */
     : (st.geo ? '길 ' + (st.gp.dist / 1000).toFixed(1) + '/' + (st.geo.D / 1000).toFixed(1) + 'km'   /* 11/20: 실제 산길로는 몇 km째인지 (오르는 높이와 걷는 거리가 다름) */
       : tower && !st.m.eq ? (st.m.floors - st.floor) + T.floorUnit : Math.floor(st.ratio * 100) + '%') + ' · ' + Math.max(1, Math.round(st.remain / climbMpm())) + T.min;
@@ -2727,16 +2736,16 @@ function hudClimb(st){
 const MTC = { seen: new Set(), q: [], last: 0, t: 0, ratio: 0, alt: null, min: 0 };
 const MTC_TX = {
   p25: [['📣', '4분의 1 통과! 제일 힘든 "시작하기"는 벌써 끝났어요', '화이링! 화이링~'], ['💪', '몸 풀렸죠? 이제부터가 진짜 산입니다', '아자 아자! 화이링~'], ['🙌', '초반 페이스 좋아요. 이대로만 가면 정상이 먼저 옵니다', '으쌰! 으쌰!']],   // [그림, 작은 글, 큰 글씨] — 큰 글씨가 있으면 큰 응원
-  p50: [['🌗', '이제 반! 올라온 만큼만 더 가면 정상'], ['🙌', '절반 통과! 내려갈 걱정이 없으니 이득이에요']],
-  p75: [['🤥', '산에서 제일 유명한 거짓말… 인데 이번엔 4분의 3, 진짜예요', '다 왔어요~'], ['🗣', '내려오는 분이 "5분이면 가요" 하네요. 산 인심은 반만 믿기', '거의 다 왔어요~'], ['😏', '"저 모퉁이만 돌면 정상" 세 번째 듣는 중. 그래도 정말 얼마 안 남았어요', '조금만 더~ 진짜로!'], ['🥵', '깔딱고개만 넘으면 진짜 다 온 거예요. 땀 한번 닦고!', '다 왔어요~ 거의!']],
-  p90: [['👀', '정상이 코앞! 이번엔 진짜예요. "야호" 준비'], ['📸', '저 위에 정상석이 보여요. 인증샷 자세 생각해 두세요']],
-  t20: [['💧', '{m}분째! 물 한 모금 하고 가요'], ['💦', '{m}분째. 땀 닦을 시간이에요']],
-  t40: [['🧘', '{m}분 넘었어요. 잠깐 쉬어도 산은 안 도망가요']],
-  t60: [['⏰', '{m}분째! 오늘은 여기까지 해도 충분해요. 다음에 이 높이에서 이어 올라요']],
-  alt: [['❄️', '해발 {a}m 돌파! 산 아래보다 {t}℃쯤 선선해요']], alt0: [['🎉', '해발 {a}m 돌파!']]
+  /* 11/21 보스 "문 열고 나오는 캐릭터는 까불거리는데 중간 글은 정숙·설명조 → 톤이 안 맞음": 작은 글도 방구석 주인 말투(경상도·짧게) + 그 얼굴 */
+  p50: [['cheer', '반 왔다꼬? 올라온 만큼만 더 하믄 정상이다~'], ['cheer', '절반! 내려갈 걱정은 없제? 방구석이라 ㅋ']],
+  p90: [['cheer', '정상 코앞이다! 야호 연습해 놔라'], ['cheer', '저 위에 정상석 보인다~ 사진 포즈 정해라']],
+  t20: [['yawn', '{m}분째… 물 한 모금 무라'], ['yawn', '{m}분째다. 땀 좀 닦고 해라']],
+  t40: [['yawn', '{m}분 넘었다~ 쉬어도 산 안 도망간다']],
+  t60: [['sleepy', '{m}분째! 오늘은 고마 해도 된다. 여서 다음에 이어 하자']],
+  alt: [['sleepy', '해발 {a}m 넘었다! 여는 {t}도 시원하제?']], alt0: [['sleepy', '해발 {a}m 넘었다!']]
 };
 const MTC_BITS = { p25: ['💪', '✨', '👏', '🔥', '📣'], p75: ['🚩', '🎉', '👏', '✨', '🙌'] };   // 큰 응원 때 솟아오르는 그림문자
-const MTC_SAY = { p25: '화이링! 4분의 1 왔습니다.', p75: '4분의 3 왔습니다. 거의 다 왔어요.', p50: '절반 왔습니다. 힘내세요.', p90: '정상이 코앞입니다.', t40: '{m}분 지났습니다. 잠깐 쉬어 가도 좋습니다.', t60: '{m}분 지났습니다. 오늘은 여기까지 하고 다음에 이어 올라도 좋습니다.' };
+const MTC_SAY = { p25: '화이링! 4분의 1 왔데이.', p75: '4분의 3. 다 왔다.', p50: '반 왔다.', p90: '정상 코앞이다.', t40: '{m}분 넘었다. 쉬어도 된다.', t60: '{m}분째. 오늘은 고마 해도 된다.' };   // 11/21 말투 통일 · 짧게
 const mtnRun = () => S.running && isClimb() && !S.free && TGT(DB.climb.sel).kind !== 'tower';
 function cheerPush(id, grp, rest, vars){
   if (MTC.seen.has(id)) return; MTC.seen.add(id);
@@ -2801,7 +2810,7 @@ function doorFx(lines){
 function doorFxHide(){ DOOR.t.forEach(clearTimeout); DOOR.t = []; DOOR.on = false; $('doorFx').className = 'hidden out'; $('doorBub').className = 'hidden'; }
 function cheerFxHide(){ const el = $('cheerFx'); clearTimeout(MTC.t2); if (el.classList.contains('hidden')) return; el.classList.add('out'); setTimeout(() => el.classList.add('hidden'), 500); }
 function cheerShow(c){
-  const el = $('cheer'); cheerFxHide(); $('chEmo').textContent = c.emo; $('chTx').textContent = c.tx; $('chRest').classList.toggle('hidden', !c.rest);
+  const el = $('cheer'); cheerFxHide(); if (WHO_IMG.includes(c.emo)) $('chEmo').innerHTML = '<img src="img/who/' + c.emo + '.webp?v=1" alt="">'; else $('chEmo').textContent = c.emo; $('chTx').textContent = c.tx; $('chRest').classList.toggle('hidden', !c.rest);
   { let pt = 0; ['map', 'hudTop', 'infoPanel'].forEach(id => { const e = $(id); if (e && !e.classList.contains('hidden')) pt = Math.max(pt, e.getBoundingClientRect().bottom); }); if (pt) el.style.top = Math.round(pt + 8) + 'px'; }   // 거점 알림과 같은 자리(위쪽 칸 바로 아래) — 화살표(내 위치)를 가리지 않게
   el.classList.remove('hidden', 'out'); el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';   // 뜰 때마다 통통 튀게
   try { if (!document.hidden) navigator.vibrate && navigator.vibrate(60); } catch(e){}
@@ -2816,11 +2825,12 @@ function mtnStart(){   // 출발: 어디서 어디까지 오르는지(코스 높
   if (!mtnRun()) return;
   const st = climbState(), m = st.m, mins = Math.max(1, Math.round(st.remain / climbMpm()));
   MTC.ratio = st.ratio;
-  const head = st.climbed >= 3 ? '해발 ' + Math.round(st.elev).toLocaleString() + 'm에서 이어 올라요 · 남은 오르막 ' + Math.round(st.left).toLocaleString() + 'm'
-    : tr(m.baseName || { ko: '출발 지점' }) + '(해발 ' + m.base.toLocaleString() + 'm)에서 출발 · 정상까지 ' + m.gain.toLocaleString() + 'm 올라요' + (st.geo ? ' (산길 ' + (st.geo.D / 1000).toFixed(1) + 'km)' : '');
+  /* 11/21 보스 "설명조 줄이기": 출발 카드 = 숫자 한 줄 + 시간 한 줄 */
+  const head = st.climbed >= 3 ? st.hgt.toLocaleString() + 'm에서 이어 오름 → 정상 ' + m.summit.toLocaleString() + 'm'
+    : tr(m.baseName || { ko: '출발 지점' }) + ' ' + m.base.toLocaleString() + 'm → 정상 ' + m.summit.toLocaleString() + 'm' + (st.geo ? ' · 산길 ' + (st.geo.D / 1000).toFixed(1) + 'km' : '');
   const gm = Math.round(S.goalSec / 60);
-  showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n' + (gm && gm < mins ? '🎯 오늘 목표 ' + gm + '분 (약 ' + Math.round(gm * climbMpm()) + 'm) · 끝까지는 약 ' + mins + '분'
-    : '지금 레벨로 약 ' + mins + '분' + (mins >= 45 ? ' · 길면 나눠 오르세요. 멈춘 높이에서 다음에 이어져요' : '')), false);
+  showPopup('⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm', head + '\n' + (gm && gm < mins ? '🎯 오늘 ' + gm + '분 · 끝까지 약 ' + mins + '분'
+    : '약 ' + mins + '분' + (mins >= 45 ? ' · 끊어 올라도 이어져요' : '')), false);
 }
 function mtnClear(){ try { doorFxHide(); } catch(e){} clearTimeout(MTC.t); clearTimeout(MTC.t2); $('cheer').classList.add('hidden'); $('cheerFx').classList.add('hidden'); $('restBox').classList.add('hidden'); }
 /* ---- 11/20 보스 "천국의 계단 30분 하기도 힘들다 — 10분·20분 하는 경우도": 오늘 목표(분) ----
@@ -2856,11 +2866,11 @@ tGoalBind();
 function goalTick(st){
   if (!goalOn() || S.goalHit) return;
   const g = S.goalSec, min = Math.round(g / 60);
-  if (!S.goalHalf && g >= 600 && S.elapsed >= g / 2){ S.goalHalf = true; MTC.q.push({ emo: '🎯', tx: '목표 절반! ' + Math.round(g / 120) + '분만 더 가면 돼요', rest: false, say: '목표 절반 왔습니다.', at: Date.now() }); }
+  if (!S.goalHalf && g >= 600 && S.elapsed >= g / 2){ S.goalHalf = true; MTC.q.push({ emo: 'cheer', tx: '목표 반 왔다! ' + Math.round(g / 120) + '분만 더~', rest: false, say: '목표 반 왔다.', at: Date.now() }); }
   if (S.elapsed >= g){ S.goalHit = true;
     const up = Math.round(S.sessionM), more = st.m.kind !== 'tower' && st.remain > 5;
-    MTC.q = [{ emo: '🎯', tx: '오늘 ' + min + '분, ' + up + 'm 올랐어요' + (more ? '. 다음에 이 높이에서 이어 올라요' : ''), big: '목표 달성!', bits: ['🎯', '🎉', '👏', '✨', '💪'], say: '오늘 목표 ' + min + '분 달성했습니다.', force: true, at: Date.now() },
-             { emo: '🏁', tx: '목표 ' + min + '분 끝! 여기서 쉬거나 끝내도 좋아요', rest: true, say: '', force: true, at: Date.now() }];
+    MTC.q = [{ emo: '🎯', tx: min + '분에 ' + up + 'm! 잘했데이' + (more ? ' · 남은 건 다음에' : ''), big: '목표 달성!', bits: ['🎯', '🎉', '👏', '✨', '💪'], say: '목표 ' + min + '분 끝. 잘했데이.', force: true, at: Date.now() },
+             { emo: 'yawn', tx: '목표 끝! 고마 쉬든가, 더 하든가~', rest: true, say: '', force: true, at: Date.now() }];
   }
 }
 function mtnTick(st){   // 운동 화면 숫자를 고칠 때마다(1초에 두세 번)
@@ -2894,7 +2904,7 @@ function restFill(st){
   const m = st.m, mpm = climbMpm(), num = v => Math.round(v).toLocaleString();
   $('restName').textContent = '⛰ ' + tr(m.name) + ' ' + m.summit.toLocaleString() + 'm';
   const grid = $('restGrid'); grid.textContent = '';
-  [['지금 해발', num(st.elev) + ' m'], [T.upLeft, num(st.left) + ' m'], [T.runTime, fmtTime(S.elapsed)], [T.todayUp, num(S.sessionM) + ' m']].forEach(([a, b]) => {
+  [['지금 높이', num(st.hgt) + ' m'], ['정상까지', num(m.summit - st.hgt) + ' m'], [T.runTime, fmtTime(S.elapsed)], [T.todayUp, num(S.sessionM) + ' m']].forEach(([a, b]) => {
     const d = document.createElement('div'), s = document.createElement('span'), v = document.createElement('b'); s.textContent = a; v.textContent = b; d.append(s, v); grid.append(d); });
   const L = ['🥾 ' + tr(m.baseName || { ko: '출발 지점' }) + ' ' + m.base.toLocaleString() + 'm → 정상 ' + m.summit.toLocaleString() + 'm · 오를 높이 ' + m.gain.toLocaleString() + 'm'];
   if (m.trail) L.push('🗺 ' + tr(m.trail));
@@ -2905,7 +2915,7 @@ function restFill(st){
   const box = $('restLines'); box.textContent = ''; L.forEach(x => { const d = document.createElement('div'); d.textContent = x; box.append(d); });
   const pr = promoNow(m.cityId)[0], pb = $('restPromo'); pb.classList.toggle('hidden', !pr);   // 지역 행사·혜택 소식 자리 (등록된 소식이 있을 때만)
   if (pr) pb.innerHTML = '📣 <b>' + pr.title + '</b><br>' + pr.text + (pr.link ? '<br><a href="' + pr.link + '" target="_blank">자세히 보기 ›</a>' : '');
-  $('restFoot').textContent = '지금 끝내도 다음에 해발 ' + num(st.elev) + 'm에서 이어 올라요';
+  $('restFoot').textContent = '지금 끝내도 다음에 ' + num(st.hgt) + 'm에서 이어 올라요';
 }
 $('restGo').onclick = () => { if (S.running && S.paused) togglePause(); };
 $('restEnd').onclick = () => { $('restBox').classList.add('hidden'); openConfirm(); };
@@ -4733,6 +4743,26 @@ function periodStart(per){
   return 0;
 }
 const actGroup = r => ({ walk: 'foot', tread: 'foot', walk: 'foot', jog: 'foot', bike: 'bike', stair: 'up', hike: 'up' })[r.act] || 'foot';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+/* 11/21 기록 속 지나온 거점 → 이름·사진·설명 (운동 중 못 본 설명을 다시 보기 · 나중에 거점 광고·정보 자리) */
+function recHubs(r){
+  const c = r.credit || {}, names = r.passed || [];
+  if (!names.length) return [];
+  if (c.course === 'climb'){
+    const m = TGT(c.target); if (!m) return names.map(n => ({ name: n }));
+    return names.map(n => {
+      if (n === tr(m.short || m.name) || n === tr(m.name)) return { name: tr(m.name) + ' ' + T.summit, desc: T.elevAt.replace('{e}', m.summit.toLocaleString()) + (m.desc || m.trail ? ' · ' + tr(m.desc || m.trail) : ''), photo: typeof m.photo === 'string' ? m.photo : HUB_PHOTO['mtn_' + m.id] };
+      const w = (m.waypoints || []).find(x => tr(x.name) === n);
+      return w ? { name: n, desc: (w.elev ? T.elevAt.replace('{e}', w.elev.toLocaleString()) : '') + (w.desc ? ' · ' + tr(w.desc) : ''), photo: typeof w.photo === 'string' ? w.photo : undefined } : { name: n };
+    });
+  }
+  const co = ALL_ROADS[c.course === 'sangnim' ? 'sangnim-3k' : c.target], lms = (co && co.landmarks) || [];
+  return names.map(n => { const l = lms.find(x => tr(x.name) === n);
+    return l ? { name: n, desc: tr(l.desc), photo: typeof l.photo === 'string' ? l.photo : HUB_PHOTO[l.id] } : { name: n }; });
+}
+function recHubCard(h){   // 광고·행사 자리는 내용이 생기면 이 카드 아래에 (지금은 비움 — 다른 것으로 채우지 말 것)
+  return '<div class="rhub">' + (h.photo ? '<img src="' + esc(h.photo) + '" alt="" loading="lazy">' : '') + '<b>' + esc(h.name) + '</b>' + (h.desc ? '<p>' + esc(h.desc) + '</p>' : '<p class="muted">아직 설명이 없어요</p>') + '</div>';
+}
 function refreshRec(){
   try { refreshSteps(); } catch(e){}
   refreshStamps(); $('stampBox').classList.toggle('hidden', DB.pick.type === 'climb');
@@ -4762,14 +4792,19 @@ function refreshRec(){
   list.forEach(r => {
     const d = new Date(r.date), key = r.src === 'legacy' ? T.srcLegacy : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + '일월화수목금토'[d.getDay()] + ')';
     if (key !== day){ html += '<div class="rday">' + key + '</div>'; day = key; }
-    const a = ACTS[r.act] || ACTS.tread;
-    html += '<div class="rrow"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
-      (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
-      T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ' · <span class="nw">' + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + '</span>' + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
-      '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
+    const a = ACTS[r.act] || ACTS.tread, open = REC.open === r.id, hubs = open ? recHubs(r) : [];
+    /* 11/21 보스 "기록이 아래로 다 펼쳐져 너저분 · 지나온 거점을 눌러 못 본 설명(향후 광고·정보)": 한 줄만 보이고, 누르면 펼침 */
+    html += '<div class="rrow' + (open ? ' on' : '') + '" data-rx="' + r.id + '"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') +
+      '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') + T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + ((r.passed || []).length ? ' · 📍 ' + r.passed.length : '') + '</span></div><div class="rt">' + (open ? '▴' : '▾') + '</div></div>';
+    if (open) html += '<div class="rdet"><div class="muted">' + (kcalOf(r) ? '🔥 ' + kcalTxt(kcalOf(r)) + ' · ' : '') + (r.real ? T.realDone + ' · ' : '') + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</div>' +
+      (hubs.length ? '<div class="rhubs">' + hubs.map((h, i) => '<button data-rh="' + i + '" class="' + (REC.hub === i ? 'on' : '') + '">📍 ' + esc(h.name) + '</button>').join('') + '</div>' : '') +
+      (hubs[REC.hub] ? recHubCard(hubs[REC.hub]) : '') +
+      '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>' + '</div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
   document.querySelector('[data-t="recHelp"]').classList.toggle('hidden', !html);   // 11/18 A15
+  $('recList').querySelectorAll('[data-rx]').forEach(el => el.onclick = () => { const id = +el.dataset.rx; REC.open = REC.open === id ? null : id; REC.hub = null; REC.delId = REC.apId = null; refreshRec(); });
+  $('recList').querySelectorAll('[data-rh]').forEach(el => el.onclick = () => { const i = +el.dataset.rh; REC.hub = REC.hub === i ? null : i; refreshRec(); });
   $('recList').querySelectorAll('[data-ed]').forEach(el => el.onclick = () => openEdit(+el.dataset.ed));
   $('recList').querySelectorAll('[data-ap]').forEach(el => el.onclick = () => {
     const id = +el.dataset.ap; if (REC.apId !== id){ REC.apId = id; refreshRec(); return; }   // 한 번 더 누르면 반영
@@ -6355,14 +6390,14 @@ function drawClimbMini(st){   // 작은 칸: 산·빌딩 전체에서 어디쯤�
     const wc = bw * towerW(m, st.ratio); g.fillStyle = '#e8574a'; g.fillRect(mid - wc / 2 - 8 * DPR, bot - fh - 2 * DPR, wc + 16 * DPR, 4 * DPR);
     miniTag(T.tagAll, m.eq ? Math.round(st.climbed) + ' / ' + m.gain + 'm' : st.floor + ' / ' + m.floors + 'F'); return;
   }
-  if (st.geo){ g.fillStyle = '#eef2ea'; g.fillRect(0, 0, sz, sz); drawGeoProfile(g, 12 * DPR, sz - 12 * DPR, top, bot, st, true); miniTag(T.tagAll, '지금 ' + Math.round(st.elev).toLocaleString() + 'm'); return; }
+  if (st.geo){ g.fillStyle = '#eef2ea'; g.fillRect(0, 0, sz, sz); drawGeoProfile(g, 12 * DPR, sz - 12 * DPR, top, bot, st, true); miniTag(T.tagAll, '정상 ' + st.m.summit.toLocaleString() + 'm'); return; }   // 11/21: 큰 칸 '지금 높이'와 숫자가 둘이 되지 않게
   const x0 = 12 * DPR, x1 = sz - 12 * DPR, X = t => x0 + (x1 - x0) * t, Y = t => bot - (bot - top) * climbCurve(t);
   g.beginPath(); g.moveTo(x0, bot + 6 * DPR); for (let i = 0; i <= 40; i++) g.lineTo(X(i / 40), Y(i / 40)); g.lineTo(x1, bot + 6 * DPR); g.closePath(); g.fillStyle = '#c9d9c3'; g.fill();
   g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = 4 * DPR;
   g.strokeStyle = '#9aa59a'; g.beginPath(); for (let i = 0; i <= 40; i++) g.lineTo(X(i / 40), Y(i / 40)); g.stroke();
   g.strokeStyle = '#3f9a52'; g.beginPath(); for (let i = 0; i <= Math.floor(st.ratio * 40); i++) g.lineTo(X(i / 40), Y(i / 40)); g.lineTo(X(st.ratio), Y(st.ratio)); g.stroke();
   g.fillStyle = '#e8574a'; g.strokeStyle = '#fff'; g.lineWidth = 2 * DPR; g.beginPath(); g.arc(X(st.ratio), Y(st.ratio), 5 * DPR, 0, 7); g.fill(); g.stroke();
-  miniTag(T.tagAll, '지금 ' + Math.round(st.elev).toLocaleString() + 'm');
+  miniTag(T.tagAll, '정상 ' + st.m.summit.toLocaleString() + 'm');
 }
 
 /* =====================================================================
