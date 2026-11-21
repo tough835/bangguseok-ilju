@@ -18,6 +18,8 @@
     border-radius:14px;background:rgba(250,248,240,.85);box-shadow:0 2px 8px rgba(0,0,0,.3)}
   #altChip{position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;padding:5px 10px;border-radius:12px;background:rgba(20,22,25,.72);color:#fff;font-size:15px;font-weight:800;line-height:1.2;text-align:right;pointer-events:none}
   #altChip small{display:block;font-size:11px;font-weight:700;color:var(--vtx)}
+  #vidBox{position:fixed;left:0;right:0;top:0;bottom:var(--vidB,300px);z-index:4;background:#000;display:flex;flex-direction:column}#vidFrame,#vidBox iframe{flex:1;width:100%;border:0}#vidBar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#111;color:#c9cbd0;font-size:13px}#vidBar button{min-height:40px;padding:0 14px;border-radius:20px;border:0;background:#34373c;color:#fff;font-size:14px;font-weight:700}
+  body.vidOn #hudTop,body.vidOn #map,body.vidOn #altChip{visibility:hidden}
   #hudTop{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:116px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
   .pill{background:rgba(0,0,0,.45);padding:6px 11px;border-radius:999px;font-size:14px;line-height:1.2;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pill.alt{font-size:24px;font-weight:900;padding:7px 14px}
@@ -635,8 +637,10 @@
   <div class="pill hidden" id="gpsPill"></div>
   <button class="pill satb hidden" id="bSat"></button>
   <button class="pill satb hidden" id="b3d"></button>
-  <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>   <!-- 11/17 음성 안내 켜기·끄기 -->
+  <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>
+  <button class="pill satb hidden" id="bVid">🎬 영상</button>   <!-- 11/21 영상 코스 시험 (유튜브) -->   <!-- 11/17 음성 안내 켜기·끄기 -->
 </div>
+<div id="vidBox" class="hidden"><div id="vidFrame"></div><div id="vidBar"><span id="vidTx"></span><button id="vidOff">🗺 지도로</button></div></div>
 <div id="altChip" class="hidden"></div>   <!-- 11/18 고도: 오른쪽 위 작은 칸 (지금 해발 · 오늘 오른 높이) -->
 
 <div id="hudBottom" class="hidden">
@@ -1056,7 +1060,7 @@
 </div>
 
 <script>
-const BUILD = '202611211354';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211553';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1152,7 +1156,8 @@ const WORLD = {
          · 전체 거리는 공개 자료 기준, 중간 위치(at)와 지도 모양은 GPX 받기 전 추정 */
       courses: {
         'sangnim-3k': {
-          id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json', name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json',
+          video: { yt: '1ozmFi2Omgc', kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
           mode: 'distance', lengthM: 2380, loop: true,
           elev: [[0,170],[2380,170]],   // 상림 숲길은 거의 평지
           note: '11/21 보스가 직접 걸은 GPS 길 (곁가지 정리 · 2.38km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
@@ -2593,7 +2598,7 @@ function loop(now){
     const run = sp >= WALK_RUN_LIMIT, amp = S.paused || sp <= 0 || S.act === 'bike' ? 0 : (run ? 0.065 : 0.028);
     const bob = Math.abs(Math.sin(S.phase)) * amp - amp/2, sway = Math.sin(S.phase / 2) * amp * 0.8;
     const pos = ((totalNow() % L) + L) % L;
-    if (++hudTick % 6 === 0){ AREA = viewArea(); hudWalk(pos); if (NAV.full) updateInfoPanel(pos); }
+    if (++hudTick % 6 === 0){ AREA = viewArea(); hudWalk(pos); if (NAV.full) updateInfoPanel(pos); if (VID.on) vidTick(sp); }
     if (!AREA) AREA = viewArea();
     const far = S.act === 'bike';
     if (NAV.full){ drawMapView(pos); if (outTheme()) drawTrackMini(); else { drawNav(mctx, mapCv.width, mapCv.height, mapCv.width / 2, mapCv.height * 0.62, far ? 420 : 160, pos, true); miniTag(T.tagHere); } }
@@ -3700,6 +3705,7 @@ $('bTel').onclick = () => { DB.tel = DB.tel === false ? true : false; saveDB(); 
 setTimeout(() => { telBtn(); tel('open', { zone: DB.zone || null }); }, 1500);
 window.addEventListener('online', telFlush);
 function doEnd(){
+  try { vidOffNow(); } catch(e){}
   meterEnd(); try { panReset(); } catch(e){}
   try { if (S.sessionM > 10) tel('finish', { zone: DB.zone, act: S.act, course: telCourse(), km: isClimb() ? null : Math.round(S.sessionM / 10) / 100, up_m: isClimb() ? Math.round(S.sessionM) : null, min: Math.round(S.elapsed / 6) / 10 }); } catch(e){}
   S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
@@ -6224,7 +6230,44 @@ function mapModes(){
 }
 const V3D_TOON = false;   // 그림 3D 보류 (코드는 남김)
 const mapCur = m => m.includes('3d') && DB.v3d !== false && !V3D.hot ? (DB.v3dSty === 'toon' && V3D_TOON ? 'toon' : '3d') : m.includes('sat') ? mapSty() : 'flat';
+/* ---- 🎬 영상 코스 시험 (11/21 보스 상림 촬영 → 유튜브 일부 공개) ----
+   큰 화면 = 유튜브 영상, 재생 속도 = 지금 속도 ÷ 찍을 때 걸은 속도 (0.25~2배). 일시정지·종료 = 영상도 멈춤
+   유튜브 약관: 영상 위를 우리 그림으로 덮지 않음 → 위쪽 알약·작은 지도는 숨기고 숫자는 아래 칸에만 */
+const VID = { on: false, P: null, ready: false, rate: 1, api: null };
+function vidApi(){
+  if (VID.api) return VID.api;
+  VID.api = new Promise((ok, no) => { if (window.YT && YT.Player) return ok();
+    window.onYouTubeIframeAPIReady = ok; const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = no; document.head.append(s); setTimeout(no, 15000); });
+  return VID.api;
+}
+function vidLay(){ const hb = $('hudBottom'); document.documentElement.style.setProperty('--vidB', (hb.offsetHeight - 36) + 'px'); }
+async function vidOn(){
+  const v = COURSE.video; if (!v) return;
+  VID.on = true; document.body.classList.add('vidOn'); $('vidBox').classList.remove('hidden'); vidLay(); $('vidTx').textContent = '🎬 ' + (v.note || '영상') + ' · 불러오는 중…';
+  try { await vidApi(); } catch(e){ $('vidTx').textContent = '영상을 못 불러왔어요 (인터넷 확인)'; return; }
+  if (!VID.on) return;
+  if (VID.P){ VID.ready && VID.P.playVideo(); return; }
+  VID.P = new YT.Player('vidFrame', { videoId: v.yt, playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, fs: 0, disablekb: 1, mute: 1, loop: 1, playlist: v.yt },
+    events: { onReady: () => { VID.ready = true; VID.P.mute(); vidTick(effSpeed()); },
+              onStateChange: e => { if (e.data === 0) { VID.P.seekTo(0); VID.P.playVideo(); } },
+              onError: e => { $('vidTx').textContent = '영상 재생 오류 ' + e.data + ' (일부 공개인지 확인)'; } } });
+}
+function vidOffNow(){ VID.on = false; document.body.classList.remove('vidOn'); $('vidBox').classList.add('hidden'); try { VID.ready && VID.P.pauseVideo(); } catch(e){} }
+function vidTick(kmh){
+  if (!VID.on || !VID.ready) return;
+  const v = COURSE.video, go = S.running && !S.paused && kmh > 0;
+  try {
+    if (!go){ VID.P.pauseVideo(); $('vidTx').textContent = '⏸ 멈춤'; return; }
+    const r = Math.max(0.25, Math.min(2, Math.round(kmh / v.kmh * 20) / 20));
+    if (r !== VID.rate){ VID.P.setPlaybackRate(r); VID.rate = r; }
+    if (VID.P.getPlayerState() !== 1) VID.P.playVideo();
+    $('vidTx').textContent = '🎬 ' + r.toFixed(2).replace(/0$/, '') + '배속' + (kmh / v.kmh > 2 ? ' · 영상은 최대 2배' : '');
+  } catch(e){}
+}
+$('bVid').onclick = e => { e.stopPropagation(); VID.on ? vidOffNow() : vidOn(); };
+$('vidOff').onclick = e => { e.stopPropagation(); vidOffNow(); };
 function v3dBtn(){
+  $('bVid').classList.toggle('hidden', !(COURSE.video && !S.gps && !S.free && !isClimb()));
   const m = mapModes(), b = $('b3d'); $('bSat').classList.add('hidden');
   b.classList.toggle('hidden', m.length < 2); if (m.length < 2) return;
   const c = mapCur(m); b.textContent = MAPL[c] + ' ↻'; if (c === '3d' || c === 'toon'){ v3dLoad(); if (V3D.ready && V3D.sty !== c) v3dStyle(c); }
