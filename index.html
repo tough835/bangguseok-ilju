@@ -1078,7 +1078,7 @@
 </div>
 
 <script>
-const BUILD = '202611212012';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611212018';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1175,7 +1175,7 @@ const WORLD = {
       courses: {
         'sangnim-3k': {
           id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json',
-          video: { yt: '1ozmFi2Omgc', ar: 9 / 16, vy: 0.15, kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          video: { yt: '1ozmFi2Omgc', ar: 9 / 16, vy: 0, kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
           mode: 'distance', lengthM: 2380, loop: true,
           elev: [[0,170],[2380,170]],   // 상림 숲길은 거의 평지
           note: '11/21 보스가 직접 걸은 GPS 길 (곁가지 정리 · 2.38km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
@@ -6282,7 +6282,7 @@ function vidFit(){
   const bw = w.clientWidth, bh = w.clientHeight; if (!bw || !bh) return;
   let fw = bw, fh = bw / ar; if (fh < bh){ fh = bh; fw = bh * ar; }
   /* 11/21 보스 "아래(그림자)는 자르고 위를 살려": 넘치는 높이 중 위는 vy만큼만 자르고 나머지는 아래에서 자름 (vy 0 = 위 그대로, 0.5 = 가운데) */
-  const vy = COURSE.video && COURSE.video.vy != null ? COURSE.video.vy : 0.15;
+  const vy = COURSE.video && COURSE.video.vy != null ? COURSE.video.vy : 0;
   Object.assign(f.style, { width: fw + 'px', height: fh + 'px', left: (bw - fw) / 2 + 'px', top: -(fh - bh) * vy + 'px' });
 }
 window.addEventListener('resize', () => { if (VID.on) vidLay(); });
