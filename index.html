@@ -35,7 +35,7 @@
   #edActs button.on{background:var(--vt);border-color:var(--vt);color:#1b1c1f}
   #sCourseLeft{position:absolute;bottom:10px;right:12px;font-size:14px;font-style:normal;font-weight:800;color:var(--vtx)}   /* 11/18 보스: 코스 전체 남은 거리도 줄어들게 */
   #sCourseLeft:not(.hidden) ~ b{margin-top:0}
-  .stat.hasLeft small{padding-right:70px}
+  .stat.hasLeft small{padding-right:5.4em}   /* 11/21 검수 B1: 큰 글씨에서 '약 3분'과 '🏁 4.7km'가 겹치던 것 */
   .stat span{display:block;font-size:13px;opacity:.75}
   .stat b{display:block;font-size:34px;font-weight:900;line-height:1.15;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stat small{display:block;font-size:15px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -43,7 +43,8 @@
   .bar i{display:block;height:100%;width:0;background:#d7f548;border-radius:99px}
   .spdRow{display:flex;align-items:stretch;gap:8px;margin-top:9px}
   .spdRow button{width:84px;border:0;border-radius:18px;background:rgba(255,255,255,.94);color:#1b1c1f;font-size:40px;font-weight:900}
-  .spdBox{flex:1;background:rgba(0,0,0,.5);border-radius:18px;height:80px;display:flex;align-items:baseline;justify-content:center;gap:6px;padding-top:4px;box-sizing:border-box}
+  .spdBox{flex:1;min-width:0;overflow:hidden;background:rgba(0,0,0,.5);border-radius:18px;height:80px;display:flex;align-items:baseline;justify-content:center;gap:6px;padding-top:4px;box-sizing:border-box}
+  .spdRow button{flex:none}   /* 11/21 검수 B1: 글씨가 커져도 ± 버튼이 화면 밖으로 밀리지 않게 */
   .spdBox span{font-size:62px;font-weight:900;letter-spacing:-2px;line-height:76px}
   .spdBox small{font-size:17px;opacity:.85;white-space:nowrap}
   .ctrl{display:flex;gap:8px;margin-top:8px}
@@ -272,7 +273,7 @@
   .calh button{background:none;border:0;color:var(--tx);font-size:20px;width:44px;height:36px}
   .calsum{font-size:13px;color:var(--mut);margin:2px 0 8px;text-align:center}
   .calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
-  .calg i{font-style:normal;font-size:11px;color:var(--mut)}
+  .calg i{font-style:normal;font-size:13px;color:var(--mut)}
   .calg b{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;font-size:13px;font-weight:600;background:var(--ch3);color:var(--tx2b)}
   .calg b.l1{background:rgba(215,245,72,.35);color:var(--tx)}.calg b.l2{background:rgba(215,245,72,.65);color:#1b1c1f}.calg b.l3{background:var(--vt);color:#1b1c1f}
   .calg b.td{box-shadow:inset 0 0 0 2px var(--tx)}.calg b.sel{box-shadow:inset 0 0 0 2px var(--vtx),0 0 0 2px var(--tx)}.calg b.x{visibility:hidden}
@@ -355,6 +356,8 @@
   .conq .bar{height:8px;border-radius:5px;background:rgba(var(--ink),.12);margin-top:6px;overflow:hidden}
   .conq .bar b{display:block;height:100%;background:linear-gradient(90deg,#d7f548,#ffd27a)}
   .cq{text-align:center}
+  #endConq{margin:-4px 0 12px;padding:12px 14px;border-radius:14px;background:rgba(215,245,72,.14);border:1px solid rgba(215,245,72,.45);font-size:15px;line-height:1.5}
+  #endConq b{color:var(--vtx)}
   .cqflag{font-size:64px;line-height:1.1}
   .cqmc{font-size:22px;font-weight:900;letter-spacing:2px;color:#ffd27a;margin-top:4px}
   .cqname{font-size:19px;font-weight:900;margin-top:10px}
@@ -605,6 +608,17 @@
   html[data-skin=light] .satb{background:rgba(255,255,255,.92);color:#1b1c1f}
   html[data-skin=light] .card{background:var(--ch2)}   /* 달력 등 옅은 칸 = 흰 칸으로 통일 */
   html[data-skin=light] #boot{background:#eef0ea!important;color:#1b1c1f}
+  /* 11/21 검수 B5: 가로 화면이면 아래 숫자 칸이 화면의 60%를 덮던 것 → 오른쪽 세로 줄(300px) */
+  @media (orientation: landscape) and (max-height: 560px){
+    #hudBottom{left:auto;right:0;top:0;width:300px;box-sizing:border-box;padding:calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) 14px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.78) 16%);display:flex;flex-direction:column;justify-content:flex-end}
+    #hudBottom .stats{flex-direction:column;gap:6px}
+    #hudBottom .spdRow button{width:62px}
+    #map,#altChip{right:310px}
+    #hudTop{right:420px}
+    #map.big ~ #infoPanel,#infoPanel{right:420px}
+    #hudBottom:not(.hidden) ~ #toast{bottom:20px;left:calc(50% - 150px)}
+    #popup,#cheer{left:calc(50% - 150px)}
+  }
 </style>
 <script>/* 11/19 화면 색: 그리기 전에 먼저 맞춤 (밝은 모드를 고른 폰만) */try{if(localStorage.getItem('bgsj_skin')==='light'){document.documentElement.dataset.skin='light';document.querySelector('meta[name=theme-color]').content='#eef0ea'}}catch(e){}</script>
 </head>
@@ -641,7 +655,7 @@
   <button class="pill satb hidden" id="bSat"></button>
   <button class="pill satb hidden" id="b3d"></button>
   <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>
-  <button class="pill satb hidden" id="bVid">🎬 영상</button>   <!-- 11/21 영상 코스 시험 (유튜브) -->   <!-- 11/17 음성 안내 켜기·끄기 -->
+  <button class="pill satb hidden" id="bVid">🎬 맛보기</button>   <!-- 11/21 영상 코스 시험 (유튜브) -->   <!-- 11/17 음성 안내 켜기·끄기 -->
 </div>
 <div id="vidBox" class="hidden"><div id="vidWrap"><div id="vidFrame"></div></div><div id="vidBar"><span id="vidTx"></span><button id="vidOff">🗺 지도로</button></div></div>
 <div id="altChip" class="hidden"></div>   <!-- 11/18 고도: 오른쪽 위 작은 칸 (지금 해발 · 오늘 오른 높이) -->
@@ -717,10 +731,10 @@
 <div id="conqBox" class="modal hidden">
   <div class="sb cq">
     <div class="cqflag">🏴</div>
-    <div class="cqmc">MISSION COMPLETE</div>
+    <div class="cqmc">정복!</div>
     <div class="cqname" id="cqName"></div>
     <div class="muted" id="cqSub" style="margin-top:6px;line-height:1.6;white-space:pre-line"></div>
-    <div class="mbtn"><button id="cqOk" class="go">정복 완료 🎉</button></div>
+    <div class="mbtn"><button id="cqOk" class="go">확인</button></div>
   </div>
 </div>
 <div id="resumeBox" class="modal hidden">
@@ -736,6 +750,7 @@
     <div class="cg">🎉 도착을 축하합니다!</div>
     <div class="st" id="lapTitle"></div>
     <div class="rs" id="lapBody"></div>
+    <div class="muted hidden" id="lapVisit" style="margin-top:8px;line-height:1.5"></div>   <!-- 11/21 검수 B7: 실내 완주 → 실제 방문 -->
     <div class="mbtn"><button id="lapMore">↻ 한 바퀴 더</button><button id="lapEnd" class="go">🏁 여기서 끝내기</button></div>
   </div>
 </div>
@@ -1043,6 +1058,7 @@
 <div id="endScreen" class="screen hidden">
   <h1 data-t="endTitle">오늘 운동 끝 👏</h1>
   <div class="card" id="endSummary"></div>
+  <div id="endConq" class="hidden"></div>   <!-- 11/21 검수 A5: 새로 정복하면 창 대신 끝 화면 한 줄 -->
   <div class="muted hidden" id="endMeter" style="font-size:12px;margin:-4px 2px 8px"></div>   <!-- 11/17 측정 (측정 보기를 켠 폰만) -->
   <h2 id="fixLabel"></h2>
   <div class="outRow">
@@ -1078,7 +1094,7 @@
 </div>
 
 <script>
-const BUILD = '202611212018';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611212250';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1175,7 +1191,7 @@ const WORLD = {
       courses: {
         'sangnim-3k': {
           id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json',
-          video: { yt: '1ozmFi2Omgc', ar: 9 / 16, vy: 0, kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          video: { yt: '1ozmFi2Omgc', ar: 9 / 16, vy: 0, kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' }, name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) · 11/21 검수 A1: 이름이 주석 뒤로 밀려 사라졌던 것
           mode: 'distance', lengthM: 2380, loop: true,
           elev: [[0,170],[2380,170]],   // 상림 숲길은 거의 평지
           note: '11/21 보스가 직접 걸은 GPS 길 (곁가지 정리 · 2.38km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
@@ -1714,7 +1730,7 @@ const TEXT = {
     gBad: '⚠️ 받은 길({a}km, {h})이 코스({b}km)와 너무 달라 안 씀 · 눌러서 다시', gErr: '⚠️ 길 모양 서버 응답 없음 ({e}) · 눌러서 다시', gOff: '📴 인터넷 없음 · 연결 후 눌러서 다시', gNone: '🗺 실제 길 모양 없음 · 눌러서 받기',
     errMsg: '⚠️ 앱 오류: {e}', lpLoc: '📍 지금 위치 찾는 중…', lpMap: '🗺 주변 공원·물가 찾는 중…', lpRoute: '🔄 후보 {n}/3 길 만드는 중…', lpPick: '마음에 드는 코스를 고르세요', lpNone: '이 근처에서는 길을 못 만들었어요. 거리를 바꿔 보세요',
     myTitle: '⭐ 오늘 다닌 길 {a}km를 내 코스로 남길까요?', myBoxSub: '⭐ 내 코스 지역에 저장돼요. 다음에 테마에서 고르면 위성·지도 위에 이 길이 그대로 나오고, 오늘 거리는 첫 기록으로 들어가요.', myDone: '✅ 「{n}」 저장했어요', myApplied: '오늘 거리는 새 내 코스의 첫 기록으로 들어갔어요',
-    ann500: '{c} · {s}까지 500미터', ann100: '{c} · 곧 {s}, 100미터 남았어요',
+    ann500: '{c} · {s}까지 {d}', ann100: '{c} · 곧 {s}, {d} 남았어요',   /* 11/21 검수 A2: 늘 '500미터'라던 것 → 실제 거리 */
     passTitle: '🧭 이 지역을 지나는 장거리 여정:',
     lpErr: '⚠️ 코스를 만들지 못했어요', lpSet: '🔄 일반 목표를 이 코스로: {n}', lpNow: '🔄 따라갈 길: <b>{n}</b>', lpCand: '후보 {n}', lpUse: '이 코스로', lpFind: '코스 찾기', lpAgain: '다시 찾기', myPhoto: '내 사진', shotNew: '📷 이곳 사진 찍기', shotRe: '📷 다시 찍기', shotMine: '📷 내 사진으로 바꾸기', shotSaved: '📷 「{n}」 사진을 저장했어요', shotFail: '사진 저장 실패', photoFail: '사진을 못 불러왔어요:',
     geoGot: '🗺 실제 길 모양을 받았어요 · 잠깐 새로 고칠게요',
@@ -2520,13 +2536,23 @@ function celebrate(label){   // 11/20 보스 "코스 모두 결승점은 같은 
     if (el < 4000) requestAnimationFrame(f); else c.remove(); })(t0);
   try { navigator.vibrate && navigator.vibrate([80, 60, 80, 60, 160]); } catch(e){}
 }
+/* 11/21 검수 B7: '가기 전에 미리 걷고 → 가서 인증'이 화면에 안 보이던 것 → 방구석 완주 창에 한 줄. 지역 행사(PROMO)가 있으면 그것이 먼저 */
+const josa = (w, a, b) => { const c = (w || '').charCodeAt((w || '').length - 1) - 0xAC00; return c >= 0 && c <= 11171 ? (c % 28 ? a : b) : a + '(' + b + ')'; };
+function lapVisit(){
+  const el = $('lapVisit'); el.classList.add('hidden'); if (S.gps || COURSE.long || CITY.id === 'mine') return;
+  const rg = regionOf(CITY.id); if (!rg || rg.country !== 'kr') return;
+  const pr = promoNow(CITY.id)[0], nm = tr(COURSE.short || COURSE.name), rn = regionName(CITY.id);
+  el.innerHTML = pr ? '📣 <b>' + esc(pr.title) + '</b>' + (pr.link ? ' · <a href="' + esc(pr.link) + '" target="_blank">자세히</a>' : '')
+    : '📍 진짜 ' + esc(nm) + josa(nm, '은', '는') + ' ' + esc(rn) + '에 있어요 · 가서 걸으면 <b>현장 도장</b>까지';
+  el.classList.remove('hidden');
+}
 /* 완주: 창을 띄워 끝낼지·한 바퀴 더 할지 고름. 25초 안에 안 누르면 한 바퀴 더(기계는 계속 돌고 있으니) */
 function lapDone(p){
   S.lapHold = { m: S.sessionM, el: S.elapsed };   // 11/19 검수 #3: 축하 창이 떠 있는 동안 거리가 올라가 끝 화면 숫자가 어긋나던 것
   say('완주했습니다. ' + sayM(S.sessionM) + ', ' + sayDur(elapsedNow()) + '.');
   if (!S.running){ showPopup(p.name, p.desc, false); return; }
   $('lapTitle').textContent = p.name; $('lapBody').textContent = p.desc + ' · 오늘 ' + (S.sessionM / 1000).toFixed(2) + 'km · ' + fmtTime(S.elapsed);
-  $('lapBox').classList.remove('hidden'); shown(); celebrate('🏁 완주!');
+  lapVisit(); $('lapBox').classList.remove('hidden'); shown(); celebrate('🏁 완주!');
   clearTimeout(lapDone.t); lapDone.t = setTimeout(() => { if (!$('lapBox').classList.contains('hidden')) $('lapMore').click(); }, 25000);
 }
 $('lapMore').onclick = () => { clearTimeout(lapDone.t); S.lapHold = null; $('lapBox').classList.add('hidden'); toastMsg('↻ ' + (Math.floor(totalNow() / L) + 1) + '바퀴째 출발'); };
@@ -2539,7 +2565,7 @@ function nextTarget(total){
 function advance(dm){
   if (S.free){ freeAdvance(dm); return; }
   const before = totalNow(); S.sessionM += dm;
-  if (L >= 2000 && !S.doorHalf && (before % L) < L / 2 && (totalNow() % L) >= L / 2 && $('popup').classList.contains('hidden')){ S.doorHalf = true; doorFx(DOOR_TX.half[0]); }   // 11/20 길 코스 절반: 문 열고 응원
+  if (L >= 2000 && !S.doorHalf && (before % L) < L / 2 && (totalNow() % L) >= L / 2 && $('popup').classList.contains('hidden') && doorFree()){ S.doorHalf = true; doorFx(DOOR_TX.half[0]); }   // 11/20 길 코스 절반: 문 열고 응원
   walkPassed(before, totalNow()).forEach(p => {
     if (p.lap){ lapDone(p); return; }
     S.passed.push(p.name);
@@ -2548,7 +2574,7 @@ function advance(dm){
     const goalHit = S.running && !S.goalDist && S.goalName === p.name && totalNow() >= S.goalAt;
     say(p.name + ' ' + T.arrive + '.');
     showPopup((goalHit ? '🎯 ' : '🚩 ') + p.name + ' ' + T.arrive,
-      (p.lm.at / 1000).toFixed(1) + 'km' + (p.desc ? ' · ' + p.desc : '') + (st.length ? '\n🔖 ' + T.passedBy + ': ' + st.join(' · ') : ''), p.photo);
+      (p.lm.at < 100 ? '출발점' : (p.lm.at / 1000).toFixed(1) + 'km') + (p.desc ? ' · ' + p.desc : '') + (st.length ? '\n🔖 ' + T.passedBy + ': ' + st.join(' · ') : ''), p.photo);
   });
   if (S.running && S.goalAt != null) checkGoal();
 }
@@ -2631,7 +2657,7 @@ function loop(now){
       }
     } else { if (v3dOn()) v3dRoad(pos); else drawNav(ctx, W, AREA.bot, W / 2 + NAV.px * DPR, AREA.bot * 0.66 + NAV.py * DPR, (far ? 600 : 220) * (NAV.zoom || 1), pos, false); drawMiniOverview(pos); }   /* 11/16 보스: 바깥은 큰 화면 = 실제 뛰는 곳, 오른쪽 위 = 가상 테마 길 (누르면 테마 지도 크게) */
   }
-  meterFrame(dt); panTick(); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); wkTick(); }
+  meterFrame(dt); panTick(); v3dShow(v3dOn()); if (hudTick % 6 === 0){ v3dBtn(); voiceTick(); wkTick(); fitBig(); doorTick(); }
   if (wallNow - S.lastSave > 15000){ S.lastSave = wallNow; autosave(false); }
 }
 
@@ -2645,6 +2671,7 @@ const ANN = new Set();
 const ttsNative = () => !!(CAP && CAP.isPluginAvailable && CAP.isPluginAvailable('Tts'));
 function say(text){
   if (DB.voice === false || !text) return;
+  text = String(text).replace(/\s{2,}/g, ' ');
   try { if (ttsNative()){ CAP.Plugins.Tts.speak({ text, rate: 1.0 }); return; } } catch(e){}
   try { if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 1; speechSynthesis.speak(u); } } catch(e){}
 }
@@ -2664,7 +2691,7 @@ function voiceTick(){   // 운동 중 수시로 (화면 켜짐 = 그림 돌 때,
   if (!up){   // 1km마다: 거리 · 시간 · 이번 1km 페이스(자전거 = 평균 속도) · 다음 거점
     const km = Math.floor(S.sessionM / 1000);
     if (km > VOICE.km){ VOICE.km = km; const lap = now - VOICE.kmT; VOICE.kmT = now;
-      let t = km + '킬로미터. ' + sayDur(now) + '. ' + (S.act === 'bike' ? '평균 시속 ' + Math.round(S.sessionM / 1000 / Math.max(1, now) * 3600) + '킬로미터.' : '이번 1킬로미터 ' + sayDur(lap) + '.');
+      let t = km + '킬로미터. ' + sayDur(now) + '. ' + (S.act === 'bike' ? '평균 시속 ' + Math.round(S.sessionM / 1000 / Math.max(1, now) * 3600) + '킬로미터.' : km === 1 ? '' : '이번 1킬로미터 ' + sayDur(lap) + '.');   // 11/21 검수 A10: 첫 1km는 같은 시간을 두 번 말하던 것
       if (S.free && S.freeGoal && !S.freeHit){ const left = freeGoalM() - S.sessionM; if (left > 0) t += ' 목표까지 ' + sayM(left) + '.'; }
       else if (!S.free){ const nt = nextTarget(totalNow()); if (nt && nt.d > 150) t += nt.fin ? ' 완주 지점까지 ' + sayM(nt.d) + '.' : ' 다음 거점 ' + nt.name + '까지 ' + sayM(nt.d) + '.'; }   // 11/19 검수 #8
       say(t); }
@@ -2703,10 +2730,12 @@ function inclineCoach(){
 }
 function hubAlerts(){
   if (!S.running || S.paused) return;
-  const t = totalNow(), nh = nextSpotFrom(t); if (!nh || !nh.lm) return;
-  const lap = Math.floor(t / L), key = lap + ':' + nh.lm.id;
+  const t = totalNow(), nt = nextTarget(t); if (!nt) return;   /* 11/21 검수 A2: 마지막 거점 뒤엔 다음 바퀴 거점 대신 '완주 지점' */
+  const lap = Math.floor(t / L), key = lap + ':' + (nt.fin ? 'fin' : nt.lm.id);
   [[500, T.ann500], [100, T.ann100]].forEach(([m, txt]) => {
-    if (nh.d <= m && nh.d > m * 0.4 && !ANN.has(key + ':' + m)){ ANN.add(key + ':' + m); announce(txt.replace('{s}', tr(nh.lm.name)).replace('{c}', tr(COURSE.short || COURSE.name))); }
+    if (nt.d <= m && nt.d > m * 0.4 && !ANN.has(key + ':' + m)){ ANN.add(key + ':' + m);
+      const dd = m === 100 ? 100 : Math.max(100, Math.round(nt.d / 100) * 100);
+      announce(txt.replace('{s}', nt.name).replace('{d}', dd + '미터').replace('{c}', tr(COURSE.short || COURSE.name))); }
   });
 }
 function hudWalk(pos){
@@ -2785,7 +2814,7 @@ function cheerFx(c){   // 큰 응원: 테두리 번쩍 + 그림문자가 아래�
     s.style.cssText = 'left:' + (3 + Math.random() * 90).toFixed(1) + '%;font-size:' + Math.round(22 + Math.random() * 20) + 'px;animation-duration:' + (2 + Math.random() * 1.4).toFixed(2) + 's;animation-delay:' + (Math.random() * 1.1).toFixed(2) + 's;--dx:' + Math.round(Math.random() * 90 - 45) + 'px;--rot:' + Math.round(Math.random() * 540 - 270) + 'deg';
     bits.append(s); }
   { let pt = 0; ['map', 'hudTop', 'infoPanel'].forEach(id => { const e = $(id); if (e && !e.classList.contains('hidden')) pt = Math.max(pt, e.getBoundingClientRect().bottom); }); if (pt) $('fxBody').style.top = Math.round(pt + 2) + 'px';
-    try { const hb = $('hudBottom').getBoundingClientRect(); if (hb.height) $('fxSub').style.bottom = Math.round(innerHeight - hb.top + 34) + 'px'; } catch(e){} }   // 큰 글씨 = 위쪽 칸 바로 아래 / 농담 글 = 아래 숫자 칸 바로 위 → 가운데 화살표를 가리지 않게
+    try { const hb = $('hudBottom').getBoundingClientRect(); if (hb.height) $('fxSub').style.bottom = (landUI() ? 24 : Math.round(innerHeight - hb.top + 34)) + 'px'; } catch(e){} }   // 큰 글씨 = 위쪽 칸 바로 아래 / 농담 글 = 아래 숫자 칸 바로 위 → 가운데 화살표를 가리지 않게
   el.classList.remove('hidden', 'out');   // 숨김에서 풀리면 움직임이 처음부터 다시 시작
   try { if (!document.hidden) navigator.vibrate && navigator.vibrate([40, 70, 40]); } catch(e){}
   if (c.say) say(c.say);
@@ -2798,6 +2827,14 @@ const DOOR_TX = {
   p25: [['…누고?', '아 쿵쿵쿵!<br>잠 좀 자자!!', '…운동이가?<br>그라모 화이링~!!', '난 더 잔다…'], ['…몇 시고?', '방에서 산을 타나!!', '4분의 1 왔다꼬?<br>오~ 쫌 치네!', '깨우지 마래이…']],
   p75: [['또 쿵쿵…', '아직도 하나!!', '다 왔네!<br>쪼매만 더 해라~', '꿈에서 응원할게…'], ['…누고 또?', '잠 다 깼다 아이가!!', '4분의 3? 진짜 다 왔다~<br>(이번엔 진짜)', '정상 찍으면 깨워라…']],
   half: [['…뭔 소리고?', '방에서 뛰나!!', '절반 왔다꼬?<br>잘한다 잘한다~!!', '치킨은 내 꺼… 쿨']],
+  /* 11/21 검수 B2: 운동 시간 기준 — 3분 30초(지루해지는 때) · 15분마다 · 목표 끝 1분 전 */
+  early: [['…누고?', '쿵쿵쿵!<br>지진 난 줄 알았다!!', '…운동이가?<br>벌써 몸 풀렸네~ 화이링!!', '난 더 잔다…'],
+          ['…몇 시고?', '방에서 뭐 하노!!', '오~ 땀 난다<br>그대로 쭉 가래이~', '깨우지 마래이…'],
+          ['또 쿵쿵…', '잠 다 깼다 아이가!!', '그래 좋다<br>이대로만 가라~!!', '꿈에서 응원할게…']],
+  mid: [['…아직 하나?', '니 오늘 와 이리 오래 하노!!', '대단하다 진짜~<br>물 한 모금 무라', '난 진짜 잔다…'],
+        ['…또 니가?', '이웃집에서 민원 온다!!', '근데 쫌 멋있네~<br>화이링!!', '치킨은 내 꺼… 쿨']],
+  end1: [['…아직 하나?', '1분 남았다꼬?!', '마지막이다<br>쫙 밀어라~!!', '끝나믄 깨워라…'],
+         ['…뭐라꼬?', '거의 다 왔다꼬?!', '막판이다~<br>화이링!!', '수고했데이… 쿨']],
 };
 const WHO_IMG = ['sleepy', 'angry', 'cheer', 'yawn'];   // 11/20 아리 그림 v2 (img/who/*.webp, 270×354) — 캐릭터를 바꿀 때는 이 4장만 갈아 끼움
 function doorWho(){ return WHO_IMG.map((k, i) => '<img class="dw' + i + '" src="img/who/' + k + '.webp?v=1" alt="" draggable="false">').join(''); }
@@ -2816,7 +2853,7 @@ function doorWhoOld(){
 const DOOR = { t: [], on: false };
 function doorPre(){ if (doorPre.d) return; doorPre.d = 1; WHO_IMG.forEach(k => { const i = new Image(); i.src = 'img/who/' + k + '.webp?v=1'; }); }
 function doorFx(lines){
-  const el = $('doorFx'), bub = $('doorBub'); if (DOOR.on || !lines) return; DOOR.on = true;
+  const el = $('doorFx'), bub = $('doorBub'); if (DOOR.on || !lines) return; DOOR.on = true; S.doorAt = S.elapsed; MTC.last = Date.now();
   if (!$('doorWho').firstChild) $('doorWho').innerHTML = doorWho();
   const bot = Math.round(innerHeight - (AREA ? AREA.bot / DPR : innerHeight * 0.62) + 2); el.style.bottom = bot + 'px';
   const say = (tx, bang) => { bub.className = bang ? 'bang' : ''; bub.innerHTML = tx; bub.style.bottom = (bot + (bang ? 44 : 78)) + 'px'; bub.style.animation = 'none'; void bub.offsetWidth; bub.style.animation = ''; };
@@ -2829,6 +2866,23 @@ function doorFx(lines){
   at(6900, () => { el.className = ''; say('쾅!', true); });
   at(7700, () => { el.className = 'out'; bub.className = 'hidden'; });
   at(8100, doorFxHide);
+}
+const DOOR_GAP = 300;   // 문 응원끼리 5분 넘게 띄움
+const doorFree = () => S.elapsed - (S.doorAt == null ? -1e9 : S.doorAt) >= DOOR_GAP;
+const pickDoor = g => { const l = DOOR_TX[g]; return l[Math.floor(Math.random() * l.length)]; };
+function goalLeftSec(){   // 오늘 목표까지 남은 시간(초) · 목표가 없으면 null
+  if (goalOn() && !S.goalHit) return S.goalSec - S.elapsed;
+  if (S.free && S.freeGoal && !S.freeHit){ const left = freeGoalM() - S.sessionM, v = isClimb() ? climbMpm() / 60 : effSpeed() / 3.6; return v > 0 ? left / v : null; }
+  if (!S.free && !isClimb() && S.goalDist && S.goalAt != null){ const left = S.goalAt - totalNow(), v = effSpeed() / 3.6; return left > 0 && v > 0 ? left / v : null; }
+  return null;
+}
+function doorTick(){   /* 11/21 검수 B2: 일반·빌딩·짧은 산·10분 운동에서 문 응원이 한 번도 안 나오던 것 */
+  if (!S.running || S.paused || S.gps || DOOR.on || !doorFree()) return;
+  if (['popup', 'cheer', 'cheerFx', 'lapBox', 'confirmBox', 'restBox', 'vidBox'].some(id => !$(id).classList.contains('hidden'))) return;
+  const e = S.elapsed, left = goalLeftSec();
+  if (!S.doorEnd && left != null && left <= 65 && left > 15){ S.doorEnd = true; doorFx(pickDoor('end1')); return; }
+  if (!S.doorEarly && e >= 210 && (left == null || left > 90)){ S.doorEarly = true; S.doorNext = e + 900; doorFx(pickDoor('early')); return; }
+  if (S.doorEarly && !mtnRun() && e >= S.doorNext && (left == null || left > 120)){ S.doorNext = e + 900; doorFx(pickDoor('mid')); }   // 산은 20분마다 응원 글이 따로 있음
 }
 function doorFxHide(){ DOOR.t.forEach(clearTimeout); DOOR.t = []; DOOR.on = false; $('doorFx').className = 'hidden out'; $('doorBub').className = 'hidden'; }
 function cheerFxHide(){ const el = $('cheerFx'); clearTimeout(MTC.t2); if (el.classList.contains('hidden')) return; el.classList.add('out'); setTimeout(() => el.classList.add('hidden'), 500); }
@@ -2889,7 +2943,7 @@ tGoalBind();
 function goalTick(st){
   if (!goalOn() || S.goalHit) return;
   const g = S.goalSec, min = Math.round(g / 60);
-  if (!S.goalHalf && g >= 600 && S.elapsed >= g / 2){ S.goalHalf = true; MTC.q.push({ emo: 'cheer', tx: '목표 반 왔다! ' + Math.round(g / 120) + '분만 더~', rest: false, say: '목표 반 왔다.', at: Date.now() }); }
+  if (!S.goalHalf && g >= 600 && S.elapsed >= g / 2){ S.goalHalf = true; MTC.q.push({ emo: 'cheer', tx: '목표 반 왔다! ' + Math.round(g / 120) + '분만 더~', rest: false, say: '목표 반 왔다.', force: true, at: Date.now() });   /* 11/21: 문 응원 뒤 3분 기다림에 막혀 늦게 뜨던 것 */ }
   if (S.elapsed >= g){ S.goalHit = true;
     const up = Math.round(S.sessionM), more = st.m.kind !== 'tower' && st.remain > 5;
     MTC.q = [{ emo: '🎯', tx: min + '분에 ' + up + 'm! 잘했데이' + (more ? ' · 남은 건 다음에' : ''), big: '목표 달성!', bits: ['🎯', '🎉', '👏', '✨', '💪'], say: '목표 ' + min + '분 끝. 잘했데이.', force: true, at: Date.now() },
@@ -2903,7 +2957,7 @@ function mtnTick(st){   // 운동 화면 숫자를 고칠 때마다(1초에 두�
   goalTick(st);
   if (st.m.kind !== 'tower') mtnCheers(st);
   const now = Date.now(); MTC.q = MTC.q.filter(c => c.force || now - c.at < 240000);
-  if (MTC.q.length && (MTC.q[0].force || now - MTC.last > 200000) && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden') && !DOOR.on){ const c = MTC.q.shift(); if (c.door){ MTC.last = now; doorFx(c.door); if (c.say) say(c.say); } else c.big ? cheerFx(c) : cheerShow(c); }
+  if (MTC.q.length && (MTC.q[0].force || now - MTC.last > 200000) && $('popup').classList.contains('hidden') && $('cheer').classList.contains('hidden') && $('cheerFx').classList.contains('hidden') && !DOOR.on){ const c = MTC.q[0].door && !doorFree() ? null : MTC.q.shift(); if (!c){} else if (c.door){ MTC.last = now; doorFx(c.door); if (c.say) say(c.say); } else c.big ? cheerFx(c) : cheerShow(c); }
 }
 function mtnCheers(st){   // 산 코스 고비 응원 (빌딩은 층 알림이 따로 있음)
   const r = st.ratio, big = st.m.gain >= 300, lap = ':' + st.done;
@@ -2942,9 +2996,24 @@ function restFill(st){
 }
 $('restGo').onclick = () => { if (S.running && S.paused) togglePause(); };
 $('restEnd').onclick = () => { $('restBox').classList.add('hidden'); openConfirm(); };
+/* 11/21 검수 B1: 폰 설정의 글자 크기를 키우면(설치 앱은 글자가 따라 커짐) 큰 숫자가 '0.30…'로 잘리던 것
+   → 칸에 안 들어가면 그 숫자만 줄여서 맞춤. 글이 바뀌거나 칸 폭이 바뀔 때만 다시 잼 */
+const FIT = {};
+function fitOne(el, box){
+  if (!el || !el.offsetParent) return; box = box || el;
+  const key = el.textContent + '|' + box.clientWidth; if (FIT[el.id] === key) return; FIT[el.id] = key;
+  el.style.fontSize = '';
+  let need = box.scrollWidth;   // 가운데 정렬 칸은 넘쳐도 scrollWidth에 안 잡힘 → 안의 것들 폭을 더해서 잼
+  if (box !== el){ const cs = getComputedStyle(box), kids = [...box.children].filter(k => k.offsetParent);
+    need = kids.reduce((a, k) => a + k.offsetWidth, 0) + (parseFloat(cs.columnGap) || 0) * Math.max(0, kids.length - 1) + (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 6; }
+  const over = need - box.clientWidth; if (over <= 1) return;
+  const f = parseFloat(getComputedStyle(el).fontSize), w = el.scrollWidth || el.offsetWidth;
+  el.style.fontSize = Math.max(14, Math.floor(f * Math.max(0.4, (w - over - 4) / w))) + 'px';
+}
+function fitBig(){ try { fitOne($('sNextDist')); fitOne($('sToday')); fitOne($('spdVal'), $('spdVal').parentElement); } catch(e){} }
 function refreshSpeedBox(flash){
   const v = isClimb() ? String(S.level) : S.speed.toFixed(1), u = isClimb() ? T.levelUnit : 'km/h';
-  $('spdVal').textContent = v; $('spdUnit').textContent = u;
+  $('spdVal').textContent = v; $('spdUnit').textContent = u; fitBig();
   if (flash && S.running){ $('flashVal').textContent = v; $('flashUnit').textContent = u;
     const el = $('speedFlash'); el.classList.remove('hidden'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.add('hidden'), 1100); }
 }
@@ -3012,6 +3081,9 @@ function checkConquest(){   // 새로 정복한 코스가 있으면 축하 창
   if (!fresh.length) return; saveDB();
   try { fresh.forEach(x => tel('conquer', { course: x.name })); } catch(e){}
   const f = fresh[0], l = conqList(f.cid), allDone = l.every(x => x.done), cityNm = tr(WORLD.cities[f.cid].name);
+  const cnt = allDone ? '🏆 ' + cityNm + ' 모든 코스 정복!' : cityNm + ' ' + l.filter(x => x.done).length + ' / ' + l.length;
+  if (!$('endScreen').classList.contains('hidden')){   /* 11/21 검수 A5: 완주 창 → 끝 화면 → 정복 창(3겹)이던 것 → 끝 화면 맨 위 한 줄 */
+    const e = $('endConq'); e.innerHTML = '🏴 <b>정복!</b> ' + esc(f.name) + ' · ' + esc(cnt) + (fresh.length > 1 ? ' · 그 밖에 ' + (fresh.length - 1) + '곳' : ''); e.classList.remove('hidden'); conqLine(); return; }
   $('cqName').textContent = f.name;
   $('cqSub').textContent = now + ' 정복' + (allDone ? '\n🏆 ' + cityNm + ' 모든 코스 정복!' : '\n' + cityNm + ' ' + l.filter(x => x.done).length + ' / ' + l.length + ' 정복') + (fresh.length > 1 ? '\n(이 밖에 ' + (fresh.length - 1) + '곳 더)' : '');
   $('conqBox').classList.remove('hidden');
@@ -3174,8 +3246,8 @@ const mtnZone = m => m.cityId.indexOf('m100-') === 0 ? m.cityId.slice(5) : ({ ha
 $('rFind').oninput = () => { MF.rq = $('rFind').value; refreshCourses(); };
 $('bFind').oninput = () => { MF.bq = $('bFind').value; refreshBrowse(); };
 const TOPICS = [
-  { id: 'long', ko: '🧭 장거리 여정' }, { id: 'forest', ko: '🌲 숲·공원길' }, { id: 'water', ko: '🌊 바다·물가' },
-  { id: 'city', ko: '🏙 도시 명소' }, { id: 'village', ko: '🏘 마을·역사길' }, { id: 'bike', ko: '🚲 자전거' },
+  { id: 'forest', ko: '🌲 숲·공원길' }, { id: 'water', ko: '🌊 바다·물가' },   // 11/21 검수 A4: 첫 주제가 해외 장거리라 → 짧은 길부터
+  { id: 'city', ko: '🏙 도시 명소' }, { id: 'village', ko: '🏘 마을·역사길' }, { id: 'bike', ko: '🚲 자전거' }, { id: 'long', ko: '🧭 장거리 여정' },
   { id: 'mountain', ko: '⛰ 산 정상' }, { id: 'tower', ko: '🏢 빌딩 계단' }, { id: 'mine', ko: '⭐ 내 코스' }
 ];
 function topicsOf(c){   // 길 코스 하나 → 주제 목록
@@ -3479,7 +3551,7 @@ $('bStart').onclick = () => {
   if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
   S.gps = DB.zone === 'out'; GPS.track = []; GPS.tt = []; GPS.t0 = 0;
-  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false; try { doorPre(); } catch(e){}
+  S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false; S.doorAt = null; S.doorEarly = false; S.doorEnd = false; S.doorNext = 0; try { doorPre(); } catch(e){}
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
   try { tel('start', { zone: DB.zone, act: S.act, course: telCourse() }); } catch(e){}
@@ -3495,6 +3567,12 @@ $('bStart').onclick = () => {
 };
 function endKcal(){ const up = isClimb(), n = kcalOf({ act: S.act, sec: Math.round(S.elapsed), distM: up ? 0 : S.sessionM, upM: up ? S.sessionM : 0 }); return n ? '<br>🔥 ' + T.sKcal + ' <b>' + kcalTxt(n) + '</b> <span class="muted" data-kb style="text-decoration:underline;text-underline-offset:3px">(' + T['kcalLv' + bodyFix()[2]] + ' · 계산 기준)</span>' : ''; }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-kb]')) $('bBody').click(); });
+/* 11/21 검수 A7: 러너는 1km당 시간을 봄 → 끝 화면 요약 줄 끝에 평균 (자전거 = 평균 시속) */
+function paceTxt(){
+  if (S.sessionM < 200 || S.elapsed < 30) return '';
+  if (S.act === 'bike') return ' · 평균 시속 ' + (S.sessionM / 1000 / (S.elapsed / 3600)).toFixed(1) + 'km';
+  const sec = Math.round(S.elapsed / (S.sessionM / 1000)); return ' · 평균 ' + Math.floor(sec / 60) + "'" + String(sec % 60).padStart(2, '0') + '"/km';
+}
 function fillEnd(){
   if (S.hikeGps) return fillHike();
   setTimeout(endAlt, 0);
@@ -3505,7 +3583,7 @@ function fillEnd(){
   $('applyBox').classList.toggle('hidden', !S.free); $('passedWrap').classList.toggle('hidden', !!S.free || !S.passed.length);   // 11/18 A16: 지나온 곳이 없으면 칸째 숨김
   if (S.free){
     const up = isClimb(), amt = up ? Math.round(S.sessionM) + ' m (' + Math.floor(S.sessionM / FLOOR_M) + T.floorUnit + ')' : (S.sessionM / 1000).toFixed(2) + ' km';
-    $('endSummary').innerHTML = T.freeSum.replace('{g}', freeGoalText(S.freeGoal, up)) + '<br>' + a.icon + ' ' + T[a.key] + ' <b>' + amt + '</b> · ' + fmtTime(S.elapsed) +
+    $('endSummary').innerHTML = T.freeSum.replace('{g}', freeGoalText(S.freeGoal, up)) + '<br>' + a.icon + ' ' + T[a.key] + ' <b>' + amt + '</b> · ' + fmtTime(S.elapsed) + (up ? '' : paceTxt()) +
       (S.freeHit ? '<br>🎉 ' + T.freeDone.replace('🎉 ', '').replace('{g}', freeGoalText(S.freeGoal, up)) : '');
     $('fixLabel').textContent = up ? T.fixFloors : S.gps ? T.fixGps : T.fixKm; $('fixIn').placeholder = up ? T.floorUnit : 'km';
     fillApply(); return;
@@ -3517,7 +3595,7 @@ function fillEnd(){
     $('fixLabel').textContent = T.fixFloors; $('fixIn').placeholder = T.floorUnit;
   } else {
     const pos = totalNow() % L;
-    $('endSummary').innerHTML = a.icon + ' ' + T[a.key] + ' <b>' + (S.sessionM / 1000).toFixed(2) + ' km</b> · ' + fmtTime(S.elapsed) +
+    $('endSummary').innerHTML = a.icon + ' ' + T[a.key] + ' <b>' + (S.sessionM / 1000).toFixed(2) + ' km</b> · ' + fmtTime(S.elapsed) + paceTxt() +
       '<br>' + tr(COURSE.short || COURSE.name) + ' <b>' + (S.lapFin ? '🏁 완주 ' + (L/1000) + ' / ' + (L/1000) : (pos/1000).toFixed(2) + ' / ' + (L/1000)) + ' km</b>';
     $('fixLabel').textContent = S.gps ? T.fixGps : T.fixKm; $('fixIn').placeholder = 'km';
   }
@@ -3717,7 +3795,7 @@ function telFlush(){
     .catch(() => {}).finally(() => { telBusy = false; });
 }
 const telCourse = () => S.free ? '일반' : isClimb() ? tr((TGT(DB.climb.sel) || {}).name || { ko: '' }) : tr(COURSE.short || COURSE.name);
-setTimeout(() => { if (DB.telSeen || DB.tel === false) return; DB.telSeen = true; saveDB(); toastMsg('📊 이름 없는 사용 통계(운동 종류·거리)를 보내요 · 내 기록 → ⚙️ 설정에서 끌 수 있어요'); }, 3500);   // 11/19 검수: 첫 실행 알림 없던 것
+setTimeout(() => { if (DB.telSeen || DB.tel === false) return; DB.telSeen = true; saveDB(); toastMsg('📊 이름 없는 사용 통계(운동 종류·거리)를 보내요 · 내 기록 → ⚙️ 설정에서 끌 수 있어요', 7000); }, 3500);   // 11/21 검수 A6: 2.6초면 못 읽음 → 7초   // 11/19 검수: 첫 실행 알림 없던 것
 function telBtn(){ const b = $('bTel'); if (b) b.textContent = '📊 익명 사용 통계 보내기 · ' + (DB.tel === false ? '꺼짐' : '켜짐'); }
 $('bTel').onclick = () => { DB.tel = DB.tel === false ? true : false; saveDB(); telBtn(); toastMsg(DB.tel === false ? '통계를 보내지 않아요' : '이름 없는 사용 통계만 보내요 (위치·몸 정보 제외)'); };
 setTimeout(() => { telBtn(); tel('open', { zone: DB.zone || null }); }, 1500);
@@ -3729,7 +3807,7 @@ function doEnd(){
   S.running = false; S.paused = false; $('pauseBadge').classList.add('hidden'); $('bPause').textContent = '⏸ ' + T.paused;   // 11/18 보스 폰: 일시정지 중에 종료하면 '일시정지' 표시가 끝 화면에 남아 지워지지 않던 것
   zoomTag(); cancelAnimationFrame(raf); sensorStop(); gpsStop(); altStop(); wkStop(); autosave(true);
   try { wakeLock && wakeLock.release(); } catch(e){}
-  showRun(false); clearPopups(); mtnClear(); $('fixMsg').textContent = ''; $('fixIn').value = '';
+  showRun(false); clearPopups(); mtnClear(); $('fixMsg').textContent = ''; $('fixIn').value = ''; $('endConq').classList.add('hidden');
   fillEnd(); $('endScreen').classList.remove('hidden');
 }
 $('bFix').onclick = () => {   // 기계에 찍힌 숫자로 맞추기
@@ -4140,7 +4218,7 @@ function errNote(m){
   try { const a = JSON.parse(localStorage.getItem('bgsj_err') || '[]'); a.unshift(new Date().toLocaleString('ko-KR') + ' ' + m); localStorage.setItem('bgsj_err', JSON.stringify(a.slice(0, 10))); } catch(x){}
   try { toastMsg(T.errMsg.replace('{e}', m)); } catch(x){}
 }
-function toastMsg(m){ const t = $('toast'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.add('hidden'), 2600); }
+function toastMsg(m, ms){ const t = $('toast'); t.textContent = m; t.classList.remove('hidden'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.add('hidden'), ms || 2600); }
 async function sensorStart(){
   Object.assign(SENS, { on: false, ok: false, times: [], sessSteps: 0, sessDist: 0, rising: false, f: 0 });
   if (!DB.autoSensor || !autoCapable() || S.gps){ updateAutoUI(); return; }
@@ -4308,8 +4386,8 @@ function updateInfoPanel(pos){
     T.hubsOf.replace('{a}', HUBS.filter(h => h.at <= pos).length).replace('{b}', HUBS.length) + ' · ' + T.alti + ' ' + Math.round(ELEV_MIN) + (ELEV_MAX - ELEV_MIN > 1 ? '~' + Math.round(ELEV_MAX) : '') + 'm';
 }
 function walkNote(pos){   // [문구, 평온한 상태인지]
-  const nh = nextSpotFrom(totalNow()), gr = gradeAt(pos); let note = '', ok = false;
-  if (nh.d <= 300) note = '🚩 ' + T.nSoon.replace('{s}', tr(nh.lm.name));
+  const nh = nextTarget(totalNow()), gr = gradeAt(pos); let note = '', ok = false;   // 11/21 검수 A2: 마지막 거점 뒤 '곧 함화루'(다음 바퀴) → '곧 완주 지점'
+  if (nh.d <= 300) note = (nh.fin ? '🏁 ' : '🚩 ') + T.nSoon.replace('{s}', nh.name);
   else if (gr > 6) note = T.nSteepUp;
   else if (gr < -6) note = T.nSteepDown;
   else if (gr > 2.5) note = T.nUp;
@@ -5038,10 +5116,16 @@ function updateInfoClimb(st){
   $('ipCourse').textContent = tr(m.cityName) + ' · ' + m.base.toLocaleString() + ' → ' + m.summit.toLocaleString() + 'm' + (tower && !m.eq ? ' · ' + m.floors + T.floorUnit : '') + (st.done ? ' · ✅ ' + st.done + T.times : '') + (m.desc ? ' · ' + tr(m.desc) : '');
 }
 $('courseToggle').onclick = () => { listOpen = !listOpen; refreshCourses(); };
+function streakDays(){   // 운동한 날 연속 (오늘 아직 안 했으면 어제부터) — 달력과 같은 셈
+  const by = {}; DB.records.forEach(r => { if (r.src !== 'legacy' && r.src !== 'steps') by[calKey(new Date(r.date))] = 1; });
+  let st = 0; const now = new Date(); for (let t = new Date(now); st < 400; t.setDate(t.getDate() - 1)){ const k = calKey(t); if (by[k]) st++; else if (k !== calKey(now)) break; }
+  return st;
+}
 function showHome(){
   const today = new Date().toDateString(), tr0 = DB.records.filter(r => new Date(r.date).toDateString() === today);
   const d = tr0.reduce((a, r) => a + (r.distM || 0), 0), u = tr0.reduce((a, r) => a + (r.upM || 0), 0);
-  $('homeToday').textContent = (d || u) ? T.homeToday.replace('{d}', [d ? (d / 1000).toFixed(1) + 'km' : '', u ? u.toLocaleString() + 'm' : ''].filter(Boolean).join(' · ')) : '';
+  const st = streakDays(), tx = (d || u) ? T.homeToday.replace('{d}', [d ? (d / 1000).toFixed(1) + 'km' : '', u ? u.toLocaleString() + 'm' : ''].filter(Boolean).join(' · ')) : '';
+  $('homeToday').textContent = [tx, st >= 2 ? '🔥 ' + st + '일째' : ''].filter(Boolean).join(' · ');   // 11/21 검수 A8: 연속일을 첫 화면에도 (2일 이상일 때만)
   ['startScreen', 'recScreen', 'endScreen'].forEach(id => $(id).classList.add('hidden'));
   $('homeScreen').classList.remove('hidden');
   try { sessionStorage.removeItem('bgsj_inapp'); } catch(e){}
@@ -5130,14 +5214,14 @@ function hudFree(){
   $('progBar').style.width = (S.freeGoal ? Math.min(100, S.sessionM / goalM * 100) : 0).toFixed(1) + '%';
 }
 function drawFree(){   // 목표 링: 가운데 큰 숫자, 둘레가 차오름
-  const top = 70 * DPR, bot = (innerHeight - ($('hudBottom').offsetHeight || innerHeight * 0.4) + 20) * DPR;
+  const land = landUI(), top = 70 * DPR, bot = (land ? innerHeight - 10 : innerHeight - ($('hudBottom').offsetHeight || innerHeight * 0.4) + 20) * DPR;
   const lt = isLight();   // 11/19 밝은 모드: 밝은 바탕·진한 숫자
-  ctx.fillStyle = lt ? '#eef0ea' : '#12261b'; ctx.fillRect(0, 0, W, H);
-  const cx = W / 2, cy = (top + bot) / 2, r = Math.max(40 * DPR, Math.min(W * 0.36, (bot - top) * 0.42)), up = isClimb();
+  ctx.fillStyle = lt ? '#eef0ea' : '#1b1c1f'; ctx.fillRect(0, 0, W, H);   // 11/21 검수 A10: 녹색 바탕 → 차콜 (화면 색 규칙)
+  const cx = land ? (W - 300 * DPR) / 2 : W / 2, cy = (top + bot) / 2, r = Math.max(40 * DPR, Math.min(W * 0.36, (bot - top) * 0.42)), up = isClimb();
   const ratio = S.freeGoal ? Math.min(1, S.sessionM / freeGoalM()) : (S.elapsed % 60) / 60;
   ctx.lineCap = 'round';
   ctx.strokeStyle = lt ? 'rgba(27,28,31,.1)' : 'rgba(255,255,255,.1)'; ctx.lineWidth = 18 * DPR; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-  const ringCol = S.freeHit ? (lt ? '#d9960f' : '#ffd27a') : (lt ? '#3f9a52' : '#7fcf8a');
+  const ringCol = lt ? '#5d7a00' : '#d7f548';   // 11/21 검수 A10: 녹색·금색 원 → 볼트 하나
   ctx.strokeStyle = ringCol; ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.002, ratio)); ctx.stroke();
   ctx.fillStyle = lt ? '#1b1c1f' : '#fff'; ctx.textAlign = 'center';
   ctx.font = '900 ' + Math.round(r * 0.42) + 'px sans-serif';
@@ -5455,8 +5539,9 @@ function gpsStop(){ try { if (GPS.id != null){ if (BG) BG.removeWatcher({ id: GP
    · 오른쪽 위 작은 칸 = 코스 전체 + 진행 거리. 누르면 서로 바뀌고 사진·고도·코스 정보가 나옴
    ===================================================================== */
 var NAV = { full: false, zoom: 1, alt: false, fz: 1, fx: 0, fy: 0, fa: 0, px: 0, py: 0, pt: 0, drag: false }   /* fz = 전체 경로 확대 배율, fx·fy = 끌어 옮긴 양, fa = 확대 중심(진행 거리) */, AREA = null;
-function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위
-  const hb = $('hudBottom').offsetHeight || innerHeight * 0.4, ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
+const landUI = () => matchMedia('(orientation: landscape) and (max-height: 560px)').matches;   // 11/21 검수 B5
+function viewArea(){   // 지도를 그릴 세로 범위: 위 정보칸 아래 ~ 아래 조작판 위 (가로 화면은 숫자가 오른쪽이라 끝까지)
+  const hb = landUI() ? 36 : ($('hudBottom').offsetHeight || innerHeight * 0.4), ip = NAV.full ? $('infoPanel').offsetHeight + 16 : 0;
   return { top: Math.round(ip * DPR), bot: Math.round((innerHeight - hb + 36) * DPR) };
 }
 function fadeBottom(g, vh){
@@ -5586,11 +5671,14 @@ function geoNote(){
     : GEO_ST === 'err' ? T.gErr.replace('{e}', GEO_ERR) : GEO_ST === 'off' ? T.gOff : T.gNone;
 }
 function geoReload(){   /* 길 모양을 받으면 화면을 한 번 새로 고침 (창이 열려 있거나 운동 중이면 다음에 열 때 반영) */
-  if (S.running) return; toastMsg(T.geoGot);
-  setTimeout(() => { if (S.running || document.querySelector('.modal:not(.hidden), #gallery:not(.hidden), #stepBox:not(.hidden)')) return; try { sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, 1800);
+  if (S.running) return;
+  const quiet = !!COURSE.official;   /* 11/21 검수 A6: 우리 노선 파일(바로 옴)은 알림 없이 바로 — 첫 실행 때 '길 모양을 받았어요' 알림·늦은 새로 고침 없앰 */
+  if (!quiet) toastMsg(T.geoGot);
+  setTimeout(() => { if (S.running || document.querySelector('.modal:not(.hidden), #gallery:not(.hidden), #stepBox:not(.hidden)')) return;
+    try { if ($('homeScreen').classList.contains('hidden')) sessionStorage.setItem('bgsj_inapp', '1'); } catch(e){} location.reload(); }, quiet ? 0 : 1800);
 }
 function geoRetry(){ if (GEO_NOW) return; delete RGEO[GEO_ID]; saveGeo(); snapRoads(); }
-setTimeout(snapRoads, 2500);
+setTimeout(snapRoads, COURSE.official && !GEO_NOW ? 0 : 2500);   // 11/21 검수 A6: 우리 노선 파일은 표식 화면이 떠 있는 동안 바로
 /* GPS로 다닌 길 모으기 (12m마다 한 점) → 끝난 뒤 '이 코스 지도로 쓰기' */
 function trackPush(lat, lon){
   const t = GPS.track || (GPS.track = []), l = t[t.length - 1];
@@ -6358,7 +6446,7 @@ function voiceBtn(on){ const b = $('bVoice'); b.classList.toggle('hidden', !on);
 $('bVoice').onclick = () => { DB.voice = DB.voice === false; saveDB(); voiceBtn(true); if (DB.voice !== false) say('음성 안내를 켭니다.'); else { try { if (ttsNative()) CAP.Plugins.Tts.stop(); else window.speechSynthesis && speechSynthesis.cancel(); } catch(e){} } toastMsg(DB.voice === false ? '🔇 음성 안내 끔' : '🔊 음성 안내 켬'); };
 $('b3d').onclick = e => { e.stopPropagation(); const m = mapModes(); if (m.length < 2) return; const n = m[(m.indexOf(mapCur(m)) + 1) % m.length];
   if (n === '3d' || n === 'toon'){ V3D.hot = false; METER.hz.bad = 0; DB.v3d = true; DB.v3dSty = n === 'toon' ? 'toon' : 'sat'; if (V3D.ready) v3dStyle(n); } else { DB.v3d = false; if (n !== 'flat'){ DB.sat = true; DB.mapSty = n; } }
-  saveDB(); showViewMode(true); toastMsg(MAPL[n] + ' 지도'); };
+  saveDB(); showViewMode(true); toastMsg(MAPL[n].includes('지도') ? MAPL[n] : MAPL[n] + ' 지도'); };
 const topLabel = m => tr(m.name).replace(/\(.*\)/, '') + (m.topName ? ' · ' + m.topName : '');   // 이 길의 가장 높은 봉우리 이름
 const climbGeoOn = () => S.running && isClimb() && !S.free && DB.pick.type === 'climb' && !!mtnGeo(TGT(DB.climb.sel));
 /* ---- 11/16 빌딩 창밖 = 실제 항공사진 (높이 오를수록 더 멀리·더 넓게) ----
