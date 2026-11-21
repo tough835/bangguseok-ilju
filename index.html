@@ -18,7 +18,7 @@
     border-radius:14px;background:rgba(250,248,240,.85);box-shadow:0 2px 8px rgba(0,0,0,.3)}
   #altChip{position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;padding:5px 10px;border-radius:12px;background:rgba(20,22,25,.72);color:#fff;font-size:15px;font-weight:800;line-height:1.2;text-align:right;pointer-events:none}
   #altChip small{display:block;font-size:11px;font-weight:700;color:var(--vtx)}
-  #vidBox{position:fixed;left:0;right:0;top:0;bottom:var(--vidB,300px);z-index:4;background:#000;display:flex;flex-direction:column}#vidFrame,#vidBox iframe{flex:1;width:100%;border:0}#vidBar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#111;color:#c9cbd0;font-size:13px}#vidBar button{min-height:40px;padding:0 14px;border-radius:20px;border:0;background:#34373c;color:#fff;font-size:14px;font-weight:700}
+  #vidBox{position:fixed;left:0;right:0;top:0;bottom:var(--vidB,300px);z-index:4;background:#000;display:flex;flex-direction:column}#vidWrap{flex:1;position:relative;overflow:hidden}#vidWrap iframe,#vidFrame{position:absolute;border:0;left:0;top:0;width:100%;height:100%}#vidBar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#111;color:#c9cbd0;font-size:13px}#vidBar button{min-height:40px;padding:0 14px;border-radius:20px;border:0;background:#34373c;color:#fff;font-size:14px;font-weight:700}
   body.vidOn #hudTop,body.vidOn #map,body.vidOn #altChip{visibility:hidden}
   #hudTop{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:116px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
   .pill{background:rgba(0,0,0,.45);padding:6px 11px;border-radius:999px;font-size:14px;line-height:1.2;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -640,7 +640,7 @@
   <button class="pill satb hidden" id="bVoice" aria-label="음성 안내"></button>
   <button class="pill satb hidden" id="bVid">🎬 영상</button>   <!-- 11/21 영상 코스 시험 (유튜브) -->   <!-- 11/17 음성 안내 켜기·끄기 -->
 </div>
-<div id="vidBox" class="hidden"><div id="vidFrame"></div><div id="vidBar"><span id="vidTx"></span><button id="vidOff">🗺 지도로</button></div></div>
+<div id="vidBox" class="hidden"><div id="vidWrap"><div id="vidFrame"></div></div><div id="vidBar"><span id="vidTx"></span><button id="vidOff">🗺 지도로</button></div></div>
 <div id="altChip" class="hidden"></div>   <!-- 11/18 고도: 오른쪽 위 작은 칸 (지금 해발 · 오늘 오른 높이) -->
 
 <div id="hudBottom" class="hidden">
@@ -1060,7 +1060,7 @@
 </div>
 
 <script>
-const BUILD = '202611211553';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211559';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1157,7 +1157,7 @@ const WORLD = {
       courses: {
         'sangnim-3k': {
           id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json',
-          video: { yt: '1ozmFi2Omgc', kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          video: { yt: '1ozmFi2Omgc', ar: 9 / 16, kmh: 3.6, from: 920, to: 1020, note: '시험 영상 1:41 · 숲길 중간' },   // 11/21 보스 촬영 10:51 (걸은 속도 약 3.6km/h) name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
           mode: 'distance', lengthM: 2380, loop: true,
           elev: [[0,170],[2380,170]],   // 상림 숲길은 거의 평지
           note: '11/21 보스가 직접 걸은 GPS 길 (곁가지 정리 · 2.38km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
@@ -6240,7 +6240,15 @@ function vidApi(){
     window.onYouTubeIframeAPIReady = ok; const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = no; document.head.append(s); setTimeout(no, 15000); });
   return VID.api;
 }
-function vidLay(){ const hb = $('hudBottom'); document.documentElement.style.setProperty('--vidB', (hb.offsetHeight - 36) + 'px'); }
+function vidLay(){ const hb = $('hudBottom'); document.documentElement.style.setProperty('--vidB', (hb.offsetHeight - 36) + 'px'); vidFit(); }
+/* 11/21 보스 "세로 영상 양옆 검은 여백 → 꽉 채우기": 영상 칸을 덮도록 키우고(가로세로 비율 유지) 넘치는 위·아래만 잘라 보임 */
+function vidFit(){
+  const w = $('vidWrap'), f = w.querySelector('iframe') || $('vidFrame'), ar = (COURSE.video && COURSE.video.ar) || 9 / 16;
+  const bw = w.clientWidth, bh = w.clientHeight; if (!bw || !bh) return;
+  let fw = bw, fh = bw / ar; if (fh < bh){ fh = bh; fw = bh * ar; }
+  Object.assign(f.style, { width: fw + 'px', height: fh + 'px', left: (bw - fw) / 2 + 'px', top: (bh - fh) / 2 + 'px' });
+}
+window.addEventListener('resize', () => { if (VID.on) vidLay(); });
 async function vidOn(){
   const v = COURSE.video; if (!v) return;
   VID.on = true; document.body.classList.add('vidOn'); $('vidBox').classList.remove('hidden'); vidLay(); $('vidTx').textContent = '🎬 ' + (v.note || '영상') + ' · 불러오는 중…';
@@ -6248,7 +6256,7 @@ async function vidOn(){
   if (!VID.on) return;
   if (VID.P){ VID.ready && VID.P.playVideo(); return; }
   VID.P = new YT.Player('vidFrame', { videoId: v.yt, playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, fs: 0, disablekb: 1, mute: 1, loop: 1, playlist: v.yt },
-    events: { onReady: () => { VID.ready = true; VID.P.mute(); vidTick(effSpeed()); },
+    events: { onReady: () => { VID.ready = true; VID.P.mute(); vidFit(); vidTick(effSpeed()); },
               onStateChange: e => { if (e.data === 0) { VID.P.seekTo(0); VID.P.playVideo(); } },
               onError: e => { $('vidTx').textContent = '영상 재생 오류 ' + e.data + ' (일부 공개인지 확인)'; } } });
 }
