@@ -1050,7 +1050,7 @@
 </div>
 
 <script>
-const BUILD = '202611211140';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211155';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -1146,19 +1146,19 @@ const WORLD = {
          · 전체 거리는 공개 자료 기준, 중간 위치(at)와 지도 모양은 GPX 받기 전 추정 */
       courses: {
         'sangnim-3k': {
-          id: 'sangnim-3k', official: 'data/route/sangnim-gps1.json', name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
-          mode: 'distance', lengthM: 2540, loop: true,
-          elev: [[0,170],[2540,170]],   // 상림 숲길은 거의 평지
-          note: '11/21 보스가 직접 걸은 GPS 길 (2.54km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
+          id: 'sangnim-3k', official: 'data/route/sangnim-gps2.json', name: { ko: '상림 숲길 한 바퀴' }, short: { ko: '상림' }, kind: '도보',
+          mode: 'distance', lengthM: 2380, loop: true,
+          elev: [[0,170],[2380,170]],   // 상림 숲길은 거의 평지
+          note: '11/21 보스가 직접 걸은 GPS 길 (곁가지 정리 · 2.38km)', source: '보스 GPS 걷기 기록 2026-11-21 · 거점 위치는 사진 찍은 시각으로 맞춤',
           path: [[35.52443,127.71879],[35.5247,127.71839],[35.52641,127.71827],[35.52761,127.71697],[35.52837,127.71504],[35.52992,127.714],[35.53154,127.71314],[35.53248,127.71301],[35.53129,127.71462],[35.53008,127.71601],[35.52876,127.71734],[35.52733,127.71855],[35.52568,127.71916],[35.52443,127.71879]],
-          segments: [ { from: 0, to: 2540, scene: 'forest' } ],
+          segments: [ { from: 0, to: 2380, scene: 'forest' } ],
           landmarks: [   // 11/21 보스 사진 (img/hub/)
             { id: 'hamhwaru',        name: { ko: '함화루' },            at: 40,   side:  1, art: 'gate',     photo: 'img/hub/hamhwaru.webp',        desc: { ko: '상림 입구의 누각, 옛 함양읍성 남문' }, hub: true },
-            { id: 'sawoon',          name: { ko: '사운정' },            at: 440,  side: -1, art: 'pavilion', photo: null,                            desc: { ko: '숲속 정자' } },
-            { id: 'sangnim-history', name: { ko: '역사인물공원' },      at: 790,  side:  1, art: 'stele',    photo: 'img/hub/sangnim-history.webp', desc: { ko: '최치원 등 함양의 옛 인물 흉상이 줄지어 선 곳' }, hub: true },
-            { id: 'sangnim-mill',    name: { ko: '물레방앗간' },        at: 1320, side: -1, art: 'mill',     photo: 'img/hub/sangnim-mill.webp',    desc: { ko: '숲 북쪽 끝 초가 물레방앗간, 여기서 돌아섬' }, hub: true },
-            { id: 'sangnim-eoksae',  name: { ko: '억새 정원' },         at: 2100, side:  1, art: 'sign',     photo: 'img/hub/sangnim-eoksae.webp',  desc: { ko: '문화예술회관 앞 억새·꽃밭' } },
-            { id: 'hwasujeong',      name: { ko: '파평윤씨 화수정' },   at: 2260, side: -1, art: 'pavilion', photo: 'img/hub/hwasujeong.webp',      desc: { ko: '숲길 남쪽 정자, 한 바퀴 끝이 가까움' }, hub: true }
+            { id: 'sawoon',          name: { ko: '사운정' },            at: 330,  side: -1, art: 'pavilion', photo: null,                            desc: { ko: '숲속 정자' } },
+            { id: 'sangnim-history', name: { ko: '역사인물공원' },      at: 680,  side:  1, art: 'stele',    photo: 'img/hub/sangnim-history.webp', desc: { ko: '최치원 등 함양의 옛 인물 흉상이 줄지어 선 곳' }, hub: true },
+            { id: 'sangnim-mill',    name: { ko: '물레방앗간' },        at: 1200, side: -1, art: 'mill',     photo: 'img/hub/sangnim-mill.webp',    desc: { ko: '숲 북쪽 끝 초가 물레방앗간, 여기서 돌아섬' }, hub: true },
+            { id: 'sangnim-eoksae',  name: { ko: '억새 정원' },         at: 1970, side:  1, art: 'sign',     photo: 'img/hub/sangnim-eoksae.webp',  desc: { ko: '문화예술회관 앞 억새·꽃밭' } },
+            { id: 'hwasujeong',      name: { ko: '파평윤씨 화수정' },   at: 2120, side: -1, art: 'pavilion', photo: 'img/hub/hwasujeong.webp',      desc: { ko: '숲길 남쪽 정자, 한 바퀴 끝이 가까움' }, hub: true }
           ]
         },
         'sangnim-5k': {
@@ -1752,7 +1752,9 @@ const GEO_KEY = 'bgsj_geo', GEO_ID = ACTIVE.city + '/' + COURSE.id;
 let RGEO = {}; try { RGEO = JSON.parse(localStorage.getItem(GEO_KEY)) || {}; } catch(e){}
 const saveGeo = () => { try { localStorage.setItem(GEO_KEY, JSON.stringify(RGEO)); } catch(e){} };
 const RAW_PATH = COURSE.path || null;
-const GEO_NOW = RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 && !(COURSE.official && RGEO[GEO_ID].src !== 'gps' && (RGEO[GEO_ID].src !== 'official' || (RGEO[GEO_ID].of && RGEO[GEO_ID].of !== COURSE.official) || (!RGEO[GEO_ID].of && /2\.json$/.test(COURSE.official)))) &&   /* 노선 파일이 바뀌면 다시 받음 */ !(COURSE.pathExact && RGEO[GEO_ID].src === 'osm' && !RGEO[GEO_ID].v2) ? RGEO[GEO_ID] : null;   // 손으로 맞춘 코스는 지도 맞추기(v2) 결과만 씀
+/* 11/21 보스 "내 길이 꼬불꼬불·곁가지": 내 코스(직접 다닌 길)는 길 찾기 서버로 다시 잇지 않고 다닌 길 그대로 — 점 190개를 서버가 숲속 오솔길로 지그재그 이었음 */
+const MINE_GEO = COURSE.pathReal && RAW_PATH && RAW_PATH.length > 1 ? { p: COURSE.loop ? RAW_PATH.concat([RAW_PATH[0]]) : RAW_PATH, src: 'mine', d: COURSE.lengthM, t: 0, v2: 1 } : null;
+const GEO_NOW = MINE_GEO || (RGEO[GEO_ID] && RGEO[GEO_ID].p && RGEO[GEO_ID].p.length > 1 && !(COURSE.official && RGEO[GEO_ID].src !== 'gps' && (RGEO[GEO_ID].src !== 'official' || (RGEO[GEO_ID].of && RGEO[GEO_ID].of !== COURSE.official) || (!RGEO[GEO_ID].of && /2\.json$/.test(COURSE.official)))) &&   /* 노선 파일이 바뀌면 다시 받음 */ !(COURSE.pathExact && RGEO[GEO_ID].src === 'osm' && !RGEO[GEO_ID].v2) ? RGEO[GEO_ID] : null);   // 손으로 맞춘 코스는 지도 맞추기(v2) 결과만 씀
 if (GEO_NOW) COURSE.path = GEO_NOW.p;
 /* 장거리: 실제 길을 따라 받은 구간별 거리로 거점 위치를 다시 잡음 → 지도 위 거점 = 진행 거리 위 거점 */
 if (GEO_NOW && GEO_NOW.ats && COURSE.long && GEO_NOW.ats.length === COURSE.landmarks.length) COURSE.landmarks.forEach((m, i) => { m.at = Math.max(20, Math.min(COURSE.lengthM - 20, GEO_NOW.ats[i])); });
@@ -4230,7 +4232,7 @@ function buildMapView(){
     g.fillStyle = '#24332a'; g.fillText(tr(lm.name), lx, ly);
   });
   g.fillStyle = '#16382a'; g.fillText(sName, sx, s0[1] + 18 * DPR);
-  g.fillStyle = onMap ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(onMap ? mapCredit() + (GEO_NOW && GEO_NOW.src === 'official' ? ' · ' + T.mapOfficial : '') : T.mapNote, 12 * DPR, AREA.bot - 8 * DPR);   // 공식 노선이면 출처 표시
+  g.fillStyle = onMap ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.35)'; g.font = Math.round(11 * DPR) + 'px sans-serif'; g.fillText(onMap ? mapCredit() + (GEO_NOW && GEO_NOW.src === 'official' && !/gps\d*\.json$/.test(COURSE.official || '') ? ' · ' + T.mapOfficial : '') : T.mapNote, 12 * DPR, AREA.bot - 8 * DPR);   // 공식 노선이면 출처 표시
   const key = fz + '/' + NAV.fx + '/' + NAV.fy + '/' + NAV.fa + '/' + mapSty();
   mvN = mvKey === key ? mvN + 1 : 0; mvKey = key;
   mv = { base, tf, step, w: W, h: H, top: AREA.top, bot: AREA.bot, key, onMap, t: performance.now() };
@@ -5767,8 +5769,13 @@ function drawSat(g, tf, c, R, sc){
   g.restore();
   if (mapSty() === 'sat'){ g.fillStyle = 'rgba(20,30,24,.12)'; g.fillRect(0, 0, g.canvas.width, g.canvas.height); }   // 길 선이 잘 보이게 살짝 어둡게 (위성만)
 }
+function navHead(pos){   /* 11/21 보스 "화살표가 길 방향과 다름": 큰 지도 방향 = 뒤 15m → 앞 40m 방향, 천천히 돌림 (GPS 흔들림에 화면이 휙휙 돌지 않게) */
+  const a = pointAt(pos - 15), b = pointAt(pos + 40); let t = Math.atan2(b.x - a.x, b.y - a.y);
+  if (!isFinite(t) || Math.hypot(b.x - a.x, b.y - a.y) < 5) t = headingAt(pos);
+  if (NAV.nh == null || NAV.nhC !== COURSE.id) NAV.nh = t; NAV.nhC = COURSE.id; NAV.nh += wrapA(t - NAV.nh) * 0.12; return NAV.nh;
+}
 function drawNav(g, vw, vh, ax, ay, viewM, pos, mini){
-  const sc = vw / viewM, c = pointAt(pos), h = headingAt(pos), ch = Math.cos(h), sh = Math.sin(h);
+  const sc = vw / viewM, c = pointAt(pos), h = mini ? (NAV.nh != null ? NAV.nh : headingAt(pos)) : navHead(pos), ch = Math.cos(h), sh = Math.sin(h);
   const tf = p => { const vx = (p.x - c.x) * sc, vy = -(p.y - c.y) * sc; return [ax + vx * ch + vy * sh, ay - vx * sh + vy * ch]; };
   const R = (Math.hypot(vw, vh) + (mini ? 0 : Math.hypot(NAV.px, NAV.py) * DPR)) / sc;   // 끌어 옮긴 만큼 더 넓게 그림
   g.fillStyle = '#e6ecdf'; g.fillRect(0, 0, g.canvas.width, g.canvas.height);
