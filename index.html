@@ -429,6 +429,7 @@
   .seg button.on{background:var(--ch3);color:var(--tx);border:0}
   /* 공통 보조 버튼 = 점선 상자 대신 조용한 한 줄 */
   .toggle{height:44px;border:0;border-radius:12px;background:var(--ch2);color:var(--tx);font-size:14px;font-weight:600}
+  #setBox .toggle{text-align:left;padding:0 14px;height:auto;min-height:44px;line-height:1.4}   /* 11/21 보스: 설정 아래 글은 왼쪽 정렬 */
   .titlebar .back{height:34px;border:0;border-radius:999px;background:var(--ch2);color:var(--tx);font-size:13px;font-weight:700;padding:0 12px}
   .stepbtn,.recbtn,.zoneBtn{background:var(--ch2)}
   /* 내 기록 */
@@ -441,8 +442,9 @@
   #recScreen .chips button.on,#recScreen .lchips button.on{background:var(--vt);color:var(--onv)}
   .rrow{background:var(--ch2);border-radius:12px;padding:10px 12px}
   .rrow .rt{color:var(--mut);opacity:1}
-  .rrow{cursor:pointer}.rrow.on{border-radius:12px 12px 0 0}
-  .rdet{background:var(--ch2);border-radius:0 0 12px 12px;margin-top:1px;padding:8px 12px 12px;font-size:14px;line-height:1.5}
+  .rrow .rtx{flex:1;min-width:0;cursor:pointer}.rhint{color:var(--vtx)}
+  .rdk{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;background:rgba(var(--ink),.05);border-radius:12px;padding:12px;margin:8px 0 0;opacity:1}.rdk .rds{font-size:13px;font-weight:600;color:var(--mut);white-space:nowrap}.rdk.on{background:transparent;padding:12px 2px 2px}
+  .rdet{background:var(--ch2);border-radius:12px;margin-top:4px;padding:8px 12px 12px;font-size:14px;line-height:1.5}
   .rdet .rb{margin-top:10px;justify-content:flex-end}.rdet .rpub{margin-top:10px;width:100%}
   .rhubs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.rhubs button{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid rgba(var(--ink),.18);background:transparent;color:var(--tx);font-size:14px;font-weight:700}.rhubs button.on{background:var(--vt);color:var(--onv);border-color:var(--vt)}
   .rhub{margin-top:10px;background:var(--ch3);border-radius:12px;overflow:hidden}.rhub img{display:block;width:100%;max-height:180px;object-fit:cover}.rhub b{display:block;padding:10px 12px 0;font-size:16px}.rhub p{margin:4px 12px 12px;color:var(--tx2);word-break:keep-all}
@@ -1076,7 +1078,7 @@
 </div>
 
 <script>
-const BUILD = '202611211655';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211707';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -4810,23 +4812,34 @@ function refreshRec(){
     '<div class="kc"><span>🔥 ' + T.sKcal + ' · ' + T['kcalLv' + bodyFix()[2]] + '</span><b>' + kcalTxt(list.reduce((a, r) => a + kcalOf(r), 0)) + '</b></div>';
   $('bBody').textContent = T.bodyBtn;
   { const kc = $('recSum').querySelector('.kc'); if (kc) kc.onclick = () => $('bBody').click(); }   // 칼로리 칸을 누르면 내 몸 정보
-  let html = '', day = '';
-  list.forEach(r => {
-    const d = new Date(r.date), key = r.src === 'legacy' ? T.srcLegacy : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + '일월화수목금토'[d.getDay()] + ')';
-    if (key !== day){ html += '<div class="rday">' + key + '</div>'; day = key; }
-    const a = ACTS[r.act] || ACTS.tread, open = REC.open === r.id, hubs = open ? recHubs(r) : [];
-    /* 11/21 보스 "기록이 아래로 다 펼쳐져 너저분 · 지나온 거점을 눌러 못 본 설명(향후 광고·정보)": 한 줄만 보이고, 누르면 펼침 */
-    html += '<div class="rrow' + (open ? ' on' : '') + '" data-rx="' + r.id + '"><div>' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') +
-      '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') + T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + ((r.passed || []).length ? ' · 📍 ' + r.passed.length : '') + '</span></div><div class="rt">' + (open ? '▴' : '▾') + '</div></div>';
-    if (open) html += '<div class="rdet"><div class="muted">' + (kcalOf(r) ? '🔥 ' + kcalTxt(kcalOf(r)) + ' · ' : '') + (r.real ? T.realDone + ' · ' : '') + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</div>' +
-      (hubs.length ? '<div class="rhubs">' + hubs.map((h, i) => '<button data-rh="' + i + '" class="' + (REC.hub === i ? 'on' : '') + '">📍 ' + esc(h.name) + '</button>').join('') + '</div>' : '') +
-      (hubs[REC.hub] ? recHubCard(hubs[REC.hub]) : '') +
-      (r.credit && /^my-/.test(r.credit.target || '') && MINE.some(x => x.id === r.credit.target) ? '<button class="toggle rpub" data-pub="' + r.credit.target + '">🌍 이 길 모두에게 공개 신청' + (MINE.find(x => x.id === r.credit.target).pub === 'wait' ? ' (신청함)' : '') + '</button>' : '') +
-      '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>' + '</div>';
+  /* 11/21 보스 "기록이 날마다 다 나열돼 지저분" → 날짜 줄만 보이고(그날 합계), 누르면 그날 기록이 펼쳐짐. 기록 줄은 예전처럼 한 줄 + 오른쪽 수정·삭제
+     기록 글을 누르면 지나온 거점(사진·설명) · 내 코스면 공개 신청 */
+  const groups = [];
+  list.forEach(r => { const d = new Date(r.date), key = r.src === 'legacy' ? T.srcLegacy : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + '일월화수목금토'[d.getDay()] + ')';
+    const g = groups[groups.length - 1]; if (g && g.key === key) g.rs.push(r); else groups.push({ key, rs: [r] }); });
+  if (!REC.days) REC.days = {};
+  let html = '';
+  groups.forEach((g, gi) => {
+    const open = REC.day ? true : REC.days[g.key] != null ? REC.days[g.key] : gi === 0;
+    const km = g.rs.reduce((a, r) => a + (r.distM || 0), 0), up = g.rs.reduce((a, r) => a + (r.upM || 0), 0), mn = Math.round(g.rs.reduce((a, r) => a + (r.sec || 0), 0) / 60);
+    html += '<div class="rday rdk' + (open ? ' on' : '') + '" data-dk="' + esc(g.key) + '"><span>' + g.key + '</span><span class="rds">' + g.rs.length + '번' + (km >= 50 ? ' · ' + (km / 1000).toFixed(1) + 'km' : '') + (up > 0 ? ' · ↑' + up.toLocaleString() + 'm' : '') + (mn ? ' · ' + mn + T.min : '') + ' ' + (open ? '▴' : '▾') + '</span></div>';
+    if (!open) return;
+    g.rs.forEach(r => {
+      const d = new Date(r.date), a = ACTS[r.act] || ACTS.tread, sel = REC.open === r.id, hubs = sel ? recHubs(r) : [];
+      const isMine = r.credit && /^my-/.test(r.credit.target || '') && MINE.some(x => x.id === r.credit.target);
+      html += '<div class="rrow"><div class="rtx" data-rx="' + r.id + '">' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
+        (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
+        T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ((r.passed || []).length || isMine ? ' · <span class="rhint">📍 ' + ((r.passed || []).length || '') + (sel ? ' ▴' : ' ▾') + '</span>' : '') + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
+        '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
+      if (sel && (hubs.length || isMine)) html += '<div class="rdet">' + (hubs.length ? '<div class="rhubs">' + hubs.map((h, i) => '<button data-rh="' + i + '" class="' + (REC.hub === i ? 'on' : '') + '">📍 ' + esc(h.name) + '</button>').join('') + '</div>' : '') +
+        (hubs[REC.hub] ? recHubCard(hubs[REC.hub]) : '') +
+        (isMine ? '<button class="toggle rpub" data-pub="' + r.credit.target + '">🌍 이 길 모두에게 공개 신청' + (MINE.find(x => x.id === r.credit.target).pub === 'wait' ? ' (신청함)' : '') + '</button>' : '') + '</div>';
+    });
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
   document.querySelector('[data-t="recHelp"]').classList.toggle('hidden', !html);   // 11/18 A15
   $('recList').querySelectorAll('[data-rx]').forEach(el => el.onclick = () => { const id = +el.dataset.rx; REC.open = REC.open === id ? null : id; REC.hub = null; REC.delId = REC.apId = null; refreshRec(); });
+  $('recList').querySelectorAll('[data-dk]').forEach(el => el.onclick = () => { const k = el.dataset.dk, on = el.classList.contains('on'); REC.days[k] = !on; refreshRec(); });
   $('recList').querySelectorAll('[data-rh]').forEach(el => el.onclick = () => { const i = +el.dataset.rh; REC.hub = REC.hub === i ? null : i; refreshRec(); });
   $('recList').querySelectorAll('[data-pub]').forEach(el => el.onclick = () => pubOpen(el.dataset.pub));
   $('recList').querySelectorAll('[data-ed]').forEach(el => el.onclick = () => openEdit(+el.dataset.ed));
