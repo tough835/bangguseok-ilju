@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>방구석러너 · 코스 실험실</title>
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<style>
+  /* 코스 실험실 (11/21 보스 "코스 개발을 연구할 공간") — 앱과 분리 · 앱에서 가는 버튼 없음 · 넣은 자료는 이 브라우저 밖으로 안 나감 */
+  :root{--ch:#1b1c1f;--ch2:#26282c;--ch3:#34373c;--tx:#fff;--tx2:#c9cbd0;--mut:#9a9ca1;--vt:#d7f548}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ch);color:var(--tx);font:15px/1.5 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+  header{padding:14px 16px 4px}
+  header h1{margin:0;font-size:20px}
+  header p{margin:2px 0 0;color:var(--mut);font-size:13px}
+  nav{display:flex;gap:6px;padding:10px 16px;overflow-x:auto}
+  nav button{flex:none;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--tx);font-weight:700}
+  nav button.on{background:var(--vt);color:var(--ch);border-color:var(--vt)}
+  section{display:none;padding:0 16px 30px}
+  section.on{display:block}
+  .card{background:var(--ch2);border-radius:14px;padding:12px;margin-top:10px}
+  .card h2{margin:0 0 6px;font-size:16px}
+  textarea,input,select{width:100%;background:var(--ch3);color:var(--tx);border:0;border-radius:10px;padding:10px;font-size:15px}
+  textarea{height:70px;resize:vertical}
+  label{display:block;margin-top:10px;color:var(--tx2);font-size:13px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{flex:1}
+  input[type=range]{padding:0;height:32px;background:transparent}
+  button.go{min-height:44px;border:0;border-radius:12px;background:var(--vt);color:var(--ch);font-weight:800;padding:0 16px}
+  button.sub{min-height:44px;border:0;border-radius:12px;background:var(--ch3);color:var(--tx);font-weight:700;padding:0 16px}
+  .muted{color:var(--mut);font-size:13px}
+  .num{font-size:22px;font-weight:800}
+  #map{height:52vh;border-radius:14px;margin-top:10px;background:#000}
+  .stat{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .stat div{min-width:90px}
+  #phone{position:relative;width:min(100%,360px);aspect-ratio:360/520;margin:10px auto 0;background:#000;border-radius:16px;overflow:hidden}
+  #phone iframe,#phone .ph{position:absolute;border:0;left:0;top:0;width:100%;height:100%}
+  #phone .ph{display:flex;align-items:center;justify-content:center;color:var(--mut);text-align:center;padding:20px}
+  #phone .guide{position:absolute;left:0;right:0;pointer-events:none;border-top:1px dashed rgba(215,245,72,.6);color:var(--vt);font-size:11px}
+  code{background:var(--ch3);padding:2px 6px;border-radius:6px}
+  pre{background:var(--ch3);border-radius:10px;padding:10px;white-space:pre-wrap;word-break:break-all;font-size:12px;max-height:160px;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧪 코스 실험실</h1>
+  <p>앱과 따로 있는 연구 공간 · 넣은 기록은 이 브라우저 안에서만 쓰고 어디에도 보내지 않아요</p>
+</header>
+<nav>
+  <button data-tab="route" class="on">🗺 길 다듬기</button>
+  <button data-tab="video">🎬 영상 맞추기</button>
+  <button data-tab="note">📒 실험 노트</button>
+</nav>
+
+<!-- 1. 길 다듬기 -->
+<section id="route" class="on">
+  <div class="card">
+    <h2>1. 길 불러오기</h2>
+    <label>💾 기록 옮기기 글을 붙여 넣기 (내 코스만 읽음)</label>
+    <textarea id="inTx" placeholder="BGSJ1:…"></textarea>
+    <label>또는 앱에 있는 노선 파일 이름</label>
+    <div class="row"><input id="inFile" placeholder="sangnim-gps2"><button class="sub" id="bFile" style="flex:none">불러오기</button></div>
+    <label>코스 고르기</label>
+    <select id="pick"><option value="">— 먼저 불러오세요 —</option></select>
+  </div>
+
+  <div id="map"></div>
+  <div class="muted" style="margin-top:4px">회색 = 원래 기록 · 노랑 = 다듬은 길 · 초록 점 = 출발 · 빨강 점 = 끝</div>
+
+  <div class="card">
+    <h2>2. 다듬기</h2>
+    <label>출발 쪽 자르기 <b id="vA">0</b> m</label><input type="range" id="cutA" min="0" max="400" step="10" value="0">
+    <label>끝 쪽 자르기 <b id="vB">0</b> m</label><input type="range" id="cutB" min="0" max="400" step="10" value="0">
+    <label>흔들림 다듬기 <b id="vS">0</b>번 (3점 평균)</label><input type="range" id="smooth" min="0" max="6" step="1" value="0">
+    <label>곁가지 지우기 (같은 길을 되돌아온 짧은 구간) <b id="vP">0</b> m 이하</label><input type="range" id="spur" min="0" max="150" step="10" value="0">
+    <label class="row" style="justify-content:flex-start;gap:8px"><input type="checkbox" id="loop" style="width:auto;flex:none"> 출발점으로 닫기 (한 바퀴 코스)</label>
+    <div class="stat">
+      <div><div class="muted">원래</div><div class="num" id="sRaw">–</div></div>
+      <div><div class="muted">다듬은 길</div><div class="num" id="sNew">–</div></div>
+      <div><div class="muted">점 개수</div><div class="num" id="sPts">–</div></div>
+      <div><div class="muted">점 사이 최대</div><div class="num" id="sGap">–</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. 내보내기</h2>
+    <label>파일 이름 (공식 노선은 고칠 때마다 이름을 바꿔야 폰이 다시 받음)</label>
+    <input id="outName" placeholder="sangnim-gps3">
+    <div class="row" style="margin-top:10px"><button class="go" id="bDown">노선 파일 받기 (.json)</button><button class="sub" id="bCopy">아미에게 보낼 글 복사</button></div>
+    <div class="muted" style="margin-top:6px">받은 파일은 아미에게 보내 주세요 → <code>data/route/</code>에 넣고 코스에 연결</div>
+  </div>
+</section>
+
+<!-- 2. 영상 맞추기 -->
+<section id="video">
+  <div class="card">
+    <h2>영상 화면 미리 보기 (폰 폭 360 기준)</h2>
+    <label>유튜브 링크 또는 영상 번호</label>
+    <div class="row"><input id="yt" placeholder="https://youtu.be/…"><button class="sub" id="bYt" style="flex:none">보기</button></div>
+    <label>영상 모양</label>
+    <select id="ar"><option value="0.5625">세로 9:16 (폰 세로 촬영)</option><option value="1.7778">가로 16:9</option><option value="1">정사각 1:1</option></select>
+    <label>위쪽 자르기 비율 <b id="vVy">0</b> (0 = 위 그대로 · 0.5 = 가운데 · 1 = 아래 그대로)</label>
+    <input type="range" id="vy" min="0" max="1" step="0.05" value="0">
+    <label>화면 칸 높이 <b id="vH">520</b> px (앱 운동 화면에서 영상 칸은 대략 450~560)</label>
+    <input type="range" id="boxH" min="380" max="700" step="10" value="520">
+  </div>
+  <div id="phone"><div class="ph">위에 유튜브 링크를 넣고 '보기'</div></div>
+  <div class="card">
+    <h2>재생 속도 계산</h2>
+    <label>찍을 때 속도 (km/h)</label><input id="shotK" type="number" value="3.6" step="0.1">
+    <label>뛰는 사람 속도 <b id="vRun">6.0</b> km/h</label><input type="range" id="runK" min="2" max="18" step="0.5" value="6">
+    <div class="stat"><div><div class="muted">재생 배속</div><div class="num" id="sRate">–</div></div><div><div class="muted">판단</div><div id="sJudge" style="font-weight:700">–</div></div></div>
+    <div class="muted" style="margin-top:6px">유튜브는 0.25~2배까지 · 우리 저장소로 옮기면 더 빠르게도 가능하지만 3배를 넘으면 '빨리 감기'처럼 보임</div>
+  </div>
+  <div class="card">
+    <h2>앱에 넣을 값</h2>
+    <pre id="vOut">video: { yt: '…', ar: 9 / 16, vy: 0, kmh: 3.6 }</pre>
+    <button class="sub" id="bVCopy" style="width:100%">복사</button>
+  </div>
+</section>
+
+<!-- 3. 실험 노트 -->
+<section id="note">
+  <div class="card">
+    <h2>지금까지 알게 된 것</h2>
+    <ul style="margin:6px 0 0;padding-left:20px;line-height:1.7">
+      <li>내 코스(직접 다닌 길)는 길 찾기 서버로 다시 이으면 오솔길로 지그재그 → <b>다닌 길 그대로</b></li>
+      <li>출발·끝의 곁가지는 직접 잘라야 함 (상림: 출발 40m)</li>
+      <li>걸어서 찍은 영상(3.6km/h)은 유튜브 2배속 = 7km/h까지 → 러너용은 <b>빠르게 걷기·바퀴·머리 액션캠</b></li>
+      <li>세로 영상은 화면을 꽉 채우고 <b>위는 살리고 아래(그림자)를 자름</b></li>
+      <li>그림자: 흐린 날 · 한낮 · 해를 앞에 두고 · 갔다 오는 길은 방향마다 시간을 나눠 촬영</li>
+      <li>촬영 중 코스를 벗어나면 녹화를 끄고 돌아와서 다시 켜기 · 시작할 때 폰 시계를 2초 찍어 두기</li>
+      <li>유튜브는 새 채널 하루 올리기 한도가 있음 → 영상은 적게, 길게, 한 번에</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>내 메모 (이 브라우저에만 저장)</h2>
+    <textarea id="memo" style="height:200px" placeholder="실험하면서 떠오른 것"></textarea>
+  </div>
+</section>
+
+<script src="lib/maplibre-gl.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const store = { get(k, d){ try { const v = localStorage.getItem('bgrlab_' + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+                set(k, v){ try { localStorage.setItem('bgrlab_' + k, JSON.stringify(v)); } catch(e){} } };
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === b.dataset.tab));
+  if (b.dataset.tab === 'route' && MAP) MAP.resize();
+});
+
+/* ---------- 길 계산 ---------- */
+const dM = (a, b) => { const r = Math.PI / 180, x = (b[1] - a[1]) * r * Math.cos((a[0] + b[0]) / 2 * r), y = (b[0] - a[0]) * r; return 6371000 * Math.hypot(x, y); };
+const lenOf = p => { let s = 0; for (let i = 1; i < p.length; i++) s += dM(p[i - 1], p[i]); return s; };
+function cutEnds(p, a, b){
+  let i = 0, s = 0; while (i < p.length - 2 && s < a){ s += dM(p[i], p[i + 1]); i++; }
+  let j = p.length - 1; s = 0; while (j > i + 1 && s < b){ s += dM(p[j - 1], p[j]); j--; }
+  return p.slice(i, j + 1);
+}
+function smooth(p, n){
+  for (let k = 0; k < n; k++) p = [p[0]].concat(p.slice(1, -1).map((q, i) => [(p[i][0] + q[0] + p[i + 2][0]) / 3, (p[i][1] + q[1] + p[i + 2][1]) / 3]), [p[p.length - 1]]);
+  return p;
+}
+/* 곁가지: 앞으로 가다가 같은 자리로 되돌아오는 짧은 왕복 — 점 i 다음에 L m 안에서 i 근처(12m)로 돌아오면 그 사이를 뺌 */
+function unspur(p, L){
+  if (!L) return p;
+  const out = []; let i = 0;
+  while (i < p.length){
+    out.push(p[i]); let s = 0, back = -1;
+    for (let j = i + 1; j < p.length && s <= L * 2; j++){ s += dM(p[j - 1], p[j]); if (j > i + 2 && s <= L * 2 && dM(p[i], p[j]) < 12) back = j; }
+    i = back > 0 ? back + 1 : i + 1;
+  }
+  return out;
+}
+const r5 = v => Math.round(v * 1e6) / 1e6;
+
+/* ---------- 불러오기 ---------- */
+let SRC = {}, CUR = null;
+function loadText(){
+  const s = $('inTx').value.trim(); if (!s) return;
+  try {
+    let j; const raw = s.includes(':') && !s.trim().startsWith('{') ? s.slice(s.indexOf(':') + 1) : s;
+    try { j = JSON.parse(decodeURIComponent(escape(atob(raw.trim())))); } catch(e){ j = JSON.parse(s); }
+    const mine = j.mine || (j.p ? [{ id: 'file', name: '붙여 넣은 노선', path: j.p }] : []);
+    SRC = {}; mine.forEach(m => { const p = (m.type === 'mtn' ? m.p : m.path) || []; if (p.length > 1) SRC[m.id] = { name: m.name, p: p.map(q => [q[0], q[1]]), loop: !!m.loop }; });
+    $('inTx').value = '';   // 몸 정보가 든 글이라 화면에 남기지 않음
+    fillPick();
+  } catch(e){ alert('글을 읽지 못했어요. 💾 기록 옮기기에서 복사한 글 전체를 넣어 주세요.'); }
+}
+$('inTx').addEventListener('input', () => { if ($('inTx').value.length > 30) loadText(); });
+$('bFile').onclick = async () => {
+  const n = $('inFile').value.trim().replace(/\.json$/, ''); if (!n) return;
+  try { const j = await (await fetch('data/route/' + n + '.json?t=' + Date.now())).json(); SRC['f:' + n] = { name: n + ' (앱 노선)', p: j.p, loop: dM(j.p[0], j.p[j.p.length - 1]) < 30 }; fillPick('f:' + n); }
+  catch(e){ alert('data/route/' + n + '.json 을 못 찾았어요'); }
+};
+function fillPick(sel){
+  const ks = Object.keys(SRC);
+  $('pick').innerHTML = ks.length ? ks.map(k => '<option value="' + k + '">' + SRC[k].name + ' · ' + (lenOf(SRC[k].p) / 1000).toFixed(2) + 'km</option>').join('') : '<option value="">— 내 코스가 없어요 —</option>';
+  if (sel) $('pick').value = sel;
+  pickIt();
+}
+$('pick').onchange = pickIt;
+function pickIt(){
+  CUR = SRC[$('pick').value]; if (!CUR) return;
+  $('loop').checked = CUR.loop; $('outName').value = ($('pick').value.replace(/^f:/, '').replace(/^my-/, 'mine-')) + '-lab';
+  redraw(true);
+}
+['cutA', 'cutB', 'smooth', 'spur', 'loop'].forEach(id => $(id).addEventListener('input', () => redraw(false)));
+
+let OUT = null;
+function redraw(fit){
+  $('vA').textContent = $('cutA').value; $('vB').textContent = $('cutB').value; $('vS').textContent = $('smooth').value; $('vP').textContent = $('spur').value;
+  if (!CUR) return;
+  let p = cutEnds(CUR.p, +$('cutA').value, +$('cutB').value);
+  p = unspur(p, +$('spur').value);
+  p = smooth(p, +$('smooth').value).map(q => [r5(q[0]), r5(q[1])]);
+  if ($('loop').checked && dM(p[0], p[p.length - 1]) > 1) p.push(p[0]);
+  OUT = p;
+  let gap = 0; for (let i = 1; i < p.length; i++) gap = Math.max(gap, dM(p[i - 1], p[i]));
+  $('sRaw').textContent = (lenOf(CUR.p) / 1000).toFixed(2) + 'km'; $('sNew').textContent = (lenOf(p) / 1000).toFixed(2) + 'km';
+  $('sPts').textContent = p.length; $('sGap').textContent = Math.round(gap) + 'm';
+  drawMap(fit);
+}
+
+/* ---------- 지도 (국내 브이월드 위성) ---------- */
+let MAP = null;
+const gj = (p) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: p.map(q => [q[1], q[0]]) } });
+function drawMap(fit){
+  const raw = gj(CUR.p), nw = gj(OUT), ends = { type: 'FeatureCollection', features: [
+    { type: 'Feature', properties: { c: '#3ddc84' }, geometry: { type: 'Point', coordinates: [OUT[0][1], OUT[0][0]] } },
+    { type: 'Feature', properties: { c: '#ff5a4f' }, geometry: { type: 'Point', coordinates: [OUT[OUT.length - 1][1], OUT[OUT.length - 1][0]] } }] };
+  const go = () => {
+    MAP.getSource('raw').setData(raw); MAP.getSource('new').setData(nw); MAP.getSource('ends').setData(ends);
+    if (fit){ const b = new maplibregl.LngLatBounds(); CUR.p.forEach(q => b.extend([q[1], q[0]])); MAP.fitBounds(b, { padding: 30, duration: 0 }); }
+  };
+  if (MAP){ MAP.loaded() ? go() : MAP.once('load', go); return; }
+  MAP = new maplibregl.Map({ container: 'map', attributionControl: false, center: [CUR.p[0][1], CUR.p[0][0]], zoom: 15, style: { version: 8,
+    sources: { sat: { type: 'raster', tiles: ['https://api.vworld.kr/req/wmts/1.0.0/77F0E859-7013-4326-8DA4-F326BCAB8C0E/Satellite/{z}/{y}/{x}.jpeg'], tileSize: 256, maxzoom: 19 },
+      raw: { type: 'geojson', data: raw }, new: { type: 'geojson', data: nw }, ends: { type: 'geojson', data: ends } },
+    layers: [ { id: 'sat', type: 'raster', source: 'sat' },
+      { id: 'raw', type: 'line', source: 'raw', paint: { 'line-color': '#ffffff', 'line-opacity': .45, 'line-width': 5 } },
+      { id: 'new', type: 'line', source: 'new', paint: { 'line-color': '#d7f548', 'line-width': 3 } },
+      { id: 'ends', type: 'circle', source: 'ends', paint: { 'circle-radius': 7, 'circle-color': ['get', 'c'], 'circle-stroke-color': '#000', 'circle-stroke-width': 2 } } ] } });
+  MAP.addControl(new maplibregl.AttributionControl({ customAttribution: '지도 © 브이월드(국토교통부)', compact: true }));
+  MAP.once('load', go);
+}
+
+/* ---------- 내보내기 ---------- */
+const routeJson = () => JSON.stringify({ p: OUT, km: Math.round(lenOf(OUT) / 10) / 100, how: 'gps', src: '코스 실험실에서 다듬음 (' + new Date().toLocaleDateString('ko-KR') + ')' });
+$('bDown').onclick = () => {
+  if (!OUT) return alert('먼저 코스를 고르세요');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([routeJson()], { type: 'application/json' }));
+  a.download = ($('outName').value.trim() || 'course-lab') + '.json'; a.click();
+};
+$('bCopy').onclick = async () => {
+  if (!OUT) return alert('먼저 코스를 고르세요');
+  const t = '[코스 실험실] ' + ($('outName').value.trim() || 'course-lab') + '.json · ' + (lenOf(OUT) / 1000).toFixed(2) + 'km · 점 ' + OUT.length +
+    '개 · 자르기 ' + $('cutA').value + '/' + $('cutB').value + 'm · 다듬기 ' + $('smooth').value + '번 · 곁가지 ' + $('spur').value + 'm' + ($('loop').checked ? ' · 한 바퀴' : '') + '\n' + routeJson();
+  try { await navigator.clipboard.writeText(t); alert('복사했어요. 아미 창에 붙여 넣어 주세요.'); } catch(e){ prompt('아래 글을 복사하세요', t); }
+};
+
+/* ---------- 영상 맞추기 ---------- */
+const ytId = s => { const m = String(s || '').match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([A-Za-z0-9_-]{6,20})/) || String(s || '').trim().match(/^([A-Za-z0-9_-]{11})$/); return m ? m[1] : null; };
+let VID = null;
+function vidFit(){
+  const ph = $('phone'), f = ph.querySelector('iframe'), ar = +$('ar').value, vy = +$('vy').value;
+  ph.style.aspectRatio = '360/' + $('boxH').value;
+  $('vVy').textContent = vy; $('vH').textContent = $('boxH').value;
+  const bw = ph.clientWidth, bh = ph.clientHeight;
+  if (f){ let fw = bw, fh = bw / ar; if (fh < bh){ fh = bh; fw = bh * ar; }
+    Object.assign(f.style, { width: fw + 'px', height: fh + 'px', left: (bw - fw) / 2 + 'px', top: -(fh - bh) * vy + 'px' }); }
+  const arTx = { '0.5625': '9 / 16', '1.7778': '16 / 9', '1': '1' }[$('ar').value];
+  $('vOut').textContent = "video: { yt: '" + (VID || '…') + "', ar: " + arTx + ', vy: ' + vy + ', kmh: ' + (+$('shotK').value || 3.6) + ' }';
+  store.set('vid', { yt: VID, ar: $('ar').value, vy, h: $('boxH').value });
+}
+$('bYt').onclick = () => {
+  VID = ytId($('yt').value); if (!VID) return alert('유튜브 링크를 확인해 주세요');
+  $('phone').innerHTML = '<iframe allow="autoplay; encrypted-media" src="https://www.youtube.com/embed/' + VID + '?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=' + VID + '&rel=0&modestbranding=1"></iframe>';
+  vidFit();
+};
+['vy', 'ar', 'boxH', 'shotK'].forEach(id => $(id).addEventListener('input', vidFit));
+window.addEventListener('resize', vidFit);
+function rate(){
+  const s = +$('shotK').value || 3.6, r = +$('runK').value, x = r / s;
+  $('vRun').textContent = r.toFixed(1); $('sRate').textContent = x.toFixed(2) + '배';
+  $('sJudge').textContent = x < 0.5 ? '너무 느림 · 느린 화면' : x <= 1.5 ? '자연스러움' : x <= 2 ? '조금 빠름 · 유튜브 한계' : x <= 3 ? '빠름 · 우리 저장소 필요' : '빨리 감기처럼 보임 · 더 빠르게 찍어야 함';
+}
+['shotK', 'runK'].forEach(id => $(id).addEventListener('input', rate)); rate();
+$('bVCopy').onclick = async () => { try { await navigator.clipboard.writeText($('vOut').textContent); alert('복사했어요'); } catch(e){ prompt('복사하세요', $('vOut').textContent); } };
+const sv = store.get('vid', null); if (sv){ if (sv.yt) $('yt').value = sv.yt; $('ar').value = sv.ar || '0.5625'; $('vy').value = sv.vy || 0; $('boxH').value = sv.h || 520; vidFit(); }
+
+/* ---------- 노트 ---------- */
+$('memo').value = store.get('memo', '');
+$('memo').addEventListener('input', () => store.set('memo', $('memo').value));
+</script>
+</body>
+</html>
