@@ -442,7 +442,7 @@
   #recScreen .chips button.on,#recScreen .lchips button.on{background:var(--vt);color:var(--onv)}
   .rrow{background:var(--ch2);border-radius:12px;padding:10px 12px}
   .rrow .rt{color:var(--mut);opacity:1}
-  .rrow .rtx{flex:1;min-width:0;cursor:pointer}.rhint{color:var(--vtx)}
+  .rrow .rtx{flex:1;min-width:0;cursor:pointer}.rhint{color:var(--vtx);white-space:nowrap}
   .rdk{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;background:rgba(var(--ink),.05);border-radius:12px;padding:12px;margin:8px 0 0;opacity:1}.rdk .rds{font-size:13px;font-weight:600;color:var(--mut);white-space:nowrap}.rdk.on{background:transparent;padding:12px 2px 2px}
   .rdet{background:var(--ch2);border-radius:12px;margin-top:4px;padding:8px 12px 12px;font-size:14px;line-height:1.5}
   .rdet .rb{margin-top:10px;justify-content:flex-end}.rdet .rpub{margin-top:10px;width:100%}
@@ -1078,7 +1078,7 @@
 </div>
 
 <script>
-const BUILD = '202611211707';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211714';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -4828,8 +4828,8 @@ function refreshRec(){
       const d = new Date(r.date), a = ACTS[r.act] || ACTS.tread, sel = REC.open === r.id, hubs = sel ? recHubs(r) : [];
       const isMine = r.credit && /^my-/.test(r.credit.target || '') && MINE.some(x => x.id === r.credit.target);
       html += '<div class="rrow"><div class="rtx" data-rx="' + r.id + '">' + a.icon + ' <b>' + recAmt(r) + '</b> ' + recWhere(r) +
-        (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' · ') +
-        T[a.key] + (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥 ' + kcalTxt(kcalOf(r)) : '') + ((r.passed || []).length || isMine ? ' · <span class="rhint">📍 ' + ((r.passed || []).length || '') + (sel ? ' ▴' : ' ▾') + '</span>' : '') + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
+        (r.real ? ' · ' + T.realDone : '') + (r.site ? ' <span class="gold">' + T.siteTag + '</span>' : '') + '<br><span class="muted">' + (r.src === 'legacy' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')) +   // 11/21 보스: 운동 종류는 윗줄 아이콘으로 충분 → 아랫줄에서 뺌
+        (r.sec >= 30 ? ' · ' + Math.round(r.sec / 60) + T.min : '') + (kcalOf(r) ? ' · 🔥' + Math.round(kcalOf(r)).toLocaleString() : '') + ((r.passed || []).length || isMine ? ' · <span class="rhint">📍' + ((r.passed || []).length || '') + (sel ? '▴' : '▾') + '</span>' : '') + (r.fixed ? ' · ' + T.fixedTag : '') + '</span></div>' +
         '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>';
       if (sel && (hubs.length || isMine)) html += '<div class="rdet">' + (hubs.length ? '<div class="rhubs">' + hubs.map((h, i) => '<button data-rh="' + i + '" class="' + (REC.hub === i ? 'on' : '') + '">📍 ' + esc(h.name) + '</button>').join('') + '</div>' : '') +
         (hubs[REC.hub] ? recHubCard(hubs[REC.hub]) : '') +
