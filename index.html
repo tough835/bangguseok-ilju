@@ -250,6 +250,7 @@
   #addBox .big{margin-top:14px}
   .modal{z-index:35;position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
   .modal .sb{width:min(88vw,360px);background:#1b1c1f;border-radius:20px;padding:20px}
+  #pubBox .sb{max-height:90vh;overflow:auto}#pubBox .form input{font-size:17px;height:48px}.pubNote{margin:12px 0 4px;font-size:12.5px;line-height:1.5;word-break:keep-all}
   .modal .st{font-size:21px;font-weight:900;margin-bottom:8px}
   .modal .rs{font-size:16px;line-height:1.7;white-space:pre-line}
   .mbtn{display:flex;gap:8px;margin-top:16px}
@@ -442,7 +443,7 @@
   .rrow .rt{color:var(--mut);opacity:1}
   .rrow{cursor:pointer}.rrow.on{border-radius:12px 12px 0 0}
   .rdet{background:var(--ch2);border-radius:0 0 12px 12px;margin-top:1px;padding:8px 12px 12px;font-size:14px;line-height:1.5}
-  .rdet .rb{margin-top:10px;justify-content:flex-end}
+  .rdet .rb{margin-top:10px;justify-content:flex-end}.rdet .rpub{margin-top:10px;width:100%}
   .rhubs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.rhubs button{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid rgba(var(--ink),.18);background:transparent;color:var(--tx);font-size:14px;font-weight:700}.rhubs button.on{background:var(--vt);color:var(--onv);border-color:var(--vt)}
   .rhub{margin-top:10px;background:var(--ch3);border-radius:12px;overflow:hidden}.rhub img{display:block;width:100%;max-height:180px;object-fit:cover}.rhub b{display:block;padding:10px 12px 0;font-size:16px}.rhub p{margin:4px 12px 12px;color:var(--tx2);word-break:keep-all}
   .rb button{height:32px;padding:0 10px;border-radius:8px;background:transparent;border:1px solid rgba(var(--ink),.14);color:var(--tx2);font-size:13px;font-weight:600}
@@ -1014,6 +1015,20 @@
     <button id="edClose" class="x2" data-t="close">닫기</button>
   </div>
 </div>
+<div id="pubBox" class="modal hidden">   <!-- 11/21 사용자 코스 공개 신청 -->
+  <div class="sb">
+    <div class="st">🌍 모두에게 공개 신청</div>
+    <div class="muted" id="pubSub" style="margin-top:4px"></div>
+    <div class="form">
+      <label>코스 이름</label><input id="pubName" maxlength="30">
+      <label>개척자 이름 (코스에 함께 보여요)</label><input id="pubNick" maxlength="20" placeholder="닉네임">
+      <label>유튜브 영상 링크 (선택 · 일부 공개)</label><input id="pubYt" inputmode="url" placeholder="https://youtu.be/…">
+      <label>한마디 (선택)</label><input id="pubMemo" maxlength="100" placeholder="이 길 자랑 한 줄">
+    </div>
+    <div class="muted pubNote">출발·도착 근처 200m는 가리고 보내요 · 확인을 거쳐 올라가요 · 차도·사유지는 빠질 수 있어요</div>
+    <div class="mbtn"><button id="pubNo">닫기</button><button id="pubYes" class="go">신청</button></div>
+  </div>
+</div>
 <div id="dupBox" class="modal hidden">
   <div class="sb">
     <div class="st" data-t="dupTitle">방금 운동한 기록이 있어요</div>
@@ -1045,6 +1060,7 @@
     <input id="myName" class="myname" maxlength="30">
     <div class="mbtn"><button id="myNo" data-t="apNo"></button><button id="myYes" class="go">⭐ 내 코스로 저장</button></div>
     <button id="myGo" class="go hidden" style="margin-top:10px;width:100%">⭐ 이 코스로 가기</button>
+    <button id="myPub" class="toggle hidden" style="margin-top:8px;width:100%">🌍 모두에게 공개 신청</button>
   </div>
   <div id="trackBox" class="hidden">
     <b id="trTitle"></b>
@@ -1060,7 +1076,7 @@
 </div>
 
 <script>
-const BUILD = '202611211559';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
+const BUILD = '202611211655';   // 올릴 때마다 바뀜 → 폰이 예전 파일을 붙잡고 있으면 새로 받음
 
 /* =====================================================================
    세계 데이터  —  도시 → 코스 → 구간 → 명소
@@ -3131,7 +3147,7 @@ function renderCourseRows(lists, onlySel){
 function roadRow(c, o){
   const t = posTotal(c), laps = Math.floor(t / c.lengthM), pct = Math.floor((t % c.lengthM) / c.lengthM * 100), hubs = c.landmarks.filter(l => l.hub).length || c.landmarks.length;
   return '<div class="mrow' + (o.sel ? ' sel' : '') + '" ' + o.attr + '><div><b>' + tr(c.name) + '</b><br><span class="muted"><b class="km">' +
-    (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (o.place ? o.place + ' · ' : '') + (o.extra ? o.extra : T.hubsN.replace('{n}', hubs)) + '</span><span class="tag">' + kindIcon(c) + c.kind + '</span></div>' +
+    (c.lengthM / 1000).toFixed(c.lengthM % 1000 ? 1 : 0) + 'km</b> · ' + (o.place ? o.place + ' · ' : '') + (o.extra ? o.extra : T.hubsN.replace('{n}', hubs)) + (c.by ? ' · 🌍 개척 ' + c.by : '') + '</span><span class="tag">' + kindIcon(c) + c.kind + '</span></div>' +
     '<div class="r">' + (pct ? '<span class="cont">' + T.cont + ' ' + pct + '%</span>' : '') + (laps ? '<br>✅ ' + laps + T.times : '') + '</div></div>';
 }
 const flTx = (st, f) => st.m.eq ? Math.round(f === undefined ? st.climbed : f / st.m.floors * st.m.gain) + 'm' : (f === undefined ? st.floor : f) + 'F';   // eq 탑은 층 대신 높이
@@ -3460,7 +3476,7 @@ $('bStart').onclick = () => {
   const hikeGps = hikeGpsOK();   // 11/18 보스: 일반 등산도 GPS로 기록 → 내 산 코스
   if (DB.zone === 'out' && ((isClimb() && !hikeGps) || !gpsUsable())){ addAct = S.act; openAdd(); return; }   // 바깥인데 GPS를 못 쓰면 다녀온 기록 넣기
   S.hikeGps = hikeGps; if (hikeGps) S.act = 'walk';   // 달리는 동안은 거리 운동으로 기록, 끝나면 등산으로 바꿈(fillHike)
-  S.gps = DB.zone === 'out'; GPS.track = [];
+  S.gps = DB.zone === 'out'; GPS.track = []; GPS.tt = []; GPS.t0 = 0;
   S.running = true; S.paused = false; S.sessionM = 0; S.elapsed = 0; S.passed = []; CLIMB_SLOW = false; NAV.px = NAV.py = 0; NAV.drag = false; S.doorHalf = false; try { doorPre(); } catch(e){}
   S.sessionId = Date.now(); S.lastT = Date.now(); S.lastSave = Date.now();
   S.free = isFree(); S.freeGoal = S.free && !hikeGps ? freeGoalVal() : 0; S.freeHit = false; voiceReset(); V3D.hot = false; meterStart();
@@ -4805,12 +4821,14 @@ function refreshRec(){
     if (open) html += '<div class="rdet"><div class="muted">' + (kcalOf(r) ? '🔥 ' + kcalTxt(kcalOf(r)) + ' · ' : '') + (r.real ? T.realDone + ' · ' : '') + (r.src === 'steps' ? T.srcSteps : r.src === 'manual' ? T.srcManual : r.src === 'legacy' ? T.srcLegacy : r.src === 'gps' ? T.srcGps : T.srcLive) + (r.fixed ? ' · ' + T.fixedTag : '') + '</div>' +
       (hubs.length ? '<div class="rhubs">' + hubs.map((h, i) => '<button data-rh="' + i + '" class="' + (REC.hub === i ? 'on' : '') + '">📍 ' + esc(h.name) + '</button>').join('') + '</div>' : '') +
       (hubs[REC.hub] ? recHubCard(hubs[REC.hub]) : '') +
+      (r.credit && /^my-/.test(r.credit.target || '') && MINE.some(x => x.id === r.credit.target) ? '<button class="toggle rpub" data-pub="' + r.credit.target + '">🌍 이 길 모두에게 공개 신청' + (MINE.find(x => x.id === r.credit.target).pub === 'wait' ? ' (신청함)' : '') + '</button>' : '') +
       '<div class="rb">' + (r.free && !r.credit ? '<button data-ap="' + r.id + '" class="ap">' + (REC.apId === r.id ? T.apSure.replace('{c}', themeName((ACTS[r.act] || ACTS.tread).kind === 'up')) : T.apBtn) + '</button>' : '') + '<button data-ed="' + r.id + '">' + T.edit + '</button><button data-del="' + r.id + '" class="' + (REC.delId === r.id ? 'arm' : '') + '">' + (REC.delId === r.id ? T.delSure : T.del) + '</button></div></div>' + '</div>';
   });
   $('recList').innerHTML = html || '<div class="muted" style="margin-top:14px">' + T.noRecord + '</div>';
   document.querySelector('[data-t="recHelp"]').classList.toggle('hidden', !html);   // 11/18 A15
   $('recList').querySelectorAll('[data-rx]').forEach(el => el.onclick = () => { const id = +el.dataset.rx; REC.open = REC.open === id ? null : id; REC.hub = null; REC.delId = REC.apId = null; refreshRec(); });
   $('recList').querySelectorAll('[data-rh]').forEach(el => el.onclick = () => { const i = +el.dataset.rh; REC.hub = REC.hub === i ? null : i; refreshRec(); });
+  $('recList').querySelectorAll('[data-pub]').forEach(el => el.onclick = () => pubOpen(el.dataset.pub));
   $('recList').querySelectorAll('[data-ed]').forEach(el => el.onclick = () => openEdit(+el.dataset.ed));
   $('recList').querySelectorAll('[data-ap]').forEach(el => el.onclick = () => {
     const id = +el.dataset.ap; if (REC.apId !== id){ REC.apId = id; refreshRec(); return; }   // 한 번 더 누르면 반영
@@ -5452,6 +5470,7 @@ function gradeBands(){
 const bandCol = d => { const B = gradeBands(); let lo = 0, hi = B.length - 1; while (lo < hi){ const m = (lo + hi) >> 1; if (B[m].to <= d) lo = m + 1; else hi = m; } return B[lo]; };
 /* ---- 실제 길 붙이기: 대충 찍은 점들 → 오픈스트리트맵 걷는 길 (FOSSGIS 공개 경로 서버, 하루 한 코스 한 번)
    · 받은 길 길이가 코스 길이와 너무 다르면 쓰지 않음 (7일 뒤 다시 시도) */
+function thinIdx(n, maxN){ if (n <= maxN) return [...Array(n).keys()]; const k = n / maxN, out = []; for (let i = 0; i < maxN; i++) out.push(Math.floor(i * k)); out.push(n - 1); return out; }
 function thinPath(c, maxN){ if (c.length <= maxN) return c; const k = c.length / maxN, out = []; for (let i = 0; i < maxN; i++) out.push(c[Math.floor(i * k)]); out.push(c[c.length - 1]); return out; }
 function poly6(str){   // Valhalla 경로 문자열 → [[경도, 위도]...] (OSRM과 같은 순서로)
   let i = 0, lat = 0, lon = 0; const out = [];
@@ -5563,7 +5582,9 @@ setTimeout(snapRoads, 2500);
 function trackPush(lat, lon){
   const t = GPS.track || (GPS.track = []), l = t[t.length - 1];
   if (l && gpsDist({ lat: l[0], lon: l[1] }, { lat, lon }) < 12) return;
-  if (t.length < 6000) t.push([+lat.toFixed(5), +lon.toFixed(5)]);
+  if (t.length < 6000){ t.push([+lat.toFixed(5), +lon.toFixed(5)]);
+    /* 11/21 사용자 코스·영상 맞추기: 점마다 출발 뒤 몇 초인지(시계 기준) — 영상 파일의 찍은 시각과 맞춤 */
+    if (!GPS.t0) GPS.t0 = Date.now(); (GPS.tt || (GPS.tt = [])).push(Math.round((Date.now() - GPS.t0) / 1000)); }
 }
 /* 실제로 그 코스 근처를 걸었을 때만 '지도로 쓰기'를 물음 (아파트 앞을 걸으며 가상으로 상림을 걸은 날은 묻지 않음)
    · 코스 좌표가 있으면: 다닌 점의 절반 이상이 코스 선에서 600m 안 / 좌표가 없으면: 묻되 '실제로 걸었을 때만' 안내 */
@@ -5711,11 +5732,11 @@ function saveMyMtn(){
   MINE = [{ id, type: 'mtn', name, p: h.p, summit: h.top, base: h.base, lengthM: h.len, note: '직접 오른 길 ' + new Date().toLocaleDateString('ko-KR') }].concat(MINE).slice(0, 30);
   try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
   window.MINE_NEW = true; S.hikeP = null;
-  $('myTitle').textContent = T.myDone.replace('{n}', name); $('myYes').disabled = true; $('myNo').disabled = true;
+  $('myTitle').textContent = T.myDone.replace('{n}', name); $('myYes').disabled = true; $('myNo').disabled = true; $('myPub').dataset.id = id; $('myPub').classList.remove('hidden');
 }
 function fillMine(){
   const t = GPS.track || [], d = trackLen(t), show = S.gps && S.free && !isClimb() && t.length > 10 && d >= MINE_MIN_M;
-  $('myGo').classList.add('hidden'); if (show) $('applyBox').classList.add('hidden');   // 11/19 검수 #4: 질문은 한 번에 하나 (내 코스 먼저, 답하면 반영 질문)
+  $('myGo').classList.add('hidden'); $('myPub').classList.add('hidden'); if (show) $('applyBox').classList.add('hidden');   // 11/19 검수 #4: 질문은 한 번에 하나 (내 코스 먼저, 답하면 반영 질문)
   $('myBox').classList.toggle('hidden', !show); if (!show) return;
   const dt = new Date(); $('myTitle').textContent = T.myTitle.replace('{a}', (S.sessionM / 1000).toFixed(2));   // 거리 숫자는 끝 화면과 같은 것 하나
   $('myName').value = '내 길 ' + (d / 1000).toFixed(1) + 'km (' + (dt.getMonth() + 1) + '/' + dt.getDate() + ')';
@@ -5726,11 +5747,12 @@ $('myYes').onclick = () => {
   const t = GPS.track || []; if (t.length < 2) return;
   const d = Math.round(trackLen(t)), id = 'my-' + Date.now().toString(36), loop = dM(t[0], t[t.length - 1]) < 150;
   const name = ($('myName').value || '').trim() || ('내 길 ' + (d / 1000).toFixed(1) + 'km');
-  MINE = [{ id, name, lengthM: d, path: thinPath(t, 800), loop, scene: 'road', note: '직접 뛴 길 ' + new Date().toLocaleDateString('ko-KR') }].concat(MINE).slice(0, 30);
+  const ix = thinIdx(t.length, 800), tt = GPS.tt || [];
+  MINE = [{ id, name, lengthM: d, path: ix.map(i => t[i]), ts: tt.length === t.length ? ix.map(i => tt[i]) : undefined, t0: GPS.t0 ? new Date(GPS.t0).toISOString() : undefined, act: S.act, loop, scene: 'road', note: '직접 뛴 길 ' + new Date().toLocaleDateString('ko-KR') }].concat(MINE).slice(0, 30);
   try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){ toastMsg(T.lpErr); return; }
   window.MINE_NEW = true;
   const r = DB.records.find(x => x.id === S.sessionId); if (r && !r.credit){ r.credit = { course: 'walk', target: id, m: r.distM || d }; saveDB(); }
-  $('myTitle').textContent = T.myDone.replace('{n}', name); myDoneUI(); $('myGo').dataset.id = id; $('myGo').classList.remove('hidden');   // 11/19 검수 #5: 저장 직후 '이 코스로 가기'
+  $('myTitle').textContent = T.myDone.replace('{n}', name); myDoneUI(); $('myGo').dataset.id = id; $('myGo').classList.remove('hidden'); $('myPub').dataset.id = id; $('myPub').classList.remove('hidden');   // 11/19 검수 #5: 저장 직후 '이 코스로 가기'
 };
 $('myNo').onclick = () => { $('myTitle').textContent = T.apLater; myDoneUI(); if (S.free && S.sessionM >= 1) $('applyBox').classList.remove('hidden'); };
 function myDoneUI(){ $('myName').classList.add('hidden'); $('myBox').querySelector('.mbtn').classList.add('hidden'); $('myBox').querySelector('.muted').classList.add('hidden'); }   // 답한 뒤엔 결과 한 줄만
@@ -6274,6 +6296,43 @@ function vidTick(kmh){
 }
 $('bVid').onclick = e => { e.stopPropagation(); VID.on ? vidOffNow() : vidOn(); };
 $('vidOff').onclick = e => { e.stopPropagation(); vidOffNow(); };
+/* ---- 🌍 사용자 코스 공개 신청 (11/21 보스 "사용자가 코스·영상을 올리는 생태계") ----
+   내 코스 → 신청(Supabase bgr_course_sub, 넣기만) → 아미 검수 → 보스 승인 → 공식 코스로 추가 + "개척: 닉네임"
+   개인 보호: 출발·끝 200m 잘라서 보냄 (집 위치) · 이름·연락처 없음 */
+const PUB_URL = TEL.url.replace('/bgr_event', '/bgr_course_sub');
+function pubCut(path, ts, cut){
+  if (path.length < 4) return { p: path, ts };
+  const L = trackLen(path); if (L < cut * 2 + 300) cut = Math.max(0, (L - 300) / 2);
+  let a = 0, s = 0; while (a < path.length - 2 && s < cut){ s += dM(path[a], path[a + 1]); a++; }
+  let b = path.length - 1; s = 0; while (b > a + 1 && s < cut){ s += dM(path[b - 1], path[b]); b--; }
+  return { p: path.slice(a, b + 1), ts: ts ? ts.slice(a, b + 1) : undefined };
+}
+function pubOpen(id){
+  const m = MINE.find(x => x.id === id); if (!m) return;
+  PUB.id = id; $('pubName').value = m.name || ''; $('pubNick').value = DB.nick || ''; $('pubYt').value = ''; $('pubMemo').value = '';
+  $('pubSub').textContent = (m.pub === 'wait' ? '이미 신청한 코스예요 · 다시 보내면 새로 신청돼요' : ((m.lengthM || 0) / 1000).toFixed(1) + 'km · ' + (m.type === 'mtn' ? '등산' : '길'));
+  $('pubYes').disabled = false; $('pubBox').classList.remove('hidden');
+}
+const PUB = { id: null };
+const ytId = s => { const m = String(s || '').match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([A-Za-z0-9_-]{6,20})/) || String(s || '').trim().match(/^([A-Za-z0-9_-]{11})$/); return m ? m[1] : null; };
+$('myPub').onclick = () => pubOpen($('myPub').dataset.id);
+$('pubNo').onclick = () => $('pubBox').classList.add('hidden');
+$('pubYes').onclick = async () => {
+  const m = MINE.find(x => x.id === PUB.id); if (!m) return;
+  const nick = $('pubNick').value.trim(), name = $('pubName').value.trim() || m.name, ytRaw = $('pubYt').value.trim(), yt = ytRaw ? ytId(ytRaw) : null;
+  if (!nick){ toastMsg('개척자 이름을 적어 주세요'); $('pubNick').focus(); return; }
+  if (ytRaw && !yt){ toastMsg('유튜브 링크를 확인해 주세요'); $('pubYt').focus(); return; }
+  const raw = (m.type === 'mtn' ? m.p : m.path).map(q => [q[0], q[1]]), c = pubCut(raw, m.ts, 200), mid = c.p[Math.floor(c.p.length / 2)];
+  const body = { did: telDid(), nick, name: name.slice(0, 40), kind: m.type === 'mtn' ? 'hike' : m.act === 'bike' ? 'bike' : 'walk', km: Math.max(0.01, Math.round(trackLen(c.p) / 10) / 100),
+    lat: mid[0], lon: mid[1], path: c.p, ts: c.ts || null, t0: m.t0 || null, yt, memo: $('pubMemo').value.trim() || null, build: BUILD };
+  $('pubYes').disabled = true;
+  try {
+    const r = await fetch(PUB_URL, { method: 'POST', headers: { apikey: TEL.key, Authorization: 'Bearer ' + TEL.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(r.status);
+    DB.nick = nick; saveDB(); m.pub = 'wait'; try { localStorage.setItem('bgsj_mine', JSON.stringify(MINE)); } catch(e){}
+    $('pubBox').classList.add('hidden'); toastMsg('🌍 신청했어요 · 확인되면 "개척: ' + nick + '"으로 올라가요');
+  } catch(e){ $('pubYes').disabled = false; toastMsg('보내지 못했어요 · 인터넷을 확인해 주세요'); }
+};
 function v3dBtn(){
   $('bVid').classList.toggle('hidden', !(COURSE.video && !S.gps && !S.free && !isClimb()));
   const m = mapModes(), b = $('b3d'); $('bSat').classList.add('hidden');
